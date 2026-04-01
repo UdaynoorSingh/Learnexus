@@ -22,7 +22,7 @@ exports.uploadNote = async (req, res) => {
       return res.status(404).json({ error: 'Topic not found.' });
     }
 
-    const fileUrl = `/uploads/${req.file.filename}`;
+    const fileUrl = req.file.path; // Cloudinary URL
 
     // Insert note
     const result = await pool.query(
@@ -31,15 +31,17 @@ exports.uploadNote = async (req, res) => {
     );
 
     const note = result.rows[0];
+    const io = req.app.get('io');
+    io.to(userId).emit('ai-progress', { step: 'Upload Complete', message: 'Note saved. Starting AI extraction...' });
 
     // Trigger AI processing in background
     try {
       const aiUrl = process.env.AI_BACKEND_URL || 'http://localhost:5001';
-      const filePath = path.join(__dirname, '..', 'uploads', req.file.filename);
-
+      
       // Process asynchronously
-      processNoteWithAI(note.id, filePath, aiUrl).catch(err => {
+      processNoteWithAI(note.id, fileUrl, aiUrl, io, userId).catch(err => {
         console.error('AI processing error:', err);
+        io.to(userId).emit('ai-error', { message: 'AI processing failed.' });
       });
     } catch (err) {
       console.error('AI trigger error:', err);
@@ -60,14 +62,20 @@ exports.uploadNote = async (req, res) => {
 };
 
 // AI processing helper
-async function processNoteWithAI(noteId, filePath, aiUrl) {
+async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId) {
   try {
     const { default: fetch } = await import('node-fetch');
-    const fileBuffer = fs.readFileSync(filePath);
-    const base64 = fileBuffer.toString('base64');
-    const mimeType = filePath.endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
+    io.to(userId).emit('ai-progress', { step: 'Downloading', message: 'Fetching PDF/Image from Cloud...' });
+    
+    // Fetch file from Cloudinary to send to Python backend
+    const cloudRes = await fetch(fileUrl);
+    const arrayBuffer = await cloudRes.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
+    const base64 = buffer.toString('base64');
+    const mimeType = fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
 
     // Step 1: OCR
+    io.to(userId).emit('ai-progress', { step: 'Extracting Text', message: 'Running OCR Vision Models...' });
     const ocrRes = await fetch(`${aiUrl}/api/ai/ocr`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -78,10 +86,12 @@ async function processNoteWithAI(noteId, filePath, aiUrl) {
 
     if (!extractedText) {
       await pool.query('UPDATE notes SET extracted_text = $1 WHERE id = $2', ['Could not extract text', noteId]);
+      io.to(userId).emit('ai-error', { message: 'Failed to extract text from document.' });
       return;
     }
 
     // Step 2: Summary
+    io.to(userId).emit('ai-progress', { step: 'Summarizing', message: 'Generating clear summary...' });
     const sumRes = await fetch(`${aiUrl}/api/ai/summarize`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -90,6 +100,7 @@ async function processNoteWithAI(noteId, filePath, aiUrl) {
     const sumData = await sumRes.json();
 
     // Step 3: Key Points
+    io.to(userId).emit('ai-progress', { step: 'Key Points', message: 'Isolating key takeaways...' });
     const kpRes = await fetch(`${aiUrl}/api/ai/keypoints`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -122,8 +133,10 @@ async function processNoteWithAI(noteId, filePath, aiUrl) {
     );
 
     console.log(`✅ AI processing complete for note ${noteId}`);
+    io.to(userId).emit('ai-success', { noteId, message: 'Processing fully completed!' });
   } catch (error) {
     console.error(`AI processing failed for note ${noteId}:`, error.message);
+    io.to(userId).emit('ai-error', { message: 'An error occurred during AI sequence.' });
   }
 }
 

@@ -57,6 +57,48 @@ exports.deleteNote = async (req, res) => {
   }
 };
 
+// Create degree
+exports.createDegree = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const result = await pool.query(
+      'INSERT INTO degrees (name) VALUES ($1) RETURNING *',
+      [name]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+// Create branch
+exports.createBranch = async (req, res) => {
+  try {
+    const { name, degreeId } = req.body;
+    const result = await pool.query(
+      'INSERT INTO branches (name, degree_id) VALUES ($1, $2) RETURNING *',
+      [name, degreeId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+// Create semester
+exports.createSemester = async (req, res) => {
+  try {
+    const { number, branchId } = req.body;
+    const result = await pool.query(
+      'INSERT INTO semesters (number, branch_id) VALUES ($1, $2) RETURNING *',
+      [number, branchId]
+    );
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
 // Create subject
 exports.createSubject = async (req, res) => {
   try {
@@ -116,6 +158,37 @@ exports.getStats = async (req, res) => {
       pendingNotes: parseInt(pendingNotes.rows[0].count)
     });
   } catch (error) {
+    res.status(500).json({ error: 'Server error.' });
+  }
+};
+
+// Advanced Dashboard Chart Stats
+exports.getChartStats = async (req, res) => {
+  try {
+    // Last 7 days uploads
+    const uploadsRes = await pool.query(`
+      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count 
+      FROM notes 
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY TO_CHAR(created_at, 'MM-DD') 
+      ORDER BY date ASC
+    `);
+
+    // Last 7 days user registrations
+    const usersRes = await pool.query(`
+      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count 
+      FROM users 
+      WHERE created_at >= NOW() - INTERVAL '7 days'
+      GROUP BY TO_CHAR(created_at, 'MM-DD') 
+      ORDER BY date ASC
+    `);
+
+    res.json({
+      uploadsData: uploadsRes.rows.map(r => ({ date: r.date, uploads: parseInt(r.count) })),
+      usersData: usersRes.rows.map(r => ({ date: r.date, users: parseInt(r.count) }))
+    });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'Server error.' });
   }
 };

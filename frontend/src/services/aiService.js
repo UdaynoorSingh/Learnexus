@@ -10,4 +10,9 @@ export const generateLecture = async (topicName, context = '') => {
   return res.data.lecture;
 };
 
+export const sendChatMessage = async (history, message, lectureContext) => {
+  const res = await aiApi.post('/chat', { history, message, lectureContext });
+  return res.data.reply;
+};
+
 export default aiApi;
