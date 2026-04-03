@@ -1,18 +1,15 @@
-import axios from 'axios';
+import api from './api';
 
-const aiApi = axios.create({
-  baseURL: 'http://localhost:5001/api/ai',
-  headers: { 'Content-Type': 'application/json' }
-});
+// Instead of maintaining a separate axios instance to localhost:5001,
+// we now route everything securely through our Node.js backend.
+// The Node.js backend will attach internal credentials and proxy to Python.
 
 export const generateLecture = async (topicName, context = '') => {
-  const res = await aiApi.post('/teach', { topicName, context });
+  const res = await api.post('/ai/teach', { topicName, context });
   return res.data.lecture;
 };
 
-export const sendChatMessage = async (history, message, lectureContext) => {
-  const res = await aiApi.post('/chat', { history, message, lectureContext });
+export const sendChatMessage = async (topicId, history, message, lectureContext) => {
+  const res = await api.post('/ai/chat', { topicId, history, message, lectureContext });
   return res.data.reply;
 };
-
-export default aiApi;

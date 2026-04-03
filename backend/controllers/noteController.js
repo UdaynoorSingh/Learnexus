@@ -39,7 +39,7 @@ exports.uploadNote = async (req, res) => {
       const aiUrl = process.env.AI_BACKEND_URL || 'http://localhost:5001';
       
       // Process asynchronously
-      processNoteWithAI(note.id, fileUrl, aiUrl, io, userId).catch(err => {
+      processNoteWithAI(note.id, fileUrl, aiUrl, io, userId, topicId).catch(err => {
         console.error('AI processing error:', err);
         io.to(userId).emit('ai-error', { message: 'AI processing failed.' });
       });
@@ -62,24 +62,17 @@ exports.uploadNote = async (req, res) => {
 };
 
 // AI processing helper
-async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId) {
+async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
   try {
     const { default: fetch } = await import('node-fetch');
-    io.to(userId).emit('ai-progress', { step: 'Downloading', message: 'Fetching PDF/Image from Cloud...' });
-    
-    // Fetch file from Cloudinary to send to Python backend
-    const cloudRes = await fetch(fileUrl);
-    const arrayBuffer = await cloudRes.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64 = buffer.toString('base64');
     const mimeType = fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
 
     // Step 1: OCR
-    io.to(userId).emit('ai-progress', { step: 'Extracting Text', message: 'Running OCR Vision Models...' });
+    io.to(userId).emit('ai-progress', { step: 'Extracting Text', message: 'Running OCR Vision Models via URL...' });
     const ocrRes = await fetch(`${aiUrl}/api/ai/ocr`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image: base64, mimeType })
+      body: JSON.stringify({ fileUrl, mimeType })
     });
     const ocrData = await ocrRes.json();
     const extractedText = ocrData.text || '';
@@ -88,6 +81,18 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId) {
       await pool.query('UPDATE notes SET extracted_text = $1 WHERE id = $2', ['Could not extract text', noteId]);
       io.to(userId).emit('ai-error', { message: 'Failed to extract text from document.' });
       return;
+    }
+
+    // Step 1.5: FAISS Vector Embeddings
+    io.to(userId).emit('ai-progress', { step: 'Vectorizing', message: 'Building FAISS knowledge base...' });
+    try {
+      await fetch(`${aiUrl}/api/ai/embed`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: extractedText, topicId })
+      });
+    } catch (embedError) {
+      console.error('FAISS Embed Error (soft fail):', embedError);
     }
 
     // Step 2: Summary

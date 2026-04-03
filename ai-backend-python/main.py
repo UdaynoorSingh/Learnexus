@@ -1,20 +1,29 @@
 import os
 import json
 import base64
+import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 from dotenv import load_dotenv
 import google.generativeai as genai
+
+# RAG specific imports
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
 # Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-# We use Gemini 1.5 Flash as it is fast and supports multimodality (vision)
+
+# Standard fast model for text
 model = genai.GenerativeModel('gemini-2.5-flash')
+# Superior vision model exclusively for handwriting OCR
+vision_model = genai.GenerativeModel('gemini-2.5-pro')
 
 app = FastAPI(title="Learnexus AI Backend")
 
@@ -29,15 +38,15 @@ app.add_middleware(
 
 # --- PYDANTIC MODELS (Strict Input Validation) ---
 class OCRRequest(BaseModel):
-    image: str # Base64 string
+    fileUrl: str
     mimeType: str
 
 class TextRequest(BaseModel):
     text: str
 
-class ClassifyRequest(BaseModel):
+class EmbedRequest(BaseModel):
     text: str
-    availableTopics: List[str]
+    topicId: Any
 
 class TeachRequest(BaseModel):
     topicName: str
@@ -48,6 +57,7 @@ class ChatMessage(BaseModel):
     text: str
 
 class ChatRequest(BaseModel):
+    topicId: Any
     history: List[ChatMessage]
     message: str
     lectureContext: str
@@ -57,20 +67,55 @@ class ChatRequest(BaseModel):
 
 @app.post("/api/ai/ocr")
 async def extract_text(req: OCRRequest):
-    """Agent Task 1: Act as the Eyes (Vision OCR)"""
+    """Agent Task 1: Act as the Eyes (Vision OCR) - Memory Optimized"""
     try:
-        # Prepare the image for Gemini
+        # Download the file directly in Python memory instead of proxying through Node.js
+        resp = requests.get(req.fileUrl, timeout=30)
+        resp.raise_for_status()
+
+        # Prepare the image for Gemini Pro
         image_parts = [
             {
                 "mime_type": req.mimeType,
-                "data": base64.b64decode(req.image)
+                "data": resp.content
             }
         ]
-        prompt = "Extract all the text from this image or document. If it contains handwritten notes, read and transcribe them accurately. Return ONLY the extracted text, no extra conversational words."
+        prompt = "Extract all the text from this image or document. If it contains messy handwritten notes, read and transcribe them accurately. Return ONLY the extracted text, no extra conversational words."
         
-        response = model.generate_content([prompt, image_parts[0]])
+        response = vision_model.generate_content([prompt, image_parts[0]])
         return {"text": response.text.strip()}
     
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/embed")
+async def embed_text(req: EmbedRequest):
+    """FAISS Pipeline: Chunk and vectorize text by topicId"""
+    try:
+        if not req.text.strip():
+            return {"status": "ignored"}
+            
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = splitter.split_text(req.text)
+        
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+        vectorstore = FAISS.from_texts(chunks, embeddings)
+        
+        save_path = f"vector_stores/{req.topicId}"
+        os.makedirs(save_path, exist_ok=True)
+        
+        # Merge if existing, otherwise save new
+        if os.path.exists(os.path.join(save_path, "index.faiss")):
+            existing_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+            existing_db.merge_from(vectorstore)
+            existing_db.save_local(save_path)
+        else:
+            vectorstore.save_local(save_path)
+            
+        return {"status": "success"}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -146,20 +191,33 @@ async def generate_lecture(req: TeachRequest):
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
+
 @app.post("/api/ai/chat")
 async def chat_interaction(req: ChatRequest):
-    """Phase 4: Tutor Interactive Chat"""
+    """Phase 4: Tutor Interactive Chat with FAISS RAG injection"""
     try:
-        # Convert history format for Gemini
+        # FAISS RAG Retrieval
+        retrieved_context = ""
+        save_path = f"vector_stores/{req.topicId}"
+        if os.path.exists(save_path):
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+            vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+            docs = vectorstore.similarity_search(req.message, k=3)
+            retrieved_context = "\n".join([f"Note snippet: {d.page_content}" for d in docs])
+
+        # Convert history format for Gemini & fix "assistant" crash bug
         formatted_history = []
         for msg in req.history:
-            # Gemini roles are 'user' and 'model'
-            formatted_history.append({"role": msg.role, "parts": [msg.text]})
+            role = "model" if msg.role == "assistant" else msg.role
+            formatted_history.append({"role": role, "parts": [msg.text]})
         
         chat_session = model.start_chat(history=formatted_history)
         
-        system_instruction = f"You are an expert academic tutor. Context: {req.lectureContext}. Answer the student's question concisely."
-        prompt = f"{system_instruction}\nStudent Question: {req.message}"
+        system_instruction = f"You are an expert academic tutor. Base Context: {req.lectureContext}."
+        if retrieved_context:
+            system_instruction += f"\n\nStudent's Extracted Notes (Use this to answer their questions accurately):\n{retrieved_context}"
+            
+        prompt = f"{system_instruction}\n\nStudent Question: {req.message}"
         
         response = chat_session.send_message(prompt)
         return {"reply": response.text.strip()}
@@ -167,6 +225,7 @@ async def chat_interaction(req: ChatRequest):
         import traceback
         traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
+
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))

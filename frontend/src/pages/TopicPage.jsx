@@ -84,7 +84,7 @@ const TopicPage = () => {
     setChatLoading(true);
 
     try {
-      const reply = await sendChatMessage(currentHistory, userMsg.text, lectureContent);
+      const reply = await sendChatMessage(topicId, currentHistory, userMsg.text, lectureContent);
       setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
     } catch (error) {
       console.error(error);
