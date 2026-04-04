@@ -1,5 +1,3 @@
-const fetch = require('node-fetch');
-
 const AI_BACKEND_URL = process.env.AI_BACKEND_URL || 'http://localhost:5001';
 
 exports.teach = async (req, res) => {

@@ -35,4 +35,7 @@ backend/uploads
 
 #frontend secrets
 frontend/.env
-/ai-backend-python
+
+#python backend
+/ai-backend-python/.env
+/ai-backend-python/venv

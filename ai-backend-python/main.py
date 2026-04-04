@@ -22,8 +22,8 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 # Standard fast model for text
 model = genai.GenerativeModel('gemini-2.5-flash')
-# Superior vision model exclusively for handwriting OCR
-vision_model = genai.GenerativeModel('gemini-2.5-pro')
+# Vision model for handwriting OCR (using same flash model — it's multimodal)
+vision_model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = FastAPI(title="Learnexus AI Backend")
 

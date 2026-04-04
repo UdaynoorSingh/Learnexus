@@ -12,6 +12,8 @@ models/gemma-3-12b-it
 models/gemma-3-27b-it
 models/gemma-3n-e4b-it
 models/gemma-3n-e2b-it
+models/gemma-4-26b-a4b-it
+models/gemma-4-31b-it
 models/gemini-flash-latest
 models/gemini-flash-lite-latest
 models/gemini-pro-latest
