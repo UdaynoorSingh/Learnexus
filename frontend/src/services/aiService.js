@@ -13,3 +13,13 @@ export const sendChatMessage = async (topicId, history, message, lectureContext)
   const res = await api.post('/ai/chat', { topicId, history, message, lectureContext });
   return res.data.reply;
 };
+
+export const generateFlashcards = async (topicId) => {
+  const res = await api.post('/ai/flashcards', { topicId });
+  return res.data.flashcards;
+};
+
+export const generateExam = async (topicId) => {
+  const res = await api.post('/ai/exam/generate', { topicId });
+  return res.data.exam;
+};

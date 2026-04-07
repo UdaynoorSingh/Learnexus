@@ -4,7 +4,9 @@ import api from '../services/api';
 import { generateLecture, sendChatMessage } from '../services/aiService';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiSend } from 'react-icons/fi';
+import Flashcards from '../components/study/Flashcards';
+import ExamSimulator from '../components/study/ExamSimulator';
+import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiSend, FiLayers, FiAward } from 'react-icons/fi';
 
 const TopicPage = () => {
   const { topicId } = useParams();
@@ -22,6 +24,8 @@ const TopicPage = () => {
   const chatBottomRef = useRef(null);
 
   const [expandedNote, setExpandedNote] = useState(null);
+  const [showFlashcards, setShowFlashcards] = useState(false);
+  const [showExam, setShowExam] = useState(false);
 
   useEffect(() => {
     fetchTopic();
@@ -52,6 +56,8 @@ const TopicPage = () => {
     }
 
     setShowLecture(true);
+    setShowFlashcards(false);
+    setShowExam(false);
     setLectureLoading(true);
     setChatHistory([]);
     try {
@@ -92,6 +98,18 @@ const TopicPage = () => {
     } finally {
       setChatLoading(false);
     }
+  };
+
+  const handleFlashcards = () => {
+    setShowFlashcards(true);
+    setShowLecture(false);
+    setShowExam(false);
+  };
+
+  const handleExam = () => {
+    setShowExam(true);
+    setShowLecture(false);
+    setShowFlashcards(false);
   };
 
   const renderMarkdown = (text) => {
@@ -137,14 +155,30 @@ const TopicPage = () => {
                 </p>
               )}
             </div>
-            <button
-              onClick={handleTeachMe}
-              disabled={lectureLoading}
-              className="btn-gradient flex items-center gap-2 text-sm animate-pulseGlow shrink-0"
-            >
-              <FiBookOpen size={16} />
-              {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
-            </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap">
+              <button
+                onClick={handleTeachMe}
+                disabled={lectureLoading}
+                className="btn-gradient flex items-center gap-2 text-sm animate-pulseGlow"
+              >
+                <FiBookOpen size={16} />
+                {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
+              </button>
+              <button
+                onClick={handleFlashcards}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-accent/15 text-accent border border-accent/30 font-semibold hover:bg-accent/25 hover:border-accent/50 transition-all"
+              >
+                <FiLayers size={16} />
+                Flashcards
+              </button>
+              <button
+                onClick={handleExam}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-primary/15 text-primary border border-primary/30 font-semibold hover:bg-primary/25 hover:border-primary/50 transition-all"
+              >
+                <FiAward size={16} />
+                Exam (1 ⚡)
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -229,8 +263,18 @@ const TopicPage = () => {
         </div>
       )}
 
+      {/* Smart Flashcards */}
+      {showFlashcards && (
+        <Flashcards topicId={topicId} onClose={() => setShowFlashcards(false)} />
+      )}
+
+      {/* Exam Simulator */}
+      {showExam && (
+        <ExamSimulator topicId={topicId} onClose={() => setShowExam(false)} refreshUser={refreshUser} />
+      )}
+
       {/* Subtopics */}
-      {!showLecture && subtopics.length > 0 && (
+      {!showLecture && !showFlashcards && !showExam && subtopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Subtopics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -249,7 +293,7 @@ const TopicPage = () => {
       )}
 
       {/* Notes */}
-      {!showLecture && (
+      {!showLecture && !showFlashcards && !showExam && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Notes ({notes.length})</h2>
           {notes.length === 0 ? (
@@ -349,7 +393,7 @@ const TopicPage = () => {
       )}
 
       {/* Related Topics */}
-      {!showLecture && relatedTopics.length > 0 && (
+      {!showLecture && !showFlashcards && !showExam && relatedTopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
             <FiLink size={16} className="text-accent" /> Related Topics

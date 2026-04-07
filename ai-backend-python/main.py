@@ -62,6 +62,9 @@ class ChatRequest(BaseModel):
     message: str
     lectureContext: str
 
+class TopicRequest(BaseModel):
+    topicId: Any
+
 
 # --- ENDPOINTS ---
 
@@ -101,7 +104,7 @@ async def embed_text(req: EmbedRequest):
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
         chunks = splitter.split_text(req.text)
         
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
         vectorstore = FAISS.from_texts(chunks, embeddings)
         
         save_path = f"vector_stores/{req.topicId}"
@@ -200,7 +203,7 @@ async def chat_interaction(req: ChatRequest):
         retrieved_context = ""
         save_path = f"vector_stores/{req.topicId}"
         if os.path.exists(save_path):
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+            embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
             vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
             docs = vectorstore.similarity_search(req.message, k=3)
             retrieved_context = "\n".join([f"Note snippet: {d.page_content}" for d in docs])
@@ -221,6 +224,88 @@ async def chat_interaction(req: ChatRequest):
         
         response = chat_session.send_message(prompt)
         return {"reply": response.text.strip()}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/flashcards")
+async def generate_flashcards(req: TopicRequest):
+    """Active Recall: Generate 10 smart flashcards from FAISS knowledge base"""
+    try:
+        save_path = f"vector_stores/{req.topicId}"
+        if not os.path.exists(os.path.join(save_path, "index.faiss")):
+            raise HTTPException(status_code=404, detail="No notes found for this topic. Upload notes first to generate flashcards.")
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+        vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+        docs = vectorstore.similarity_search("core concepts, main ideas, definitions, and formulas", k=10)
+        context = "\n\n".join([d.page_content for d in docs])
+
+        prompt = f"""Based STRICTLY on the following academic notes, generate exactly 10 flashcards for a student to study.
+Each flashcard must have a clear, specific question and a concise, accurate answer.
+You MUST return ONLY a valid JSON array. Do not include markdown code blocks like ```json.
+Format: [{{"q": "What is...?", "a": "It is..."}}]
+
+Academic Notes:
+{context}"""
+
+        response = model.generate_content(prompt)
+        text_resp = response.text.strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        flashcards = json.loads(text_resp)
+        return {"flashcards": flashcards}
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON. Please try again.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/exam/generate")
+async def generate_exam(req: TopicRequest):
+    """Active Recall: Generate 5-question MCQ exam from FAISS knowledge base"""
+    try:
+        save_path = f"vector_stores/{req.topicId}"
+        if not os.path.exists(os.path.join(save_path, "index.faiss")):
+            raise HTTPException(status_code=404, detail="No notes found for this topic. Upload notes first to take an exam.")
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+        vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+        docs = vectorstore.similarity_search("core concepts, main ideas, definitions, and formulas", k=15)
+        context = "\n\n".join([d.page_content for d in docs])
+
+        prompt = f"""Based STRICTLY on the following academic notes, generate exactly 5 multiple-choice questions to test a student's understanding.
+Each question must have exactly 4 options (A, B, C, D), one correct answer, and a brief explanation of why the correct answer is right.
+You MUST return ONLY a valid JSON array. Do not include markdown code blocks like ```json.
+Format: [{{"question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."], "correctAnswer": "A. ...", "explanation": "..."}}]
+
+Academic Notes:
+{context}"""
+
+        response = model.generate_content(prompt)
+        text_resp = response.text.strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        exam = json.loads(text_resp)
+        return {"exam": exam}
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON. Please try again.")
     except Exception as e:
         import traceback
         traceback.print_exc()
