@@ -6,7 +6,10 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Flashcards from '../components/study/Flashcards';
 import ExamSimulator from '../components/study/ExamSimulator';
-import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiSend, FiLayers, FiAward } from 'react-icons/fi';
+import MindMapViewer from '../components/study/MindMapViewer';
+import PodcastPlayer from '../components/study/PodcastPlayer';
+import YouTubeIngestor from '../components/upload/YouTubeIngestor';
+import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiSend, FiLayers, FiAward, FiYoutube, FiShare2, FiHeadphones } from 'react-icons/fi';
 
 const TopicPage = () => {
   const { topicId } = useParams();
@@ -21,11 +24,16 @@ const TopicPage = () => {
   const [chatHistory, setChatHistory] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatContextMode, setChatContextMode] = useState('both');
   const chatBottomRef = useRef(null);
 
+  const [showTeachMenu, setShowTeachMenu] = useState(false);
   const [expandedNote, setExpandedNote] = useState(null);
   const [showFlashcards, setShowFlashcards] = useState(false);
   const [showExam, setShowExam] = useState(false);
+  const [showYouTube, setShowYouTube] = useState(false);
+  const [showMindMap, setShowMindMap] = useState(false);
+  const [showPodcast, setShowPodcast] = useState(false);
 
   useEffect(() => {
     fetchTopic();
@@ -49,23 +57,28 @@ const TopicPage = () => {
     }
   };
 
-  const handleTeachMe = async () => {
+  const handleTeachMe = async (mode) => {
     if (user.credits < 3) {
       alert('You need at least 3 credits to use "Teach Me". Upload notes to earn credits!');
       return;
     }
 
+    setShowTeachMenu(false);
     setShowLecture(true);
     setShowFlashcards(false);
     setShowExam(false);
+    setShowYouTube(false);
+    setShowMindMap(false);
+    setShowPodcast(false);
     setLectureLoading(true);
     setChatHistory([]);
+    setChatContextMode(mode);
     try {
-      const lecture = await generateLecture(topicData.topic.name, topicData.topic.subject_name);
+      const lecture = await generateLecture(topicId, topicData.topic.name, mode, topicData.topic.subject_name);
       setLectureContent(lecture);
       
       setChatHistory([
-        { role: 'model', text: `Hi ${user.name}! I'm your AI tutor. I just generated this lecture on ${topicData.topic.name} for you. Do you have any questions?` }
+        { role: 'model', text: `Hi ${user.name}! I'm your AI tutor. I just generated this lecture using your ${mode === 'both' ? 'Notes and YouTube videos' : mode === 'notes' ? 'Notes' : 'YouTube videos'}. Do you have any questions?` }
       ]);
 
       await api.post(`/notes/1/unlock`).catch(() => {}); // Fallback simplified deduction
@@ -90,7 +103,7 @@ const TopicPage = () => {
     setChatLoading(true);
 
     try {
-      const reply = await sendChatMessage(topicId, currentHistory, userMsg.text, lectureContent);
+      const reply = await sendChatMessage(topicId, chatContextMode, currentHistory, userMsg.text, lectureContent);
       setChatHistory(prev => [...prev, { role: 'model', text: reply }]);
     } catch (error) {
       console.error(error);
@@ -104,12 +117,45 @@ const TopicPage = () => {
     setShowFlashcards(true);
     setShowLecture(false);
     setShowExam(false);
+    setShowYouTube(false);
+    setShowMindMap(false);
+    setShowPodcast(false);
   };
 
   const handleExam = () => {
     setShowExam(true);
     setShowLecture(false);
     setShowFlashcards(false);
+    setShowYouTube(false);
+    setShowMindMap(false);
+    setShowPodcast(false);
+  };
+
+  const handleYouTube = () => {
+    setShowYouTube(true);
+    setShowLecture(false);
+    setShowFlashcards(false);
+    setShowExam(false);
+    setShowMindMap(false);
+    setShowPodcast(false);
+  };
+
+  const handleMindMap = () => {
+    setShowMindMap(true);
+    setShowLecture(false);
+    setShowFlashcards(false);
+    setShowExam(false);
+    setShowYouTube(false);
+    setShowPodcast(false);
+  };
+
+  const handlePodcast = () => {
+    setShowPodcast(true);
+    setShowLecture(false);
+    setShowFlashcards(false);
+    setShowExam(false);
+    setShowYouTube(false);
+    setShowMindMap(false);
   };
 
   const renderMarkdown = (text) => {
@@ -155,15 +201,33 @@ const TopicPage = () => {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0 flex-wrap">
-              <button
-                onClick={handleTeachMe}
-                disabled={lectureLoading}
-                className="btn-gradient flex items-center gap-2 text-sm animate-pulseGlow"
-              >
-                <FiBookOpen size={16} />
-                {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
-              </button>
+            <div className="flex items-center gap-2 shrink-0 flex-wrap relative">
+              <div className="relative">
+                <button
+                  onClick={() => setShowTeachMenu(!showTeachMenu)}
+                  disabled={lectureLoading}
+                  className="btn-gradient flex items-center gap-2 text-sm animate-pulseGlow"
+                >
+                  <FiBookOpen size={16} />
+                  {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
+                  <FiChevronDown size={14} className={`transition-transform ${showTeachMenu ? 'rotate-180' : ''}`} />
+                </button>
+                {/* Dropdown Menu for Context Selection */}
+                {showTeachMenu && (
+                  <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a1b26] border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-fadeInUp">
+                    <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted border-b border-white/5 mb-1">Select Context</p>
+                    <button onClick={() => handleTeachMe('notes')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiFileText size={14} className="text-accent" /> Notes Only
+                    </button>
+                    <button onClick={() => handleTeachMe('youtube')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiYoutube size={14} className="text-danger" /> YouTube Lecture Only
+                    </button>
+                    <button onClick={() => handleTeachMe('both')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiLayers size={14} className="text-primary" /> Both (Comprehensive)
+                    </button>
+                  </div>
+                )}
+              </div>
               <button
                 onClick={handleFlashcards}
                 className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-accent/15 text-accent border border-accent/30 font-semibold hover:bg-accent/25 hover:border-accent/50 transition-all"
@@ -177,6 +241,34 @@ const TopicPage = () => {
               >
                 <FiAward size={16} />
                 Exam (1 ⚡)
+              </button>
+              <button
+                onClick={handleMindMap}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold hover:bg-purple-500/25 hover:border-purple-500/50 transition-all"
+              >
+                <FiShare2 size={16} />
+                Mind Map (2 ⚡)
+              </button>
+              <button
+                onClick={handlePodcast}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 font-semibold hover:bg-indigo-500/25 hover:border-indigo-500/50 transition-all"
+              >
+                <FiHeadphones size={16} />
+                Audio Overview (3 ⚡)
+              </button>
+              <Link
+                to={`/upload?topicId=${topicId}`}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-white/5 text-text border border-white/10 font-semibold hover:bg-white/10 transition-all"
+              >
+                <FiFileText size={16} />
+                Upload PDF
+              </Link>
+              <button
+                onClick={handleYouTube}
+                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-danger/15 text-danger border border-danger/30 font-semibold hover:bg-danger/25 hover:border-danger/50 transition-all"
+              >
+                <FiYoutube size={16} />
+                Link YouTube
               </button>
             </div>
           </div>
@@ -241,7 +333,19 @@ const TopicPage = () => {
             </div>
 
             <div className="p-4 border-t border-white/5 shrink-0 bg-background/50">
-              <form onSubmit={handleSendMessage} className="flex gap-2">
+              <div className="px-4 py-2 border-t border-white/5 bg-background/30 flex items-center gap-2">
+                <span className="text-xs text-text-muted">Context Source:</span>
+                <select
+                  value={chatContextMode}
+                  onChange={(e) => setChatContextMode(e.target.value)}
+                  className="bg-white/5 border border-white/10 text-xs text-text rounded px-2 py-1 outline-none focus:border-secondary transition-colors"
+                >
+                  <option value="both">Both (Comprehensive)</option>
+                  <option value="notes">Notes Only</option>
+                  <option value="youtube">YouTube Only</option>
+                </select>
+              </div>
+              <form onSubmit={handleSendMessage} className="flex gap-2 p-4 pt-2">
                 <input
                   type="text"
                   value={chatInput}
@@ -273,8 +377,23 @@ const TopicPage = () => {
         <ExamSimulator topicId={topicId} onClose={() => setShowExam(false)} refreshUser={refreshUser} />
       )}
 
+      {/* Mind Map Viewer */}
+      {showMindMap && (
+        <MindMapViewer topicId={topicId} onClose={() => setShowMindMap(false)} refreshUser={refreshUser} />
+      )}
+
+      {/* Podcast Player */}
+      {showPodcast && (
+        <PodcastPlayer topicId={topicId} onClose={() => setShowPodcast(false)} refreshUser={refreshUser} />
+      )}
+
+      {/* YouTube Ingestor */}
+      {showYouTube && (
+        <YouTubeIngestor topicId={topicId} onClose={() => setShowYouTube(false)} refreshUser={refreshUser} />
+      )}
+
       {/* Subtopics */}
-      {!showLecture && !showFlashcards && !showExam && subtopics.length > 0 && (
+      {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && subtopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Subtopics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -293,7 +412,7 @@ const TopicPage = () => {
       )}
 
       {/* Notes */}
-      {!showLecture && !showFlashcards && !showExam && (
+      {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Notes ({notes.length})</h2>
           {notes.length === 0 ? (
@@ -393,7 +512,7 @@ const TopicPage = () => {
       )}
 
       {/* Related Topics */}
-      {!showLecture && !showFlashcards && !showExam && relatedTopics.length > 0 && (
+      {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && relatedTopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
             <FiLink size={16} className="text-accent" /> Related Topics

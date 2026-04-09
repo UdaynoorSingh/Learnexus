@@ -1,16 +1,12 @@
 import api from './api';
 
-// Instead of maintaining a separate axios instance to localhost:5001,
-// we now route everything securely through our Node.js backend.
-// The Node.js backend will attach internal credentials and proxy to Python.
-
-export const generateLecture = async (topicName, context = '') => {
-  const res = await api.post('/ai/teach', { topicName, context });
+export const generateLecture = async (topicId, topicName, contextMode = 'both', context = '') => {
+  const res = await api.post('/ai/teach', { topicId, topicName, contextMode, context });
   return res.data.lecture;
 };
 
-export const sendChatMessage = async (topicId, history, message, lectureContext) => {
-  const res = await api.post('/ai/chat', { topicId, history, message, lectureContext });
+export const sendChatMessage = async (topicId, contextMode, history, message, lectureContext) => {
+  const res = await api.post('/ai/chat', { topicId, contextMode, history, message, lectureContext });
   return res.data.reply;
 };
 
@@ -22,4 +18,19 @@ export const generateFlashcards = async (topicId) => {
 export const generateExam = async (topicId) => {
   const res = await api.post('/ai/exam/generate', { topicId });
   return res.data.exam;
+};
+
+export const processYouTubeVideo = async (topicId, url) => {
+  const res = await api.post('/ai/youtube/embed', { topicId, url });
+  return res.data;
+};
+
+export const generateMindMap = async (topicId) => {
+  const res = await api.post('/ai/mindmap', { topicId });
+  return res.data;
+};
+
+export const generatePodcast = async (topicId) => {
+  const res = await api.post('/ai/podcast', { topicId });
+  return res.data.script;
 };

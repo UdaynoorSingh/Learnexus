@@ -12,7 +12,6 @@ const AdminPage = () => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  // Hierarchy State
   const [degrees, setDegrees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [semesters, setSemesters] = useState([]);
@@ -102,7 +101,6 @@ const AdminPage = () => {
     } catch (err) { console.error(err); }
   };
 
-  // Creation Handlers
   const handleCreateDegree = async (e) => {
     e.preventDefault();
     if (!newDegree) return;
@@ -222,7 +220,6 @@ const AdminPage = () => {
       </div>
 
       {activeTab === 'pending' && (
-        // Pending Notes (omitted for brevity, assume identical to previous structure)
         <div className="space-y-3">
           {pendingNotes.length === 0 ? (
             <div className="glass-card p-8 text-center text-text-muted">
@@ -290,7 +287,6 @@ const AdminPage = () => {
 
       {activeTab === 'manage' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Degree Section */}
           <div className="glass-card p-6">
             <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
             <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
@@ -300,7 +296,6 @@ const AdminPage = () => {
             </form>
           </div>
 
-          {/* Branch Section */}
           <div className="glass-card p-6 opacity-100 transition-opacity" style={{ opacity: selectedDegree ? 1 : 0.4 }}>
             <h3 className="text-lg font-bold text-text mb-4">Branch</h3>
             <SelectField label="Select Branch" value={selectedBranch} onChange={setSelectedBranch} options={branches} placeholder="Select branch..." />
@@ -310,7 +305,6 @@ const AdminPage = () => {
             </form>
           </div>
 
-          {/* Semester Section */}
           <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedBranch ? 1 : 0.4 }}>
             <h3 className="text-lg font-bold text-text mb-4">Semester</h3>
             <SelectField label="Select Semester" value={selectedSemester} onChange={setSelectedSemester} options={semesters} labelKey="number" placeholder="Select semester..." />
@@ -320,7 +314,6 @@ const AdminPage = () => {
             </form>
           </div>
 
-          {/* Subject Section */}
           <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedSemester ? 1 : 0.4 }}>
             <h3 className="text-lg font-bold text-text mb-4">Subject</h3>
             <SelectField label="Select Subject" value={selectedSubject} onChange={setSelectedSubject} options={subjects} placeholder="Select subject..." />
@@ -330,7 +323,6 @@ const AdminPage = () => {
             </form>
           </div>
 
-          {/* Topic Section */}
           <div className="glass-card p-6 md:col-span-2 transition-opacity" style={{ opacity: selectedSubject ? 1 : 0.4 }}>
             <h3 className="text-lg font-bold text-text mb-4">Topics</h3>
             <div className="mb-4">

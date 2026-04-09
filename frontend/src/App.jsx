@@ -10,6 +10,7 @@ import TopicPage from './pages/TopicPage';
 import UploadPage from './pages/UploadPage';
 import AdminPage from './pages/AdminPage';
 import ProfilePage from './pages/ProfilePage';
+import VideoLearnPage from './pages/VideoLearnPage';
 
 function App() {
   return (
@@ -32,6 +33,7 @@ function App() {
             <Route path="/explorer" element={<ExplorerPage />} />
             <Route path="/topic/:topicId" element={<TopicPage />} />
             <Route path="/upload" element={<UploadPage />} />
+            <Route path="/video-learn" element={<VideoLearnPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route
               path="/admin"

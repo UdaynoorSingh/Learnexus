@@ -1,5 +1,6 @@
 import os
 import json
+import re
 import base64
 import requests
 import uvicorn
@@ -10,24 +11,19 @@ from typing import List, Optional, Any
 from dotenv import load_dotenv
 import google.generativeai as genai
 
-# RAG specific imports
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 load_dotenv()
 
-# Configure Gemini
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# Standard fast model for text
 model = genai.GenerativeModel('gemini-2.5-flash')
-# Vision model for handwriting OCR (using same flash model — it's multimodal)
 vision_model = genai.GenerativeModel('gemini-2.5-flash')
 
 app = FastAPI(title="Learnexus AI Backend")
 
-# Allow Node.js backend to communicate with this Python server
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"], 
@@ -36,7 +32,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- PYDANTIC MODELS (Strict Input Validation) ---
 class OCRRequest(BaseModel):
     fileUrl: str
     mimeType: str
@@ -50,6 +45,8 @@ class EmbedRequest(BaseModel):
 
 class TeachRequest(BaseModel):
     topicName: str
+    topicId: Any
+    contextMode: str = "both"
     context: Optional[str] = None
 
 class ChatMessage(BaseModel):
@@ -58,6 +55,7 @@ class ChatMessage(BaseModel):
 
 class ChatRequest(BaseModel):
     topicId: Any
+    contextMode: str = "both"
     history: List[ChatMessage]
     message: str
     lectureContext: str
@@ -65,18 +63,50 @@ class ChatRequest(BaseModel):
 class TopicRequest(BaseModel):
     topicId: Any
 
+class YouTubeRequest(BaseModel):
+    url: str
+    topicId: Any
 
-# --- ENDPOINTS ---
+
+def retrieve_context(topic_id: Any, query: str, k: int = 15, context_mode: str = "both") -> str:
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+    
+    docs = []
+    base_path = f"vector_stores/{topic_id}"
+    old_index_path = os.path.join(base_path, "index.faiss")
+    notes_path = os.path.join(base_path, "notes_index")
+    youtube_path = os.path.join(base_path, "youtube_index")
+
+    if os.path.exists(old_index_path):
+        import shutil
+        os.makedirs(notes_path, exist_ok=True)
+        shutil.move(old_index_path, os.path.join(notes_path, "index.faiss"))
+        if os.path.exists(os.path.join(base_path, "index.pkl")):
+            shutil.move(os.path.join(base_path, "index.pkl"), os.path.join(notes_path, "index.pkl"))
+    
+    paths_to_check = []
+    if context_mode in ["notes", "both"] and os.path.exists(os.path.join(notes_path, "index.faiss")):
+        paths_to_check.append(("Notes snippet", notes_path))
+    if context_mode in ["youtube", "both"] and os.path.exists(os.path.join(youtube_path, "index.faiss")):
+        paths_to_check.append(("YouTube snippet", youtube_path))
+        
+    for source_label, path in paths_to_check:
+        try:
+            vectorstore = FAISS.load_local(path, embeddings, allow_dangerous_deserialization=True)
+            k_per_store = k if len(paths_to_check) == 1 else max(1, k // 2)
+            store_docs = vectorstore.similarity_search(query, k=k_per_store)
+            docs.extend([f"[{source_label}]: {d.page_content}" for d in store_docs])
+        except Exception:
+            pass
+            
+    return "\n\n".join(docs)
 
 @app.post("/api/ai/ocr")
 async def extract_text(req: OCRRequest):
-    """Agent Task 1: Act as the Eyes (Vision OCR) - Memory Optimized"""
     try:
-        # Download the file directly in Python memory instead of proxying through Node.js
         resp = requests.get(req.fileUrl, timeout=30)
         resp.raise_for_status()
 
-        # Prepare the image for Gemini Pro
         image_parts = [
             {
                 "mime_type": req.mimeType,
@@ -96,7 +126,6 @@ async def extract_text(req: OCRRequest):
 
 @app.post("/api/ai/embed")
 async def embed_text(req: EmbedRequest):
-    """FAISS Pipeline: Chunk and vectorize text by topicId"""
     try:
         if not req.text.strip():
             return {"status": "ignored"}
@@ -107,10 +136,9 @@ async def embed_text(req: EmbedRequest):
         embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
         vectorstore = FAISS.from_texts(chunks, embeddings)
         
-        save_path = f"vector_stores/{req.topicId}"
+        save_path = f"vector_stores/{req.topicId}/notes_index"
         os.makedirs(save_path, exist_ok=True)
         
-        # Merge if existing, otherwise save new
         if os.path.exists(os.path.join(save_path, "index.faiss")):
             existing_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
             existing_db.merge_from(vectorstore)
@@ -127,7 +155,6 @@ async def embed_text(req: EmbedRequest):
 
 @app.post("/api/ai/summarize")
 async def summarize_text(req: TextRequest):
-    """Agent Task 2: Act as the Summarizer"""
     try:
         prompt = f"""
         Summarize the following academic text in a clear, concise manner.
@@ -143,7 +170,6 @@ async def summarize_text(req: TextRequest):
 
 @app.post("/api/ai/keypoints")
 async def extract_keypoints(req: TextRequest):
-    """Agent Task 3: Act as the Data Extractor (Forces JSON output)"""
     try:
         prompt = f"""
         Extract the key points from the following academic text.
@@ -155,14 +181,12 @@ async def extract_keypoints(req: TextRequest):
         response = model.generate_content(prompt)
         text_resp = response.text.strip()
         
-        # Clean up in case the LLM disobeys and adds markdown
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
             
         try:
             keypoints_list = json.loads(text_resp)
         except json.JSONDecodeError:
-            # Fallback if LLM fails strict JSON
             keypoints_list = [line.strip("- *") for line in text_resp.split("\n") if line.strip()]
 
         return {"keyPoints": keypoints_list}
@@ -172,9 +196,9 @@ async def extract_keypoints(req: TextRequest):
 
 @app.post("/api/ai/teach")
 async def generate_lecture(req: TeachRequest):
-    """Agent Task 4: Act as the Professor"""
     try:
-        context_str = f"Additional context: {req.context}" if req.context else ""
+        retrieved_context = retrieve_context(req.topicId, "core concepts, main ideas, detailed explanations, architecture, relationships, and key takeaways", k=20, context_mode=req.contextMode)
+        context_str = f"Extracted Source Notes/Video Snippets:\n{retrieved_context}\n\nAdditional context (Title/Subject): {req.context}"
         prompt = f"""
         Generate a comprehensive, well-structured lecture on "{req.topicName}" for a university-level student.
         {context_str}
@@ -197,18 +221,9 @@ async def generate_lecture(req: TeachRequest):
 
 @app.post("/api/ai/chat")
 async def chat_interaction(req: ChatRequest):
-    """Phase 4: Tutor Interactive Chat with FAISS RAG injection"""
     try:
-        # FAISS RAG Retrieval
-        retrieved_context = ""
-        save_path = f"vector_stores/{req.topicId}"
-        if os.path.exists(save_path):
-            embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
-            vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
-            docs = vectorstore.similarity_search(req.message, k=3)
-            retrieved_context = "\n".join([f"Note snippet: {d.page_content}" for d in docs])
+        retrieved_context = retrieve_context(req.topicId, req.message, k=4, context_mode=req.contextMode)
 
-        # Convert history format for Gemini & fix "assistant" crash bug
         formatted_history = []
         for msg in req.history:
             role = "model" if msg.role == "assistant" else msg.role
@@ -232,16 +247,10 @@ async def chat_interaction(req: ChatRequest):
 
 @app.post("/api/ai/flashcards")
 async def generate_flashcards(req: TopicRequest):
-    """Active Recall: Generate 10 smart flashcards from FAISS knowledge base"""
     try:
-        save_path = f"vector_stores/{req.topicId}"
-        if not os.path.exists(os.path.join(save_path, "index.faiss")):
-            raise HTTPException(status_code=404, detail="No notes found for this topic. Upload notes first to generate flashcards.")
-
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
-        vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
-        docs = vectorstore.similarity_search("core concepts, main ideas, definitions, and formulas", k=10)
-        context = "\n\n".join([d.page_content for d in docs])
+        context = retrieve_context(req.topicId, "core concepts, main ideas, definitions, and formulas", k=15)
+        if not context.strip():
+            raise HTTPException(status_code=404, detail="No notes or video transcripts found for this topic. Upload content first to generate flashcards.")
 
         prompt = f"""Based STRICTLY on the following academic notes, generate exactly 10 flashcards for a student to study.
 Each flashcard must have a clear, specific question and a concise, accurate answer.
@@ -273,16 +282,10 @@ Academic Notes:
 
 @app.post("/api/ai/exam/generate")
 async def generate_exam(req: TopicRequest):
-    """Active Recall: Generate 5-question MCQ exam from FAISS knowledge base"""
     try:
-        save_path = f"vector_stores/{req.topicId}"
-        if not os.path.exists(os.path.join(save_path, "index.faiss")):
-            raise HTTPException(status_code=404, detail="No notes found for this topic. Upload notes first to take an exam.")
-
-        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
-        vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
-        docs = vectorstore.similarity_search("core concepts, main ideas, definitions, and formulas", k=15)
-        context = "\n\n".join([d.page_content for d in docs])
+        context = retrieve_context(req.topicId, "core concepts, main ideas, definitions, and formulas", k=20)
+        if not context.strip():
+            raise HTTPException(status_code=404, detail="No notes or video transcripts found for this topic. Upload content first to take an exam.")
 
         prompt = f"""Based STRICTLY on the following academic notes, generate exactly 5 multiple-choice questions to test a student's understanding.
 Each question must have exactly 4 options (A, B, C, D), one correct answer, and a brief explanation of why the correct answer is right.
@@ -306,6 +309,201 @@ Academic Notes:
         raise
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="AI returned invalid JSON. Please try again.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/youtube/embed")
+async def youtube_embed(req: YouTubeRequest):
+    try:
+        url = req.url.strip()
+        video_id = None
+        patterns = [
+            r'(?:v=|/v/|youtu\.be/)([a-zA-Z0-9_-]{11})',
+            r'(?:embed/)([a-zA-Z0-9_-]{11})',
+            r'^([a-zA-Z0-9_-]{11})$'
+        ]
+        for pattern in patterns:
+            match = re.search(pattern, url)
+            if match:
+                video_id = match.group(1)
+                break
+
+        if not video_id:
+            raise HTTPException(status_code=400, detail="Invalid YouTube URL. Please provide a valid YouTube video link.")
+
+        try:
+            from youtube_transcript_api import YouTubeTranscriptApi
+            ytt_api = YouTubeTranscriptApi()
+            transcript_list = ytt_api.fetch(video_id)
+            full_text = " ".join([entry.text for entry in transcript_list])
+        except Exception as transcript_err:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Could not fetch transcript for this video. The video may not have captions enabled. Error: {str(transcript_err)}"
+            )
+
+        if not full_text.strip():
+            raise HTTPException(status_code=400, detail="The video transcript is empty. No content to embed.")
+
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+        chunks = splitter.split_text(full_text)
+
+        chunks = splitter.split_text(full_text)
+
+        embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
+        vectorstore = FAISS.from_texts(chunks, embeddings)
+
+        save_path = f"vector_stores/{req.topicId}/youtube_index"
+        os.makedirs(save_path, exist_ok=True)
+
+        if os.path.exists(os.path.join(save_path, "index.faiss")):
+            existing_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+            existing_db.merge_from(vectorstore)
+            existing_db.save_local(save_path)
+        else:
+            vectorstore.save_local(save_path)
+
+        summary_text = full_text[:3000]
+        summary_prompt = f"""Summarize the following YouTube video transcript in 2-3 sentences.
+Focus on the main topics covered.
+
+Transcript excerpt:
+{summary_text}"""
+        summary_response = model.generate_content(summary_prompt)
+        summary = summary_response.text.strip()
+
+        return {
+            "status": "success",
+            "chunks": len(chunks),
+            "summary": summary,
+            "message": f"Successfully embedded {len(chunks)} chunks from the YouTube video into your knowledge base."
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/mindmap")
+async def generate_mindmap(req: TopicRequest):
+    try:
+        context = retrieve_context(req.topicId, "core concepts, architecture, relationships, definitions, and key ideas", k=20)
+        if not context.strip():
+            raise HTTPException(status_code=404, detail="No notes or videos found for this topic. Upload content first to generate a mind map.")
+
+        prompt = f"""You are a data structurer. Analyze the following academic notes and extract a logical, hierarchical mind map of the key concepts and their relationships.
+
+You MUST return ONLY a valid JSON object (no markdown, no code blocks, no extra text) with this EXACT structure:
+{{
+  "nodes": [
+    {{ "id": "1", "position": {{ "x": 400, "y": 0 }}, "data": {{ "label": "Main Topic" }} }}
+  ],
+  "edges": [
+    {{ "id": "e1-2", "source": "1", "target": "2" }}
+  ]
+}}
+
+STRICT RULES:
+1. The first node (id "1") is the central/main topic. Place it at the top center (x=400, y=0).
+2. Create 6-12 nodes total representing the most important concepts, sub-concepts, and relationships.
+3. Calculate x and y positions so nodes form a clean top-down tree layout:
+   - Level 0 (root): y=0, centered at x=400
+   - Level 1 (main branches): y=150, spread horizontally with at least 220px between nodes
+   - Level 2 (sub-branches): y=300, spread horizontally with at least 200px between nodes
+   - Level 3 (details): y=450, spread horizontally with at least 180px between nodes
+4. Node labels should be concise (2-6 words maximum).
+5. Every edge id must follow the pattern "e{{source}}-{{target}}".
+6. Every node except the root must have exactly one incoming edge.
+7. Return RAW JSON only. No markdown formatting, no ```json blocks.
+
+Academic Notes:
+{context}"""
+
+        response = model.generate_content(prompt)
+        text_resp = response.text.strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        mindmap_data = json.loads(text_resp)
+
+        if "nodes" not in mindmap_data or "edges" not in mindmap_data:
+            raise ValueError("AI response missing required 'nodes' or 'edges' keys.")
+
+        return mindmap_data
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON for the mind map. Please try again.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+
+@app.post("/api/ai/podcast")
+async def generate_podcast(req: TopicRequest):
+    try:
+        context = retrieve_context(req.topicId, "core concepts, key ideas, definitions, important details, examples, and relationships", k=25)
+        if not context.strip():
+            raise HTTPException(status_code=404, detail="No notes or videos found for this topic. Upload content first to generate an audio overview.")
+
+        prompt = f"""You are an expert educational podcast producer. Read the following academic notes and write a conversational, engaging 2-3 minute podcast script between two hosts.
+
+Host A ("Host A"): The curious, enthusiastic student who asks great questions, makes relatable analogies, and reacts with genuine excitement.
+Host B ("Host B"): The knowledgeable, friendly professor who explains concepts clearly, gives examples, and builds on Host A's observations.
+
+CONVERSATION RULES:
+1. Start with a warm, natural greeting and topic introduction.
+2. Cover ALL the major concepts from the notes in a logical flow.
+3. Use conversational language — contractions, reactions like "Oh wow!", "Right, exactly!", "That's a great point!".
+4. Host A should ask follow-up questions that a real student would ask.
+5. Host B should give clear, concise answers with real-world analogies when possible.
+6. End with a brief recap and an encouraging sign-off.
+7. Each line of dialogue should be 1-3 sentences maximum. Keep it punchy and natural.
+8. Generate 15-25 dialogue exchanges total for a 2-3 minute runtime.
+
+You MUST return ONLY a valid JSON array (no markdown, no code blocks, no extra text).
+Format:
+[
+  {{"speaker": "Host A", "text": "Welcome to today's deep dive! I'm really excited about this topic."}},
+  {{"speaker": "Host B", "text": "Me too! Today we're exploring something really fundamental..."}}
+]
+
+STRICT: Return RAW JSON only. No ```json blocks. No markdown formatting.
+
+Academic Notes:
+{context}"""
+
+        response = model.generate_content(prompt)
+        text_resp = response.text.strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        podcast_script = json.loads(text_resp)
+
+        if not isinstance(podcast_script, list) or len(podcast_script) == 0:
+            raise ValueError("AI returned an empty or invalid podcast script.")
+        for line in podcast_script:
+            if "speaker" not in line or "text" not in line:
+                raise ValueError("Each podcast line must have 'speaker' and 'text' keys.")
+
+        return {"script": podcast_script}
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON for the podcast script. Please try again.")
     except Exception as e:
         import traceback
         traceback.print_exc()

@@ -36,6 +36,19 @@ const Layout = () => {
     }
   }, [user]);
 
+  // Listen for global toast events (from api.js interceptor, etc.)
+  useEffect(() => {
+    const handleGlobalToast = (e) => {
+      const { type, message, step } = e.detail;
+      setToast({ type, message, step });
+      if (type === 'success' || type === 'error') {
+        setTimeout(() => setToast(null), 8000);
+      }
+    };
+    window.addEventListener('learnexus-toast', handleGlobalToast);
+    return () => window.removeEventListener('learnexus-toast', handleGlobalToast);
+  }, []);
+
   return (
     <div className="flex min-h-screen bg-background relative overflow-x-hidden">
       <Sidebar />
