@@ -17,11 +17,11 @@ function App() {
     <AuthProvider>
       <Router>
         <Routes>
-          {/* Public routes */}
+          {}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {/* Protected routes */}
+          {}
           <Route
             element={
               <ProtectedRoute>
@@ -45,7 +45,7 @@ function App() {
             />
           </Route>
 
-          {/* Redirect */}
+          {}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

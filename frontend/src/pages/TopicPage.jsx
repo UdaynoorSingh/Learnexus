@@ -17,7 +17,7 @@ const TopicPage = () => {
   const [topicData, setTopicData] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Lecture & Chat State
+  
   const [lectureContent, setLectureContent] = useState('');
   const [lectureLoading, setLectureLoading] = useState(false);
   const [showLecture, setShowLecture] = useState(false);
@@ -81,7 +81,7 @@ const TopicPage = () => {
         { role: 'model', text: `Hi ${user.name}! I'm your AI tutor. I just generated this lecture using your ${mode === 'both' ? 'Notes and YouTube videos' : mode === 'notes' ? 'Notes' : 'YouTube videos'}. Do you have any questions?` }
       ]);
 
-      await api.post(`/notes/1/unlock`).catch(() => {}); // Fallback simplified deduction
+      await api.post(`/notes/1/unlock`).catch(() => {}); 
       refreshUser();
     } catch (err) {
       console.error(err);
@@ -185,7 +185,7 @@ const TopicPage = () => {
 
   return (
     <div className="space-y-8 animate-fadeInUp">
-      {/* Header */}
+      {}
       <div>
         <Link to="/explorer" className="inline-flex items-center gap-2 text-text-muted hover:text-text text-sm mb-4 transition-colors">
           <FiArrowLeft size={14} /> Back to Explorer
@@ -212,7 +212,7 @@ const TopicPage = () => {
                   {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
                   <FiChevronDown size={14} className={`transition-transform ${showTeachMenu ? 'rotate-180' : ''}`} />
                 </button>
-                {/* Dropdown Menu for Context Selection */}
+                {}
                 {showTeachMenu && (
                   <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a1b26] border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-fadeInUp">
                     <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted border-b border-white/5 mb-1">Select Context</p>
@@ -275,10 +275,10 @@ const TopicPage = () => {
         </div>
       </div>
 
-      {/* Teach Me Lecture & Chat */}
+      {}
       {showLecture && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Lecture Viewer */}
+          {}
           <div className="glass-card flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-primary/20">
             <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-primary/5">
               <h2 className="text-lg font-bold text-text flex items-center gap-2">
@@ -298,7 +298,7 @@ const TopicPage = () => {
             </div>
           </div>
 
-          {/* AI Chat Tutor */}
+          {}
           <div className="glass-card flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-secondary/20">
             <div className="p-4 border-b border-white/5 flex items-center gap-2 shrink-0 bg-secondary/5">
               <FiMessageSquare className="text-secondary" />
@@ -367,32 +367,32 @@ const TopicPage = () => {
         </div>
       )}
 
-      {/* Smart Flashcards */}
+      {}
       {showFlashcards && (
         <Flashcards topicId={topicId} onClose={() => setShowFlashcards(false)} />
       )}
 
-      {/* Exam Simulator */}
+      {}
       {showExam && (
         <ExamSimulator topicId={topicId} onClose={() => setShowExam(false)} refreshUser={refreshUser} />
       )}
 
-      {/* Mind Map Viewer */}
+      {}
       {showMindMap && (
         <MindMapViewer topicId={topicId} onClose={() => setShowMindMap(false)} refreshUser={refreshUser} />
       )}
 
-      {/* Podcast Player */}
+      {}
       {showPodcast && (
         <PodcastPlayer topicId={topicId} onClose={() => setShowPodcast(false)} refreshUser={refreshUser} />
       )}
 
-      {/* YouTube Ingestor */}
+      {}
       {showYouTube && (
         <YouTubeIngestor topicId={topicId} onClose={() => setShowYouTube(false)} refreshUser={refreshUser} />
       )}
 
-      {/* Subtopics */}
+      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && subtopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Subtopics</h2>
@@ -411,7 +411,7 @@ const TopicPage = () => {
         </div>
       )}
 
-      {/* Notes */}
+      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Notes ({notes.length})</h2>
@@ -429,7 +429,7 @@ const TopicPage = () => {
                 <div key={note.id} className="glass-card overflow-hidden transition-all duration-300">
                   <div className="p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setExpandedNote(expandedNote === note.id ? null : note.id)}>
                     <div className="flex items-center gap-4">
-                      {/* Thumbnail */}
+                      {}
                       <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center border border-white/5 shrink-0 overflow-hidden">
                         {note.file_url ? (
                           <img
@@ -470,7 +470,7 @@ const TopicPage = () => {
                     </div>
                   </div>
 
-                  {/* Expanded Content */}
+                  {}
                   {expandedNote === note.id && (
                     <div className="border-t border-white/5 p-5 bg-background/30 space-y-4">
                       {note.summary && (
@@ -511,7 +511,7 @@ const TopicPage = () => {
         </div>
       )}
 
-      {/* Related Topics */}
+      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && relatedTopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">

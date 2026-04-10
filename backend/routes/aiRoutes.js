@@ -3,7 +3,7 @@ const router = express.Router();
 const { teach, chat, flashcards, examGenerate, youtubeEmbed, mindmap, podcast } = require('../controllers/aiController');
 const auth = require('../middleware/auth');
 
-// All AI proxy routes strictly require the user to be authenticated
+
 router.use(auth);
 
 router.post('/teach', teach);

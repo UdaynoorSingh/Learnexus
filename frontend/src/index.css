@@ -26,7 +26,7 @@ body {
   min-height: 100vh;
 }
 
-/* Scrollbar */
+
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -41,7 +41,7 @@ body {
   background: #475569;
 }
 
-/* Glass card */
+
 .glass-card {
   background: rgba(30, 41, 59, 0.7);
   backdrop-filter: blur(12px);
@@ -56,7 +56,7 @@ body {
   box-shadow: 0 8px 32px rgba(59, 130, 246, 0.15);
 }
 
-/* Gradient text */
+
 .gradient-text {
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   -webkit-background-clip: text;
@@ -64,7 +64,7 @@ body {
   background-clip: text;
 }
 
-/* Button gradient */
+
 .btn-gradient {
   background: linear-gradient(135deg, #3b82f6, #8b5cf6);
   color: white;
@@ -81,12 +81,12 @@ body {
   box-shadow: 0 4px 16px rgba(59, 130, 246, 0.4);
 }
 
-/* Glow effect */
+
 .glow {
   box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
 }
 
-/* Fade in animation */
+
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -101,7 +101,7 @@ body {
   animation: fadeInUp 0.5s ease-out;
 }
 
-/* Pulse glow */
+
 @keyframes pulseGlow {
   0%, 100% { box-shadow: 0 0 10px rgba(59, 130, 246, 0.2); }
   50% { box-shadow: 0 0 25px rgba(59, 130, 246, 0.5); }
@@ -110,7 +110,7 @@ body {
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
-/* Markdown lecture content styling */
+
 .lecture-content h2 {
   font-size: 1.5rem;
   font-weight: 700;
@@ -160,7 +160,7 @@ body {
   font-weight: 600;
 }
 
-/* Flashcard 3D Flip Animation */
+
 .flip-card {
   perspective: 1000px;
 }

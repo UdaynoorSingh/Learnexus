@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
-import { FiHome, FiCompass, FiUpload, FiUser, FiShield, FiLogOut, FiChevronRight, FiChevronDown, FiBook, FiLayers, FiGrid, FiBookOpen, FiMenu, FiX } from 'react-icons/fi';
+import { FiHome, FiCompass, FiUpload, FiUser, FiShield, FiLogOut, FiChevronRight, FiChevronDown, FiBook, FiLayers, FiGrid, FiBookOpen, FiMenu, FiX, FiYoutube } from 'react-icons/fi';
 
 const Sidebar = () => {
   const { user, logout } = useAuth();
@@ -65,6 +65,7 @@ const Sidebar = () => {
     { path: '/dashboard', icon: FiHome, label: 'Dashboard' },
     { path: '/explorer', icon: FiCompass, label: 'Explorer' },
     { path: '/upload', icon: FiUpload, label: 'Upload' },
+    { path: '/video-learn', icon: FiYoutube, label: 'YouTube Learn' },
     { path: '/profile', icon: FiUser, label: 'Profile' },
   ];
 
@@ -76,7 +77,7 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile toggle */}
+      {}
       <button
         onClick={() => setMobileOpen(!mobileOpen)}
         className="fixed top-4 left-4 z-50 p-2 rounded-lg bg-surface text-text md:hidden"
@@ -84,18 +85,18 @@ const Sidebar = () => {
         {mobileOpen ? <FiX size={20} /> : <FiMenu size={20} />}
       </button>
 
-      {/* Overlay */}
+      {}
       {mobileOpen && (
         <div className="fixed inset-0 bg-black/50 z-30 md:hidden" onClick={() => setMobileOpen(false)} />
       )}
 
-      {/* Sidebar */}
+      {}
       <aside className={`fixed top-0 left-0 h-full z-40 transition-all duration-300 flex flex-col
         ${collapsed ? 'w-20' : 'w-72'}
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
         bg-surface/90 backdrop-blur-xl border-r border-white/5`}
       >
-        {/* Logo */}
+        {}
         <div className="flex items-center gap-3 px-5 py-5 border-b border-white/5">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-lg shrink-0">
             L
@@ -114,7 +115,7 @@ const Sidebar = () => {
           </button>
         </div>
 
-        {/* Nav Links */}
+        {}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
           <div className="space-y-1">
             {navItems.map((item) => (
@@ -134,7 +135,7 @@ const Sidebar = () => {
             ))}
           </div>
 
-          {/* Academic Tree */}
+          {}
           {!collapsed && (
             <div className="mt-6">
               <p className="text-[10px] uppercase tracking-widest text-text-muted px-3 mb-3 font-semibold">Academic Explorer</p>
@@ -191,7 +192,7 @@ const Sidebar = () => {
           )}
         </nav>
 
-        {/* User + Logout */}
+        {}
         <div className="border-t border-white/5 p-4">
           {!collapsed && user && (
             <div className="flex items-center gap-3 mb-3">

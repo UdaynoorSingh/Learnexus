@@ -8,7 +8,7 @@ const ExplorerPage = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
-  const [level, setLevel] = useState('degrees'); // degrees, branches, semesters, subjects, topics
+  const [level, setLevel] = useState('degrees'); 
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [breadcrumb, setBreadcrumb] = useState([]);
@@ -160,7 +160,7 @@ const ExplorerPage = () => {
 
   return (
     <div className="space-y-6 animate-fadeInUp">
-      {/* Header */}
+      {}
       <div className="flex items-center gap-4">
         {level !== 'degrees' && (
           <button onClick={goBack} className="p-2 rounded-xl bg-surface hover:bg-surface-light border border-white/5 text-text-muted hover:text-text transition-all">

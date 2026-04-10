@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// Get all degrees
 exports.getDegrees = async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM degrees ORDER BY name');
@@ -11,7 +10,6 @@ exports.getDegrees = async (req, res) => {
   }
 };
 
-// Get branches for a degree
 exports.getBranches = async (req, res) => {
   try {
     const { degreeId } = req.params;
@@ -26,7 +24,6 @@ exports.getBranches = async (req, res) => {
   }
 };
 
-// Get semesters for a branch
 exports.getSemesters = async (req, res) => {
   try {
     const { branchId } = req.params;
@@ -41,7 +38,6 @@ exports.getSemesters = async (req, res) => {
   }
 };
 
-// Get subjects for a semester
 exports.getSubjects = async (req, res) => {
   try {
     const { semesterId } = req.params;
@@ -60,7 +56,6 @@ exports.getSubjects = async (req, res) => {
   }
 };
 
-// Get topics for a subject
 exports.getTopics = async (req, res) => {
   try {
     const { subjectId } = req.params;
@@ -80,12 +75,10 @@ exports.getTopics = async (req, res) => {
   }
 };
 
-// Get single topic with details
 exports.getTopic = async (req, res) => {
   try {
     const { topicId } = req.params;
     
-    // Get topic
     const topicResult = await pool.query(
       `SELECT t.*, s.name as subject_name, 
        te.name as teacher_name
@@ -100,13 +93,11 @@ exports.getTopic = async (req, res) => {
       return res.status(404).json({ error: 'Topic not found.' });
     }
 
-    // Get subtopics
     const subtopics = await pool.query(
       'SELECT * FROM topics WHERE parent_topic_id = $1 ORDER BY name',
       [topicId]
     );
 
-    // Get notes
     const notes = await pool.query(
       `SELECT n.*, u.name as uploader_name 
        FROM notes n 
@@ -116,7 +107,6 @@ exports.getTopic = async (req, res) => {
       [topicId]
     );
 
-    // Get related topics
     const related = await pool.query(
       `SELECT t.*, tr.relation_type 
        FROM topic_relations tr 

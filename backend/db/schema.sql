@@ -1,7 +1,7 @@
--- Learnexus Database Schema
--- PostgreSQL
 
--- Users table
+
+
+
 CREATE TABLE IF NOT EXISTS users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS users (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Academic Hierarchy
+
 CREATE TABLE IF NOT EXISTS degrees (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) UNIQUE NOT NULL
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS teachers (
   subject_id INTEGER REFERENCES subjects(id) ON DELETE SET NULL
 );
 
--- Topics with self-referencing for subtopics
+
 CREATE TABLE IF NOT EXISTS topics (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS topics (
   parent_topic_id INTEGER REFERENCES topics(id) ON DELETE SET NULL
 );
 
--- Notes
+
 CREATE TABLE IF NOT EXISTS notes (
   id SERIAL PRIMARY KEY,
   topic_id INTEGER REFERENCES topics(id) ON DELETE CASCADE,
@@ -65,7 +65,7 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Topic Relations
+
 CREATE TABLE IF NOT EXISTS topic_relations (
   id SERIAL PRIMARY KEY,
   topic_id_1 INTEGER REFERENCES topics(id) ON DELETE CASCADE,
@@ -73,7 +73,7 @@ CREATE TABLE IF NOT EXISTS topic_relations (
   relation_type VARCHAR(100)
 );
 
--- Credit Transactions
+
 CREATE TABLE IF NOT EXISTS transactions (
   id SERIAL PRIMARY KEY,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
@@ -83,7 +83,7 @@ CREATE TABLE IF NOT EXISTS transactions (
   created_at TIMESTAMP DEFAULT NOW()
 );
 
--- Indexes
+
 CREATE INDEX IF NOT EXISTS idx_branches_degree ON branches(degree_id);
 CREATE INDEX IF NOT EXISTS idx_semesters_branch ON semesters(branch_id);
 CREATE INDEX IF NOT EXISTS idx_subjects_semester ON subjects(semester_id);

@@ -28,14 +28,14 @@ const LoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      {/* Background effects */}
+      {}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl"></div>
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl"></div>
       </div>
 
       <div className="relative w-full max-w-md animate-fadeInUp">
-        {/* Logo */}
+        {}
         <div className="text-center mb-8">
           <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 glow">
             <span className="text-2xl font-bold text-white">L</span>
@@ -44,7 +44,7 @@ const LoginPage = () => {
           <p className="text-text-muted mt-2">Sign in to your Learnexus account</p>
         </div>
 
-        {/* Form */}
+        {}
         <div className="glass-card p-8">
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm">

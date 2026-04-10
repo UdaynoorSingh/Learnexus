@@ -2,7 +2,6 @@ const pool = require('../config/db');
 const path = require('path');
 const fs = require('fs');
 
-// Upload a note
 exports.uploadNote = async (req, res) => {
   try {
     const { topicId } = req.body;
@@ -16,15 +15,13 @@ exports.uploadNote = async (req, res) => {
       return res.status(400).json({ error: 'Topic ID is required.' });
     }
 
-    // Check topic exists
     const topicCheck = await pool.query('SELECT id FROM topics WHERE id = $1', [topicId]);
     if (topicCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Topic not found.' });
     }
 
-    const fileUrl = req.file.path; // Cloudinary URL
+    const fileUrl = req.file.path; 
 
-    // Insert note
     const result = await pool.query(
       'INSERT INTO notes (topic_id, uploaded_by, file_url) VALUES ($1, $2, $3) RETURNING *',
       [topicId, userId, fileUrl]
@@ -34,11 +31,9 @@ exports.uploadNote = async (req, res) => {
     const io = req.app.get('io');
     io.to(userId).emit('ai-progress', { step: 'Upload Complete', message: 'Note saved. Starting AI extraction...' });
 
-    // Trigger AI processing in background
     try {
       const aiUrl = process.env.AI_BACKEND_URL || 'http://localhost:5001';
       
-      // Process asynchronously
       processNoteWithAI(note.id, fileUrl, aiUrl, io, userId, topicId).catch(err => {
         console.error('AI processing error:', err);
         io.to(userId).emit('ai-error', { message: 'AI processing failed.' });
@@ -47,7 +42,6 @@ exports.uploadNote = async (req, res) => {
       console.error('AI trigger error:', err);
     }
 
-    // Add credits for upload
     await pool.query('UPDATE users SET credits = credits + 5 WHERE id = $1', [userId]);
     await pool.query(
       'INSERT INTO transactions (user_id, credits_added, reason) VALUES ($1, 5, $2)',
@@ -61,13 +55,11 @@ exports.uploadNote = async (req, res) => {
   }
 };
 
-// AI processing helper
 async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
   try {
     const { default: fetch } = await import('node-fetch');
     const mimeType = fileUrl.toLowerCase().endsWith('.pdf') ? 'application/pdf' : 'image/jpeg';
 
-    // Step 1: OCR
     io.to(userId).emit('ai-progress', { step: 'Extracting Text', message: 'Running OCR Vision Models via URL...' });
     const ocrRes = await fetch(`${aiUrl}/api/ai/ocr`, {
       method: 'POST',
@@ -83,7 +75,6 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
       return;
     }
 
-    // Step 1.5: FAISS Vector Embeddings
     io.to(userId).emit('ai-progress', { step: 'Vectorizing', message: 'Building FAISS knowledge base...' });
     try {
       await fetch(`${aiUrl}/api/ai/embed`, {
@@ -95,7 +86,6 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
       console.error('FAISS Embed Error (soft fail):', embedError);
     }
 
-    // Step 2: Summary
     io.to(userId).emit('ai-progress', { step: 'Summarizing', message: 'Generating clear summary...' });
     const sumRes = await fetch(`${aiUrl}/api/ai/summarize`, {
       method: 'POST',
@@ -104,7 +94,6 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
     });
     const sumData = await sumRes.json();
 
-    // Step 3: Key Points
     io.to(userId).emit('ai-progress', { step: 'Key Points', message: 'Isolating key takeaways...' });
     const kpRes = await fetch(`${aiUrl}/api/ai/keypoints`, {
       method: 'POST',
@@ -113,14 +102,12 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
     });
     const kpData = await kpRes.json();
 
-    // Calculate quality score (basic heuristic)
     const wordCount = extractedText.split(/\s+/).length;
     let qualityScore = Math.min(100, Math.floor(wordCount / 10) + 20);
     if (sumData.summary && sumData.summary.length > 50) qualityScore += 10;
     if (kpData.keyPoints && kpData.keyPoints.length > 3) qualityScore += 10;
     qualityScore = Math.min(100, qualityScore);
 
-    // Update note in DB
     await pool.query(
       `UPDATE notes SET 
         extracted_text = $1, 
@@ -137,7 +124,7 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
       ]
     );
 
-    console.log(`✅ AI processing complete for note ${noteId}`);
+    console.log(`AI processing complete for note ${noteId}`);
     io.to(userId).emit('ai-success', { noteId, message: 'Processing fully completed!' });
   } catch (error) {
     console.error(`AI processing failed for note ${noteId}:`, error.message);
@@ -145,7 +132,7 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
   }
 }
 
-// Get note by ID
+
 exports.getNote = async (req, res) => {
   try {
     const { noteId } = req.params;
@@ -169,26 +156,26 @@ exports.getNote = async (req, res) => {
   }
 };
 
-// Unlock note (spend credits)
+
 exports.unlockNote = async (req, res) => {
   try {
     const { noteId } = req.params;
     const userId = req.user.id;
 
-    // Check credits
+    
     const userResult = await pool.query('SELECT credits FROM users WHERE id = $1', [userId]);
     if (userResult.rows[0].credits < 2) {
       return res.status(400).json({ error: 'Insufficient credits. You need 2 credits to unlock.' });
     }
 
-    // Deduct credits
+    
     await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [userId]);
     await pool.query(
       'INSERT INTO transactions (user_id, credits_used, reason) VALUES ($1, 2, $2)',
       [userId, `Unlocked note #${noteId}`]
     );
 
-    // Get note
+    
     const note = await pool.query('SELECT * FROM notes WHERE id = $1', [noteId]);
     res.json({ note: note.rows[0], message: 'Note unlocked!' });
   } catch (error) {

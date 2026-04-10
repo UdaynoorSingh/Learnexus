@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-// Get pending (unverified) notes
 exports.getPendingNotes = async (req, res) => {
   try {
     const result = await pool.query(
@@ -17,7 +16,6 @@ exports.getPendingNotes = async (req, res) => {
   }
 };
 
-// Verify (approve/reject) note
 exports.verifyNote = async (req, res) => {
   try {
     const { noteId } = req.params;
@@ -26,7 +24,6 @@ exports.verifyNote = async (req, res) => {
     if (verified) {
       await pool.query('UPDATE notes SET is_verified = TRUE WHERE id = $1', [noteId]);
 
-      // Bonus credits to uploader
       const note = await pool.query('SELECT uploaded_by FROM notes WHERE id = $1', [noteId]);
       if (note.rows.length > 0) {
         await pool.query('UPDATE users SET credits = credits + 3 WHERE id = $1', [note.rows[0].uploaded_by]);
@@ -46,7 +43,6 @@ exports.verifyNote = async (req, res) => {
   }
 };
 
-// Delete note
 exports.deleteNote = async (req, res) => {
   try {
     const { noteId } = req.params;
@@ -57,7 +53,6 @@ exports.deleteNote = async (req, res) => {
   }
 };
 
-// Create degree
 exports.createDegree = async (req, res) => {
   try {
     const { name } = req.body;
@@ -71,7 +66,6 @@ exports.createDegree = async (req, res) => {
   }
 };
 
-// Create branch
 exports.createBranch = async (req, res) => {
   try {
     const { name, degreeId } = req.body;
@@ -85,7 +79,7 @@ exports.createBranch = async (req, res) => {
   }
 };
 
-// Create semester
+
 exports.createSemester = async (req, res) => {
   try {
     const { number, branchId } = req.body;
@@ -99,7 +93,7 @@ exports.createSemester = async (req, res) => {
   }
 };
 
-// Create subject
+
 exports.createSubject = async (req, res) => {
   try {
     const { name, semesterId } = req.body;
@@ -113,7 +107,7 @@ exports.createSubject = async (req, res) => {
   }
 };
 
-// Create topic
+
 exports.createTopic = async (req, res) => {
   try {
     const { name, subjectId, parentTopicId, teacherId } = req.body;
@@ -127,7 +121,7 @@ exports.createTopic = async (req, res) => {
   }
 };
 
-// Get all notes (admin)
+
 exports.getAllNotes = async (req, res) => {
   try {
     const result = await pool.query(
@@ -143,7 +137,7 @@ exports.getAllNotes = async (req, res) => {
   }
 };
 
-// Dashboard stats
+
 exports.getStats = async (req, res) => {
   try {
     const users = await pool.query('SELECT COUNT(*) FROM users');
@@ -162,10 +156,10 @@ exports.getStats = async (req, res) => {
   }
 };
 
-// Advanced Dashboard Chart Stats
+
 exports.getChartStats = async (req, res) => {
   try {
-    // Last 7 days uploads
+    
     const uploadsRes = await pool.query(`
       SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count 
       FROM notes 
@@ -174,7 +168,7 @@ exports.getChartStats = async (req, res) => {
       ORDER BY date ASC
     `);
 
-    // Last 7 days user registrations
+    
     const usersRes = await pool.query(`
       SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count 
       FROM users 

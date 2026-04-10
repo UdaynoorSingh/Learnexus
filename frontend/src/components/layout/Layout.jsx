@@ -9,7 +9,7 @@ const socket = io('http://localhost:5000', { autoConnect: false });
 
 const Layout = () => {
   const { user } = useAuth();
-  const [toast, setToast] = useState(null); // { type: 'progress' | 'success' | 'error', step?: string, message: string }
+  const [toast, setToast] = useState(null); 
 
   useEffect(() => {
     if (user) {
@@ -36,7 +36,7 @@ const Layout = () => {
     }
   }, [user]);
 
-  // Listen for global toast events (from api.js interceptor, etc.)
+  
   useEffect(() => {
     const handleGlobalToast = (e) => {
       const { type, message, step } = e.detail;
@@ -58,7 +58,7 @@ const Layout = () => {
         </div>
       </main>
 
-      {/* Global Toast Notification for WebSockets */}
+      {}
       {toast && (
         <div className="fixed bottom-6 right-6 z-50 animate-fadeInUp max-w-sm w-full">
           <div className="glass-card p-4 flex items-start gap-4 shadow-xl border-l-4" 

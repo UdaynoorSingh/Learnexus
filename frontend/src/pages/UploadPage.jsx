@@ -14,7 +14,7 @@ const UploadPage = () => {
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
-  // Academic selectors
+  
   const [degrees, setDegrees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [semesters, setSemesters] = useState([]);
@@ -158,7 +158,7 @@ const UploadPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* File upload zone */}
+        {}
         <div className="glass-card p-6">
           <h3 className="text-sm font-semibold text-text mb-4">Select File</h3>
           <div
@@ -204,7 +204,7 @@ const UploadPage = () => {
           </div>
         </div>
 
-        {/* Academic selectors */}
+        {}
         <div className="glass-card p-6">
           <h3 className="text-sm font-semibold text-text mb-4">Select Topic</h3>
           <div className="space-y-4">

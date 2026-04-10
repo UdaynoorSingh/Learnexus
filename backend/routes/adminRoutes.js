@@ -8,7 +8,7 @@ const {
   createSubject, createTopic, getAllNotes, getStats, getChartStats
 } = require('../controllers/adminController');
 
-// All admin routes require auth + admin/superadmin role
+
 router.use(auth);
 router.use(rbac('admin', 'superadmin'));
 

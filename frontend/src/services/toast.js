@@ -1,5 +1,5 @@
-// Global toast utility — fires custom events that Layout.jsx listens to.
-// This allows any part of the app (including api.js interceptors) to show toasts.
+
+
 
 export const showToast = (type, message, step = null) => {
   window.dispatchEvent(

@@ -33,7 +33,7 @@ const ProfilePage = () => {
     <div className="max-w-4xl mx-auto space-y-6 animate-fadeInUp">
       <h1 className="text-2xl font-bold text-text">My Profile</h1>
 
-      {/* User Info */}
+      {}
       <div className="glass-card p-6">
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-3xl font-bold text-white">
@@ -52,7 +52,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Credit Stats */}
+      {}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="glass-card p-5 text-center">
           <FiZap size={24} className="mx-auto text-warning mb-2" />
@@ -71,7 +71,7 @@ const ProfilePage = () => {
         </div>
       </div>
 
-      {/* Transaction History */}
+      {}
       <div className="glass-card p-6">
         <h3 className="text-lg font-semibold text-text mb-4">Transaction History</h3>
         {transactions.length === 0 ? (

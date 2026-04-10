@@ -1,6 +1,6 @@
 const pool = require('../config/db');
 
-// Get credit balance
+
 exports.getBalance = async (req, res) => {
   try {
     const result = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
@@ -10,7 +10,7 @@ exports.getBalance = async (req, res) => {
   }
 };
 
-// Get transaction history
+
 exports.getHistory = async (req, res) => {
   try {
     const result = await pool.query(

@@ -8,19 +8,19 @@ import { FiYoutube, FiArrowRight, FiBookOpen, FiMessageSquare, FiSend } from 're
 const VideoLearnPage = () => {
   const { user, refreshUser } = useAuth();
   
-  // Input State
+  
   const [url, setUrl] = useState('');
   const [processing, setProcessing] = useState(false);
   
-  // Session State
+  
   const [topicId, setTopicId] = useState(null);
   const [videoId, setVideoId] = useState(null);
   
-  // Lecture State
+  
   const [lectureContent, setLectureContent] = useState('');
   const [lectureLoading, setLectureLoading] = useState(false);
   
-  // Chat State
+  
   const [chatHistory, setChatHistory] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -58,7 +58,7 @@ const VideoLearnPage = () => {
     setChatHistory([]);
     setVideoId(vidId);
 
-    const tempTopicId = `yt-${Date.now()}-${vidId}`; // Standalone ephemeral topic
+    const tempTopicId = `yt-${Date.now()}-${vidId}`; 
     
     try {
       await processYouTubeVideo(tempTopicId, url);
@@ -66,7 +66,7 @@ const VideoLearnPage = () => {
       setTopicId(tempTopicId);
       refreshUser();
       
-      // Auto-generate lecture
+      
       handleGenerateLecture(tempTopicId);
     } catch (err) {
       console.error(err);
@@ -132,7 +132,7 @@ const VideoLearnPage = () => {
 
   return (
     <div className="space-y-8 animate-fadeInUp max-w-7xl mx-auto">
-      {/* Header & Input section */}
+      {}
       <div className="glass-card p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-danger/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
         
@@ -175,13 +175,13 @@ const VideoLearnPage = () => {
         </div>
       </div>
 
-      {/* Main Content Area */}
+      {}
       {topicId && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeInUp">
           
-          {/* Left Column: Video & Lecture */}
+          {}
           <div className="lg:col-span-7 space-y-6">
-            {/* Embed Video */}
+            {}
             <div className="glass-card overflow-hidden aspect-video border border-danger/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`}
@@ -193,7 +193,7 @@ const VideoLearnPage = () => {
               ></iframe>
             </div>
 
-            {/* Lecture Content */}
+            {}
             <div className="glass-card flex flex-col h-[500px] border border-primary/20">
               <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-primary/5">
                 <h2 className="text-lg font-bold text-text flex items-center gap-2">
@@ -213,7 +213,7 @@ const VideoLearnPage = () => {
             </div>
           </div>
 
-          {/* Right Column: Chat Tutor */}
+          {}
           <div className="lg:col-span-5">
             <div className="glass-card flex flex-col h-full min-h-[600px] border border-secondary/20 sticky top-24">
               <div className="p-4 border-b border-white/5 flex items-center gap-2 shrink-0 bg-secondary/5">

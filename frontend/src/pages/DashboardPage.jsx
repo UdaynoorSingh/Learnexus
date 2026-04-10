@@ -19,7 +19,7 @@ const DashboardPage = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Try to get admin stats and chart data, fallback to general data
+      
       try {
         const [statsRes, chartRes] = await Promise.all([
           api.get('/admin/stats'),
@@ -64,7 +64,7 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-8 animate-fadeInUp">
-      {/* Welcome */}
+      {}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-text">
@@ -82,7 +82,6 @@ const DashboardPage = () => {
         </div>
       </div>
 
-      {/* Basic Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map((stat, i) => (
           <div key={i} className="glass-card p-5 hover:border-white/20 transition-all duration-300">
@@ -97,7 +96,6 @@ const DashboardPage = () => {
         ))}
       </div>
 
-      {/* Advanced Charts (Admin Only) */}
       {chartData && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="glass-card p-6 flex flex-col h-80">
@@ -138,7 +136,6 @@ const DashboardPage = () => {
         </div>
       )}
 
-      {/* Quick Actions & Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="glass-card p-6">
           <h2 className="text-lg font-semibold text-text mb-4">Quick Actions</h2>

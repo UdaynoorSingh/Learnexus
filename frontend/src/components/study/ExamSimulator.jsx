@@ -77,7 +77,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
 
   return (
     <div className="glass-card border border-primary/20 overflow-hidden animate-fadeInUp">
-      {/* Header */}
+      {}
       <div className="p-4 border-b border-white/5 flex items-center justify-between bg-primary/5">
         <h2 className="text-lg font-bold text-text flex items-center gap-2">
           <FiAward className="text-primary" /> Exam Simulator
@@ -94,7 +94,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
         </div>
       </div>
 
-      {/* Progress bar */}
+      {}
       {questions.length > 0 && !finished && (
         <div className="h-1 bg-white/5">
           <div
@@ -104,14 +104,14 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
         </div>
       )}
 
-      {/* Body */}
+      {}
       <div className="p-6 min-h-[450px] flex flex-col">
         {loading ? (
           <div className="flex-1 flex items-center justify-center">
             <LoadingSpinner text="AI is preparing your exam..." />
           </div>
         ) : error ? (
-          /* Error / Credit Error Screen */
+          
           <div className="flex-1 flex flex-col items-center justify-center text-center">
             <div className={`w-16 h-16 rounded-full ${creditError ? 'bg-warning/15' : 'bg-danger/15'} flex items-center justify-center mb-5`}>
               <FiAlertCircle size={32} className={creditError ? 'text-warning' : 'text-danger'} />
@@ -127,7 +127,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
             )}
           </div>
         ) : finished ? (
-          /* Final Score Screen */
+          
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-fadeInUp">
             {(() => {
               const info = getGradeInfo(score, questions.length);
@@ -162,9 +162,9 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
             })()}
           </div>
         ) : currentQuestion ? (
-          /* Question View */
+          
           <div className="flex-1 flex flex-col">
-            {/* Question */}
+            {}
             <div className="mb-6">
               <span className="text-xs text-primary font-semibold uppercase tracking-wider mb-3 block">
                 Question {currentQ + 1}
@@ -174,7 +174,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
               </p>
             </div>
 
-            {/* Options */}
+            {}
             <div className="space-y-3 mb-6 flex-1">
               {currentQuestion.options.map((option, i) => {
                 const isSelected = selectedOption === option;
@@ -224,7 +224,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
               })}
             </div>
 
-            {/* Explanation */}
+            {}
             {submitted && currentQuestion.explanation && (
               <div className="mb-6 p-4 rounded-xl bg-accent/10 border border-accent/20 animate-fadeInUp">
                 <p className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">💡 Explanation</p>
@@ -232,7 +232,7 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
               </div>
             )}
 
-            {/* Action Buttons */}
+            {}
             <div className="flex justify-end gap-3">
               {!submitted ? (
                 <button
