@@ -1,10 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { academicCatalogParams } from '../utils/academicCatalog';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiBook, FiLayers, FiGrid, FiBookOpen, FiFileText, FiChevronRight, FiArrowLeft } from 'react-icons/fi';
 
 const ExplorerPage = () => {
+  const { user } = useAuth();
+  const catalogParams = useMemo(() => academicCatalogParams(user), [user]);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   
@@ -21,14 +25,14 @@ const ExplorerPage = () => {
     } else {
       loadDegrees();
     }
-  }, [searchParams]);
+  }, [searchParams, catalogParams]);
 
   const loadDegrees = async () => {
     setLoading(true);
     setLevel('degrees');
     setBreadcrumb([]);
     try {
-      const res = await api.get('/degrees');
+      const res = await api.get('/degrees', { params: catalogParams });
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -43,7 +47,7 @@ const ExplorerPage = () => {
     setParentId(degreeId);
     setBreadcrumb([{ label: degreeName, action: () => loadDegrees() }]);
     try {
-      const res = await api.get(`/degrees/${degreeId}/branches`);
+      const res = await api.get(`/degrees/${degreeId}/branches`, { params: catalogParams });
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -58,7 +62,7 @@ const ExplorerPage = () => {
     setParentId(branchId);
     setBreadcrumb(prev => [...prev.slice(0, 1), { label: branchName, action: () => loadBranches(parentId, breadcrumb[0]?.label) }]);
     try {
-      const res = await api.get(`/branches/${branchId}/semesters`);
+      const res = await api.get(`/branches/${branchId}/semesters`, { params: catalogParams });
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -71,7 +75,7 @@ const ExplorerPage = () => {
     setLoading(true);
     setLevel('subjects');
     try {
-      const res = await api.get(`/semesters/${semesterId}/subjects`);
+      const res = await api.get(`/semesters/${semesterId}/subjects`, { params: catalogParams });
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -84,7 +88,7 @@ const ExplorerPage = () => {
     setLoading(true);
     setLevel('topics');
     try {
-      const res = await api.get(`/subjects/${subjectId}/topics`);
+      const res = await api.get(`/subjects/${subjectId}/topics`, { params: catalogParams });
       setData(res.data);
     } catch (err) {
       console.error(err);
@@ -160,7 +164,6 @@ const ExplorerPage = () => {
 
   return (
     <div className="space-y-6 animate-fadeInUp">
-      {}
       <div className="flex items-center gap-4">
         {level !== 'degrees' && (
           <button onClick={goBack} className="p-2 rounded-xl bg-surface hover:bg-surface-light border border-white/5 text-text-muted hover:text-text transition-all">

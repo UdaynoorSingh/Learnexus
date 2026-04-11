@@ -39,11 +39,13 @@ app.use('/uploads', express.static(uploadsDir));
 
 
 app.use('/api/auth', require('./routes/authRoutes'));
+app.use('/api/colleges', require('./routes/collegeRoutes'));
 app.use('/api', require('./routes/academicRoutes'));
 app.use('/api/notes', require('./routes/noteRoutes'));
 app.use('/api/credits', require('./routes/creditRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/ai', require('./routes/aiRoutes'));
+app.use('/api/community', require('./routes/communityRoutes'));
 
 
 app.get('/api/health', (req, res) => {
@@ -53,4 +55,8 @@ app.get('/api/health', (req, res) => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Learnexus Backend running on port ${PORT}`);
+  if (process.env.ENABLE_GHOST_STUDENT !== 'false') {
+    const { startGhostStudentWorker } = require('./workers/ghostStudent');
+    startGhostStudentWorker();
+  }
 });

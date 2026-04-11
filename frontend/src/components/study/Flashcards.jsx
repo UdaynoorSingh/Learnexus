@@ -49,7 +49,6 @@ const Flashcards = ({ topicId, onClose }) => {
 
   return (
     <div className="glass-card border border-accent/20 overflow-hidden animate-fadeInUp">
-      {}
       <div className="p-4 border-b border-white/5 flex items-center justify-between bg-accent/5">
         <h2 className="text-lg font-bold text-text flex items-center gap-2">
           <FiLayers className="text-accent" /> Smart Flashcards
@@ -66,7 +65,6 @@ const Flashcards = ({ topicId, onClose }) => {
         </div>
       </div>
 
-      {}
       {cards.length > 0 && (
         <div className="h-1 bg-white/5">
           <div
@@ -76,7 +74,6 @@ const Flashcards = ({ topicId, onClose }) => {
         </div>
       )}
 
-      {}
       <div className="p-6 min-h-[380px] flex flex-col items-center justify-center">
         {loading ? (
           <LoadingSpinner text="AI is generating your flashcards..." />
@@ -89,13 +86,11 @@ const Flashcards = ({ topicId, onClose }) => {
           </div>
         ) : currentCard ? (
           <>
-            {}
             <div
               className="flip-card w-full max-w-lg cursor-pointer mb-8"
               onClick={() => setFlipped(!flipped)}
             >
               <div className={`flip-card-inner ${flipped ? 'flipped' : ''}`}>
-                {}
                 <div className="flip-card-front glass-card p-8 flex flex-col items-center justify-center min-h-[250px] border border-accent/20">
                   <div className="w-12 h-12 rounded-full bg-accent/15 flex items-center justify-center mb-5">
                     <FiHelpCircle size={24} className="text-accent" />
@@ -106,7 +101,6 @@ const Flashcards = ({ topicId, onClose }) => {
                   <p className="text-xs text-text-muted mt-6 opacity-60">Tap to reveal answer</p>
                 </div>
 
-                {}
                 <div className="flip-card-back glass-card p-8 flex flex-col items-center justify-center min-h-[250px] border border-success/20" style={{ background: 'rgba(16, 185, 129, 0.05)' }}>
                   <div className="w-12 h-12 rounded-full bg-success/15 flex items-center justify-center mb-5">
                     <FiCheckCircle size={24} className="text-success" />
@@ -119,7 +113,6 @@ const Flashcards = ({ topicId, onClose }) => {
               </div>
             </div>
 
-            {}
             <div className="flex items-center gap-5">
               <button
                 onClick={goPrev}
@@ -149,7 +142,6 @@ const Flashcards = ({ topicId, onClose }) => {
               </button>
             </div>
 
-            {}
             <button
               onClick={fetchFlashcards}
               className="mt-6 text-xs text-text-muted hover:text-accent transition-colors flex items-center gap-1.5"

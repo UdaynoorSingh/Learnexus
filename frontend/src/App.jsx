@@ -9,19 +9,20 @@ import ExplorerPage from './pages/ExplorerPage';
 import TopicPage from './pages/TopicPage';
 import UploadPage from './pages/UploadPage';
 import AdminPage from './pages/AdminPage';
+import AdminAuthGate from './components/admin/AdminAuthGate';
 import ProfilePage from './pages/ProfilePage';
+import BookmarkedPostsPage from './pages/BookmarkedPostsPage';
 import VideoLearnPage from './pages/VideoLearnPage';
+import NexusBoard from './pages/NexusBoard';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
         <Routes>
-          {}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
 
-          {}
           <Route
             element={
               <ProtectedRoute>
@@ -34,18 +35,23 @@ function App() {
             <Route path="/topic/:topicId" element={<TopicPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/video-learn" element={<VideoLearnPage />} />
+            <Route path="/nexus-board" element={<NexusBoard />} />
             <Route path="/profile" element={<ProfilePage />} />
-            <Route
-              path="/admin"
-              element={
-                <ProtectedRoute roles={['admin', 'superadmin']}>
-                  <AdminPage />
-                </ProtectedRoute>
-              }
-            />
+            <Route path="/bookmarks" element={<BookmarkedPostsPage />} />
           </Route>
 
-          {}
+          <Route path="/admin" element={<AdminAuthGate />}>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<AdminPage />} />
+            </Route>
+          </Route>
+
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>

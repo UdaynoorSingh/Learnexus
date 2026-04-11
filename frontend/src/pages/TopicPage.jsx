@@ -1,15 +1,19 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Send, Sparkles } from 'lucide-react';
 import api from '../services/api';
 import { generateLecture, sendChatMessage } from '../services/aiService';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import { academicCatalogParams } from '../utils/academicCatalog';
+import EmptyState from '../components/ui/EmptyState';
 import Flashcards from '../components/study/Flashcards';
 import ExamSimulator from '../components/study/ExamSimulator';
 import MindMapViewer from '../components/study/MindMapViewer';
 import PodcastPlayer from '../components/study/PodcastPlayer';
 import YouTubeIngestor from '../components/upload/YouTubeIngestor';
-import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiSend, FiLayers, FiAward, FiYoutube, FiShare2, FiHeadphones } from 'react-icons/fi';
+import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiLayers, FiAward, FiYoutube, FiShare2, FiHeadphones } from 'react-icons/fi';
 
 const TopicPage = () => {
   const { topicId } = useParams();
@@ -26,6 +30,7 @@ const TopicPage = () => {
   const [chatLoading, setChatLoading] = useState(false);
   const [chatContextMode, setChatContextMode] = useState('both');
   const chatBottomRef = useRef(null);
+  const teachMenuRef = useRef(null);
 
   const [showTeachMenu, setShowTeachMenu] = useState(false);
   const [expandedNote, setExpandedNote] = useState(null);
@@ -37,18 +42,36 @@ const TopicPage = () => {
 
   useEffect(() => {
     fetchTopic();
-  }, [topicId]);
+  }, [topicId, user?.college_id, user?.role]);
 
   useEffect(() => {
     if (chatBottomRef.current) {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatHistory]);
+  }, [chatHistory, chatLoading]);
+
+  useEffect(() => {
+    if (!showTeachMenu) return;
+    const onMouseDown = (e) => {
+      if (teachMenuRef.current && !teachMenuRef.current.contains(e.target)) {
+        setShowTeachMenu(false);
+      }
+    };
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setShowTeachMenu(false);
+    };
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [showTeachMenu]);
 
   const fetchTopic = async () => {
     setLoading(true);
     try {
-      const res = await api.get(`/topics/${topicId}`);
+      const res = await api.get(`/topics/${topicId}`, { params: academicCatalogParams(user) });
       setTopicData(res.data);
     } catch (err) {
       console.error(err);
@@ -183,102 +206,94 @@ const TopicPage = () => {
 
   const { topic, subtopics, notes, relatedTopics } = topicData;
 
+  const actionBtnClass =
+    'inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl border transition-all whitespace-nowrap px-3 py-2 sm:px-4 sm:py-2.5 shrink-0';
+
   return (
-    <div className="space-y-8 animate-fadeInUp">
-      {}
-      <div>
+    <div className="space-y-8 animate-fadeInUp max-w-full min-w-0">
+      <div className="min-w-0">
         <Link to="/explorer" className="inline-flex items-center gap-2 text-text-muted hover:text-text text-sm mb-4 transition-colors">
           <FiArrowLeft size={14} /> Back to Explorer
         </Link>
-        <div className="glass-card p-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
+        <div className="glass-card relative z-20 p-5 sm:p-6 rounded-2xl border border-white/10 min-w-0 shadow-lg shadow-black/20">
+          <div className="flex flex-col gap-5 min-w-0">
+            <div className="min-w-0 pr-1">
               <p className="text-xs text-primary font-medium uppercase tracking-wider mb-1">{topic.subject_name}</p>
-              <h1 className="text-3xl font-bold text-text">{topic.name}</h1>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight break-words">{topic.name}</h1>
               {topic.teacher_name && (
-                <p className="text-sm text-text-muted mt-1 flex items-center gap-1">
+                <p className="text-sm text-text-muted mt-1 flex items-center gap-1 flex-wrap">
                   <FiUser size={12} /> Taught by {topic.teacher_name}
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-2 shrink-0 flex-wrap relative">
-              <div className="relative">
+            <div className="flex flex-wrap gap-2 sm:gap-2.5 items-stretch sm:items-center content-start min-w-0 w-full">
+              <div ref={teachMenuRef} className="relative z-[60] shrink-0">
                 <button
+                  type="button"
                   onClick={() => setShowTeachMenu(!showTeachMenu)}
                   disabled={lectureLoading}
-                  className="btn-gradient flex items-center gap-2 text-sm animate-pulseGlow"
+                  className={`${actionBtnClass} btn-gradient animate-pulseGlow`}
+                  aria-expanded={showTeachMenu}
+                  aria-haspopup="true"
                 >
-                  <FiBookOpen size={16} />
-                  {lectureLoading ? 'Generating...' : 'Teach Me'} (3 ⚡)
-                  <FiChevronDown size={14} className={`transition-transform ${showTeachMenu ? 'rotate-180' : ''}`} />
+                  <FiBookOpen size={16} className="shrink-0" />
+                  {lectureLoading ? 'Generating…' : 'Teach Me'} (3 ⚡)
+                  <FiChevronDown size={14} className={`shrink-0 transition-transform ${showTeachMenu ? 'rotate-180' : ''}`} />
                 </button>
-                {}
                 {showTeachMenu && (
-                  <div className="absolute top-full left-0 mt-2 w-56 bg-[#1a1b26] border border-white/10 rounded-xl shadow-2xl py-2 z-50 animate-fadeInUp">
+                  <div
+                    role="menu"
+                    className="absolute top-full left-0 mt-2 w-56 max-w-[min(100vw-2rem,16rem)] rounded-xl border border-white/15 bg-[#141418]/95 backdrop-blur-xl py-2 shadow-2xl shadow-black/60 ring-1 ring-white/10 z-[70] animate-fadeInUp"
+                  >
                     <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted border-b border-white/5 mb-1">Select Context</p>
-                    <button onClick={() => handleTeachMe('notes')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiFileText size={14} className="text-accent" /> Notes Only
+                    <button type="button" onClick={() => handleTeachMe('notes')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiFileText size={14} className="text-accent shrink-0" /> Notes Only
                     </button>
-                    <button onClick={() => handleTeachMe('youtube')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiYoutube size={14} className="text-danger" /> YouTube Lecture Only
+                    <button type="button" onClick={() => handleTeachMe('youtube')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiYoutube size={14} className="text-danger shrink-0" /> YouTube Lecture Only
                     </button>
-                    <button onClick={() => handleTeachMe('both')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiLayers size={14} className="text-primary" /> Both (Comprehensive)
+                    <button type="button" onClick={() => handleTeachMe('both')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
+                      <FiLayers size={14} className="text-primary shrink-0" /> Both (Comprehensive)
                     </button>
                   </div>
                 )}
               </div>
-              <button
-                onClick={handleFlashcards}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-accent/15 text-accent border border-accent/30 font-semibold hover:bg-accent/25 hover:border-accent/50 transition-all"
-              >
-                <FiLayers size={16} />
+              <button type="button" onClick={handleFlashcards} className={`${actionBtnClass} bg-accent/15 text-accent border-accent/30 hover:bg-accent/25 hover:border-accent/50`}>
+                <FiLayers size={16} className="shrink-0" />
                 Flashcards
               </button>
-              <button
-                onClick={handleExam}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-primary/15 text-primary border border-primary/30 font-semibold hover:bg-primary/25 hover:border-primary/50 transition-all"
-              >
-                <FiAward size={16} />
-                Exam (1 ⚡)
+              <button type="button" onClick={handleExam} className={`${actionBtnClass} bg-primary/15 text-primary border-primary/30 hover:bg-primary/25 hover:border-primary/50`}>
+                <FiAward size={16} className="shrink-0" />
+                <span className="hidden sm:inline">Exam (1 ⚡)</span>
+                <span className="sm:hidden">Exam</span>
               </button>
-              <button
-                onClick={handleMindMap}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-purple-500/15 text-purple-400 border border-purple-500/30 font-semibold hover:bg-purple-500/25 hover:border-purple-500/50 transition-all"
-              >
-                <FiShare2 size={16} />
-                Mind Map (2 ⚡)
+              <button type="button" onClick={handleMindMap} className={`${actionBtnClass} bg-purple-500/15 text-purple-400 border-purple-500/30 hover:bg-purple-500/25 hover:border-purple-500/50`}>
+                <FiShare2 size={16} className="shrink-0" />
+                <span className="hidden sm:inline">Mind Map (2 ⚡)</span>
+                <span className="sm:hidden">Mind Map</span>
               </button>
-              <button
-                onClick={handlePodcast}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-indigo-500/15 text-indigo-400 border border-indigo-500/30 font-semibold hover:bg-indigo-500/25 hover:border-indigo-500/50 transition-all"
-              >
-                <FiHeadphones size={16} />
-                Audio Overview (3 ⚡)
+              <button type="button" onClick={handlePodcast} className={`${actionBtnClass} bg-indigo-500/15 text-indigo-400 border-indigo-500/30 hover:bg-indigo-500/25 hover:border-indigo-500/50`}>
+                <FiHeadphones size={16} className="shrink-0" />
+                <span className="hidden md:inline">Audio Overview (3 ⚡)</span>
+                <span className="md:hidden">Audio (3 ⚡)</span>
               </button>
-              <Link
-                to={`/upload?topicId=${topicId}`}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-white/5 text-text border border-white/10 font-semibold hover:bg-white/10 transition-all"
-              >
-                <FiFileText size={16} />
-                Upload PDF
+              <Link to={`/upload?topicId=${topicId}`} className={`${actionBtnClass} bg-white/5 text-text border-white/10 hover:bg-white/10`}>
+                <FiFileText size={16} className="shrink-0" />
+                <span className="hidden sm:inline">Upload PDF</span>
+                <span className="sm:hidden">PDF</span>
               </Link>
-              <button
-                onClick={handleYouTube}
-                className="flex items-center gap-2 text-sm px-4 py-2.5 rounded-xl bg-danger/15 text-danger border border-danger/30 font-semibold hover:bg-danger/25 hover:border-danger/50 transition-all"
-              >
-                <FiYoutube size={16} />
-                Link YouTube
+              <button type="button" onClick={handleYouTube} className={`${actionBtnClass} bg-danger/15 text-danger border-danger/30 hover:bg-danger/25 hover:border-danger/50`}>
+                <FiYoutube size={16} className="shrink-0" />
+                <span className="hidden sm:inline">Link YouTube</span>
+                <span className="sm:hidden">YouTube</span>
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {}
       {showLecture && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {}
           <div className="glass-card flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-primary/20">
             <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-primary/5">
               <h2 className="text-lg font-bold text-text flex items-center gap-2">
@@ -298,101 +313,124 @@ const TopicPage = () => {
             </div>
           </div>
 
-          {}
-          <div className="glass-card flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-secondary/20">
-            <div className="p-4 border-b border-white/5 flex items-center gap-2 shrink-0 bg-secondary/5">
-              <FiMessageSquare className="text-secondary" />
-              <h2 className="text-lg font-bold text-text">Tutor Chat</h2>
+          <div className="glass-float flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
+            <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0 bg-black/30">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
+                <Bot size={18} strokeWidth={2} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-text tracking-tight">Tutor</h2>
+                <p className="text-[10px] text-text-muted uppercase tracking-widest font-medium flex items-center gap-1">
+                  <Sparkles size={10} className="text-accent" /> AI session
+                </p>
+              </div>
             </div>
-            
-            <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-4 min-h-0">
+
+            <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-3 min-h-0 bg-[#0a0a0a]/40">
               {chatHistory.length === 0 && !lectureLoading && (
-                <p className="text-center text-text-muted text-sm mt-10">Waiting for interaction...</p>
+                <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+                  <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                    <FiMessageSquare className="text-text-muted opacity-60" size={22} />
+                  </div>
+                  <p className="text-sm text-text-muted max-w-xs leading-relaxed">
+                    Ask anything about the lecture. Replies stream in with a calm, iMessage-style layout.
+                  </p>
+                </div>
               )}
-              {chatHistory.map((msg, i) => (
-                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`max-w-[80%] rounded-2xl p-3 text-sm ${
-                    msg.role === 'user' 
-                      ? 'bg-primary text-white rounded-tr-sm' 
-                      : 'bg-white/10 text-white rounded-tl-sm border border-white/5'
-                  }`}>
-                    {msg.text}
-                  </div>
-                </div>
-              ))}
+              <AnimatePresence initial={false}>
+                {chatHistory.map((msg, i) => (
+                  <motion.div
+                    key={`${i}-${msg.role}-${msg.text?.slice(0, 12)}`}
+                    layout
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -4 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                        msg.role === 'user' ? 'chat-bubble-user rounded-tr-md' : 'chat-bubble-ai rounded-tl-md text-text'
+                      }`}
+                    >
+                      {msg.text}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
               {chatLoading && (
-                <div className="flex justify-start">
-                  <div className="max-w-[80%] rounded-2xl p-3 bg-white/5 text-text-muted rounded-tl-sm border border-white/5 flex gap-1 items-center">
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-100"></span>
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-200"></span>
-                    <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-300"></span>
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-start"
+                >
+                  <div className="max-w-[80%] rounded-2xl px-4 py-3 chat-bubble-ai flex gap-1.5 items-center">
+                    <span className="w-2 h-2 rounded-full bg-primary/80 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
                   </div>
-                </div>
+                </motion.div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            <div className="p-4 border-t border-white/5 shrink-0 bg-background/50">
-              <div className="px-4 py-2 border-t border-white/5 bg-background/30 flex items-center gap-2">
-                <span className="text-xs text-text-muted">Context Source:</span>
+            <div className="border-t border-white/10 shrink-0 bg-black/35 backdrop-blur-md">
+              <div className="px-4 py-2 flex items-center gap-2 border-b border-white/5">
+                <span className="text-[10px] uppercase tracking-wider text-text-muted font-semibold">Context</span>
                 <select
                   value={chatContextMode}
                   onChange={(e) => setChatContextMode(e.target.value)}
-                  className="bg-white/5 border border-white/10 text-xs text-text rounded px-2 py-1 outline-none focus:border-secondary transition-colors"
+                  className="flex-1 max-w-[200px] rounded-lg input-premium text-xs py-1.5 px-2"
                 >
                   <option value="both">Both (Comprehensive)</option>
                   <option value="notes">Notes Only</option>
                   <option value="youtube">YouTube Only</option>
                 </select>
               </div>
-              <form onSubmit={handleSendMessage} className="flex gap-2 p-4 pt-2">
+              <form onSubmit={handleSendMessage} className="flex gap-2 p-3">
                 <input
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
-                  placeholder="Ask a question about the lecture..."
-                  className="flex-1 input-glass py-2 px-4 rounded-full text-sm"
+                  placeholder="Message your tutor…"
+                  className="flex-1 input-premium py-2.5 px-4 rounded-full text-sm"
                   disabled={chatLoading || lectureLoading}
                 />
-                <button 
-                  type="submit" 
+                <motion.button
+                  type="submit"
                   disabled={!chatInput.trim() || chatLoading || lectureLoading}
-                  className="w-10 h-10 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/80 disabled:opacity-50 transition-colors"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="w-11 h-11 rounded-full btn-ai-primary flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
                 >
-                  <FiSend size={16} />
-                </button>
+                  <Send size={18} strokeWidth={2} />
+                </motion.button>
               </form>
             </div>
           </div>
         </div>
       )}
 
-      {}
       {showFlashcards && (
         <Flashcards topicId={topicId} onClose={() => setShowFlashcards(false)} />
       )}
 
-      {}
       {showExam && (
         <ExamSimulator topicId={topicId} onClose={() => setShowExam(false)} refreshUser={refreshUser} />
       )}
 
-      {}
       {showMindMap && (
         <MindMapViewer topicId={topicId} onClose={() => setShowMindMap(false)} refreshUser={refreshUser} />
       )}
 
-      {}
       {showPodcast && (
         <PodcastPlayer topicId={topicId} onClose={() => setShowPodcast(false)} refreshUser={refreshUser} />
       )}
 
-      {}
       {showYouTube && (
         <YouTubeIngestor topicId={topicId} onClose={() => setShowYouTube(false)} refreshUser={refreshUser} />
       )}
 
-      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && subtopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Subtopics</h2>
@@ -411,25 +449,22 @@ const TopicPage = () => {
         </div>
       )}
 
-      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4">Notes ({notes.length})</h2>
           {notes.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <FiFileText size={40} className="mx-auto text-text-muted mb-3 opacity-40" />
-              <p className="text-text-muted">No notes uploaded yet for this topic.</p>
-              <Link to="/upload" className="inline-block mt-4 btn-gradient text-sm">
-                Upload First Note
-              </Link>
-            </div>
+            <EmptyState
+              title="No notes for this topic yet"
+              description="Upload a PDF or slide deck — we will extract summaries, key points, and power your AI tutor."
+              ctaLabel="Upload your first note"
+              to={`/upload?topicId=${topicId}`}
+            />
           ) : (
             <div className="space-y-4">
               {notes.map((note) => (
                 <div key={note.id} className="glass-card overflow-hidden transition-all duration-300">
                   <div className="p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setExpandedNote(expandedNote === note.id ? null : note.id)}>
                     <div className="flex items-center gap-4">
-                      {}
                       <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center border border-white/5 shrink-0 overflow-hidden">
                         {note.file_url ? (
                           <img
@@ -470,7 +505,6 @@ const TopicPage = () => {
                     </div>
                   </div>
 
-                  {}
                   {expandedNote === note.id && (
                     <div className="border-t border-white/5 p-5 bg-background/30 space-y-4">
                       {note.summary && (
@@ -511,7 +545,6 @@ const TopicPage = () => {
         </div>
       )}
 
-      {}
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && relatedTopics.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">

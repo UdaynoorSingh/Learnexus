@@ -2,10 +2,23 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiCheck, FiX, FiTrash2, FiPlus, FiFileText, FiUsers, FiBookOpen, FiAlertTriangle, FiChevronDown } from 'react-icons/fi';
+import { FiCheck, FiX, FiTrash2, FiPlus, FiFileText, FiUsers, FiBookOpen, FiAlertTriangle, FiChevronDown, FiMail, FiEdit2 } from 'react-icons/fi';
+
+/** Normalize domain suffix: "mit.edu", "@mit.edu", or "user@mit.edu" → "mit.edu" */
+function normalizeEmailDomainSuffix(raw) {
+  let s = String(raw || '').trim().toLowerCase();
+  if (!s) return '';
+  if (s.includes('@')) {
+    const parts = s.split('@');
+    s = (parts[parts.length - 1] || '').trim();
+  }
+  return s.replace(/^\.+/, '').trim();
+}
 
 const AdminPage = () => {
   const { user } = useAuth();
+  const [adminCollegeId, setAdminCollegeId] = useState('');
+  const [adminColleges, setAdminColleges] = useState([]);
   const [activeTab, setActiveTab] = useState('pending');
   const [pendingNotes, setPendingNotes] = useState([]);
   const [allNotes, setAllNotes] = useState([]);
@@ -29,10 +42,52 @@ const AdminPage = () => {
   const [newSubject, setNewSubject] = useState('');
   const [newTopic, setNewTopic] = useState('');
 
+  const [newCollegeName, setNewCollegeName] = useState('');
+  const [newCollegeDomain, setNewCollegeDomain] = useState('');
+  const [collegeBanner, setCollegeBanner] = useState(null);
+  const [editingCollegeId, setEditingCollegeId] = useState(null);
+  const [editCollegeName, setEditCollegeName] = useState('');
+  const [editCollegeDomain, setEditCollegeDomain] = useState('');
+
+  const catalogParams =
+    user?.role === 'superadmin' && adminCollegeId
+      ? { collegeId: adminCollegeId }
+      : {};
+
+  const getCatalogParams = () => catalogParams;
+
+  const reloadAdminColleges = async () => {
+    const r = await api.get('/admin/colleges');
+    const list = r.data || [];
+    setAdminColleges(list);
+    return list;
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    if (user.role === 'superadmin') {
+      reloadAdminColleges()
+        .then((list) => {
+          setAdminCollegeId((prev) => {
+            if (prev) return prev;
+            const demo = list.find((c) => c.domain_suffix === 'demo.edu');
+            return String((demo || list[0])?.id ?? '');
+          });
+        })
+        .catch((e) => console.error(e));
+    } else {
+      setAdminCollegeId(String(user.college_id ?? ''));
+    }
+  }, [user]);
+
   useEffect(() => {
     fetchData();
-    fetchDegrees();
   }, []);
+
+  useEffect(() => {
+    if (!adminCollegeId) return;
+    fetchDegrees();
+  }, [adminCollegeId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -54,37 +109,50 @@ const AdminPage = () => {
 
   const fetchDegrees = async () => {
     try {
-      const res = await api.get('/degrees');
+      const res = await api.get('/degrees', { params: getCatalogParams() });
       setDegrees(res.data);
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
     if (selectedDegree) {
-      api.get(`/degrees/${selectedDegree}/branches`).then(res => setBranches(res.data));
-      setSelectedBranch(''); setSelectedSemester(''); setSelectedSubject('');
+      api
+        .get(`/degrees/${selectedDegree}/branches`, { params: getCatalogParams() })
+        .then((res) => setBranches(res.data));
+      setSelectedBranch('');
+      setSelectedSemester('');
+      setSelectedSubject('');
     } else setBranches([]);
-  }, [selectedDegree]);
+  }, [selectedDegree, adminCollegeId, user?.role]);
 
   useEffect(() => {
     if (selectedBranch) {
-      api.get(`/branches/${selectedBranch}/semesters`).then(res => setSemesters(res.data));
-      setSelectedSemester(''); setSelectedSubject('');
+      api
+        .get(`/branches/${selectedBranch}/semesters`, { params: getCatalogParams() })
+        .then((res) => setSemesters(res.data));
+      setSelectedSemester('');
+      setSelectedSubject('');
     } else setSemesters([]);
-  }, [selectedBranch]);
+  }, [selectedBranch, adminCollegeId, user?.role]);
 
   useEffect(() => {
     if (selectedSemester) {
-      api.get(`/semesters/${selectedSemester}/subjects`).then(res => setSubjects(res.data));
+      api
+        .get(`/semesters/${selectedSemester}/subjects`, { params: getCatalogParams() })
+        .then((res) => setSubjects(res.data));
       setSelectedSubject('');
     } else setSubjects([]);
-  }, [selectedSemester]);
+  }, [selectedSemester, adminCollegeId, user?.role]);
 
   useEffect(() => {
     if (selectedSubject) {
-      api.get(`/subjects/${selectedSubject}/topics`).then(res => setTopics(res.data));
+      api
+        .get(`/subjects/${selectedSubject}/topics`, { params: getCatalogParams() })
+        .then((res) => setTopics(res.data));
     } else setTopics([]);
-  }, [selectedSubject]);
+  }, [selectedSubject, adminCollegeId, user?.role]);
 
   const handleVerify = async (noteId, verified) => {
     try {
@@ -101,54 +169,170 @@ const AdminPage = () => {
     } catch (err) { console.error(err); }
   };
 
+  const superCollegeBody = () =>
+    user?.role === 'superadmin' && adminCollegeId ? { collegeId: Number(adminCollegeId) } : {};
+
   const handleCreateDegree = async (e) => {
     e.preventDefault();
     if (!newDegree) return;
     try {
-      await api.post('/admin/degrees', { name: newDegree });
+      await api.post('/admin/degrees', { name: newDegree, ...superCollegeBody() });
       setNewDegree('');
       fetchDegrees();
-    } catch (err) { console.error(err); }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreateBranch = async (e) => {
     e.preventDefault();
     if (!newBranch || !selectedDegree) return;
     try {
-      await api.post('/admin/branches', { name: newBranch, degreeId: selectedDegree });
+      await api.post('/admin/branches', {
+        name: newBranch,
+        degreeId: selectedDegree,
+        ...superCollegeBody()
+      });
       setNewBranch('');
-      api.get(`/degrees/${selectedDegree}/branches`).then(res => setBranches(res.data));
-    } catch (err) { console.error(err); }
+      api
+        .get(`/degrees/${selectedDegree}/branches`, { params: getCatalogParams() })
+        .then((res) => setBranches(res.data));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreateSemester = async (e) => {
     e.preventDefault();
     if (!newSemester || !selectedBranch) return;
     try {
-      await api.post('/admin/semesters', { number: parseInt(newSemester), branchId: selectedBranch });
+      await api.post('/admin/semesters', {
+        number: parseInt(newSemester, 10),
+        branchId: selectedBranch,
+        ...superCollegeBody()
+      });
       setNewSemester('');
-      api.get(`/branches/${selectedBranch}/semesters`).then(res => setSemesters(res.data));
-    } catch (err) { console.error(err); }
+      api
+        .get(`/branches/${selectedBranch}/semesters`, { params: getCatalogParams() })
+        .then((res) => setSemesters(res.data));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreateSubject = async (e) => {
     e.preventDefault();
     if (!newSubject || !selectedSemester) return;
     try {
-      await api.post('/admin/subjects', { name: newSubject, semesterId: selectedSemester });
+      await api.post('/admin/subjects', {
+        name: newSubject,
+        semesterId: selectedSemester,
+        ...superCollegeBody()
+      });
       setNewSubject('');
-      api.get(`/semesters/${selectedSemester}/subjects`).then(res => setSubjects(res.data));
-    } catch (err) { console.error(err); }
+      api
+        .get(`/semesters/${selectedSemester}/subjects`, { params: getCatalogParams() })
+        .then((res) => setSubjects(res.data));
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleCreateTopic = async (e) => {
     e.preventDefault();
     if (!newTopic || !selectedSubject) return;
     try {
-      await api.post('/admin/topics', { name: newTopic, subjectId: selectedSubject });
+      await api.post('/admin/topics', {
+        name: newTopic,
+        subjectId: selectedSubject,
+        ...superCollegeBody()
+      });
       setNewTopic('');
-      api.get(`/subjects/${selectedSubject}/topics`).then(res => setTopics(res.data));
-    } catch (err) { console.error(err); }
+      api
+        .get(`/subjects/${selectedSubject}/topics`, { params: getCatalogParams() })
+        .then((res) => setTopics(res.data));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleCreateCollege = async (e) => {
+    e.preventDefault();
+    setCollegeBanner(null);
+    const domain = normalizeEmailDomainSuffix(newCollegeDomain);
+    const name = newCollegeName.trim();
+    if (!name || !domain) {
+      setCollegeBanner({ kind: 'error', text: 'Enter a college name and an email domain (e.g. university.edu).' });
+      return;
+    }
+    try {
+      const { data } = await api.post('/admin/colleges', { name, domain_suffix: domain });
+      setNewCollegeName('');
+      setNewCollegeDomain('');
+      await reloadAdminColleges();
+      setAdminCollegeId(String(data.id));
+      setCollegeBanner({
+        kind: 'success',
+        text: `College "${data.name}" added. OTP sign-in matches addresses ending in @${data.domain_suffix} (including subdomains).`
+      });
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Could not add college.';
+      setCollegeBanner({ kind: 'error', text: msg });
+    }
+  };
+
+  const startEditCollege = (c) => {
+    setEditingCollegeId(c.id);
+    setEditCollegeName(c.name);
+    setEditCollegeDomain(c.domain_suffix);
+    setCollegeBanner(null);
+  };
+
+  const cancelEditCollege = () => {
+    setEditingCollegeId(null);
+    setEditCollegeName('');
+    setEditCollegeDomain('');
+  };
+
+  const handleSaveCollege = async (e) => {
+    e.preventDefault();
+    const domain = normalizeEmailDomainSuffix(editCollegeDomain);
+    const name = editCollegeName.trim();
+    if (!editingCollegeId || !name || !domain) {
+      setCollegeBanner({ kind: 'error', text: 'Name and email domain are required.' });
+      return;
+    }
+    try {
+      const { data } = await api.put(`/admin/colleges/${editingCollegeId}`, {
+        name,
+        domain_suffix: domain
+      });
+      cancelEditCollege();
+      await reloadAdminColleges();
+      setCollegeBanner({ kind: 'success', text: `Updated "${data.name}" (${data.domain_suffix}).` });
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Could not update college.';
+      setCollegeBanner({ kind: 'error', text: msg });
+    }
+  };
+
+  const handleDeleteCollege = async (c) => {
+    if (!confirm(`Delete college "${c.name}"? This only works if no users or catalog rows reference it.`)) return;
+    setCollegeBanner(null);
+    try {
+      await api.delete(`/admin/colleges/${c.id}`);
+      if (String(c.id) === adminCollegeId) {
+        const list = await reloadAdminColleges();
+        const demo = list.find((x) => x.domain_suffix === 'demo.edu');
+        setAdminCollegeId(String((demo || list[0])?.id ?? ''));
+      } else {
+        await reloadAdminColleges();
+      }
+      setCollegeBanner({ kind: 'success', text: 'College removed.' });
+    } catch (err) {
+      const msg = err.response?.data?.error || 'Could not delete college.';
+      setCollegeBanner({ kind: 'error', text: msg });
+    }
   };
 
   if (loading) return <LoadingSpinner size="lg" text="Loading admin panel..." />;
@@ -156,6 +340,7 @@ const AdminPage = () => {
   const tabs = [
     { id: 'pending', label: 'Pending Review', count: pendingNotes.length },
     { id: 'all', label: 'All Notes', count: allNotes.length },
+    ...(user?.role === 'superadmin' ? [{ id: 'colleges', label: 'Colleges & domains' }] : []),
     { id: 'manage', label: 'Manage Content' },
   ];
 
@@ -285,8 +470,179 @@ const AdminPage = () => {
         </div>
       )}
 
+      {activeTab === 'colleges' && user?.role === 'superadmin' && (
+        <div className="space-y-6">
+          <div className="glass-card p-6">
+            <div className="flex items-start gap-3 mb-4">
+              <FiMail className="text-primary shrink-0 mt-0.5" size={22} />
+              <div>
+                <h3 className="text-lg font-bold text-text">Colleges and email domains</h3>
+                <p className="text-sm text-text-muted mt-1">
+                  Each row ties a display name to an email domain suffix. Students request OTP with an address like{' '}
+                  <code className="text-xs bg-background px-1.5 py-0.5 rounded">name@univ.edu</code>
+                  {' '}or{' '}
+                  <code className="text-xs bg-background px-1.5 py-0.5 rounded">name@cs.univ.edu</code>
+                  {' '}when the suffix is <code className="text-xs bg-background px-1.5 py-0.5 rounded">univ.edu</code>.
+                </p>
+              </div>
+            </div>
+            {collegeBanner && (
+              <div
+                className={`mb-4 px-4 py-3 rounded-xl text-sm ${
+                  collegeBanner.kind === 'error'
+                    ? 'bg-danger/15 text-danger border border-danger/25'
+                    : 'bg-success/15 text-success border border-success/25'
+                }`}
+              >
+                {collegeBanner.text}
+              </div>
+            )}
+            <form onSubmit={handleCreateCollege} className="flex flex-col sm:flex-row flex-wrap gap-3 items-end border-t border-white/10 pt-6">
+              <div className="flex-1 min-w-[10rem] w-full sm:w-auto">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">College name</label>
+                <input
+                  type="text"
+                  value={newCollegeName}
+                  onChange={(e) => setNewCollegeName(e.target.value)}
+                  placeholder="e.g. State University"
+                  className="w-full px-3 py-2.5 bg-background border border-white/10 rounded-lg text-sm text-text"
+                />
+              </div>
+              <div className="flex-1 min-w-[10rem] w-full sm:w-auto">
+                <label className="block text-xs font-medium text-text-muted mb-1.5">Email domain suffix</label>
+                <input
+                  type="text"
+                  value={newCollegeDomain}
+                  onChange={(e) => setNewCollegeDomain(e.target.value)}
+                  placeholder="univ.edu (no @)"
+                  className="w-full px-3 py-2.5 bg-background border border-white/10 rounded-lg text-sm text-text"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full sm:w-auto px-5 py-2.5 bg-primary text-white rounded-lg text-sm font-medium flex items-center justify-center gap-2"
+              >
+                <FiPlus size={16} /> Add college
+              </button>
+            </form>
+          </div>
+
+          <div className="glass-card overflow-hidden">
+            <div className="px-6 py-4 border-b border-white/10">
+              <h4 className="text-sm font-semibold text-text">Registered colleges</h4>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm text-left">
+                <thead>
+                  <tr className="text-text-muted border-b border-white/10">
+                    <th className="px-6 py-3 font-medium">Name</th>
+                    <th className="px-6 py-3 font-medium">Email domain</th>
+                    <th className="px-6 py-3 font-medium w-40">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {adminColleges.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} className="px-6 py-8 text-center text-text-muted">
+                        No colleges loaded.
+                      </td>
+                    </tr>
+                  ) : (
+                    adminColleges.map((c) => (
+                      <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                        {editingCollegeId === c.id ? (
+                          <>
+                            <td className="px-6 py-3 align-top">
+                              <input
+                                value={editCollegeName}
+                                onChange={(e) => setEditCollegeName(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-background border border-white/10 rounded-lg text-text"
+                              />
+                            </td>
+                            <td className="px-6 py-3 align-top">
+                              <input
+                                value={editCollegeDomain}
+                                onChange={(e) => setEditCollegeDomain(e.target.value)}
+                                className="w-full px-2 py-1.5 bg-background border border-white/10 rounded-lg text-text font-mono text-xs"
+                              />
+                            </td>
+                            <td className="px-6 py-3 align-top">
+                              <form onSubmit={handleSaveCollege} className="flex flex-col gap-2">
+                                <button type="submit" className="px-3 py-1.5 rounded-lg bg-primary text-white text-xs font-medium">
+                                  Save
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={cancelEditCollege}
+                                  className="px-3 py-1.5 rounded-lg bg-surface-light text-text text-xs"
+                                >
+                                  Cancel
+                                </button>
+                              </form>
+                            </td>
+                          </>
+                        ) : (
+                          <>
+                            <td className="px-6 py-3 text-text font-medium">{c.name}</td>
+                            <td className="px-6 py-3 text-text-muted font-mono text-xs">{c.domain_suffix}</td>
+                            <td className="px-6 py-3">
+                              <div className="flex flex-wrap gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => startEditCollege(c)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-light text-text text-xs font-medium hover:bg-white/10"
+                                >
+                                  <FiEdit2 size={12} /> Edit
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteCollege(c)}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-danger text-xs font-medium hover:bg-danger/10"
+                                >
+                                  <FiTrash2 size={12} /> Delete
+                                </button>
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'manage' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="space-y-6">
+          {user?.role === 'superadmin' && (
+            <div className="glass-card p-4 flex flex-wrap items-center gap-3">
+              <label className="text-sm font-medium text-text-muted">Catalog college</label>
+              <select
+                value={adminCollegeId}
+                onChange={(e) => {
+                  setAdminCollegeId(e.target.value);
+                  setSelectedDegree('');
+                  setSelectedBranch('');
+                  setSelectedSemester('');
+                  setSelectedSubject('');
+                }}
+                className="px-4 py-2 bg-background border border-white/10 rounded-xl text-sm text-text min-w-[12rem]"
+              >
+                {adminColleges.map((c) => (
+                  <option key={c.id} value={String(c.id)}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-text-muted">
+                Superadmin: choose which tenant&apos;s degrees and branches you are editing.
+              </p>
+            </div>
+          )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="glass-card p-6">
             <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
             <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
@@ -338,6 +694,7 @@ const AdminPage = () => {
               <button type="submit" disabled={!selectedSubject} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /> Add Topic</button>
             </form>
           </div>
+        </div>
         </div>
       )}
     </div>

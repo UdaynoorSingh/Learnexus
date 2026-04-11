@@ -1,9 +1,17 @@
 const express = require('express');
 const router = express.Router();
+const auth = require('../middleware/auth');
+const requireVerified = require('../middleware/verified');
 const {
-  getDegrees, getBranches, getSemesters,
-  getSubjects, getTopics, getTopic
+  getDegrees,
+  getBranches,
+  getSemesters,
+  getSubjects,
+  getTopics,
+  getTopic
 } = require('../controllers/academicController');
+
+router.use(auth, requireVerified);
 
 router.get('/degrees', getDegrees);
 router.get('/degrees/:degreeId/branches', getBranches);

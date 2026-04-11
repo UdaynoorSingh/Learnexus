@@ -68,6 +68,39 @@ class YouTubeRequest(BaseModel):
     topicId: Any
 
 
+class CommunityAutoAnswerRequest(BaseModel):
+    title: str
+    content: str
+    topicId: Optional[Any] = None
+    imageUrl: Optional[str] = None
+    mimeType: Optional[str] = None
+
+
+class CommunityAssignTagRequest(BaseModel):
+    content: str
+    existingTags: List[str]
+
+
+class CommunityIngestSolutionRequest(BaseModel):
+    tag: str
+    question: str
+    answer: str
+
+
+class CommunityMascotChatRequest(BaseModel):
+    tag: str
+    query: str
+
+
+def community_room_index_dir(tag: str) -> str:
+    raw = (tag or "").strip()
+    if not raw:
+        raw = "room"
+    safe = re.sub(r"[^\w\-.]", "_", raw)
+    safe = re.sub(r"_+", "_", safe).strip("._-")[:100] or "room"
+    return os.path.join("vector_stores", "community", f"{safe}_index")
+
+
 def retrieve_context(topic_id: Any, query: str, k: int = 15, context_mode: str = "both") -> str:
     embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
     
@@ -147,6 +180,95 @@ async def embed_text(req: EmbedRequest):
             vectorstore.save_local(save_path)
             
         return {"status": "success"}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/moderate")
+async def moderate_text(req: TextRequest):
+    try:
+        text = (req.text or "").strip()
+        if not text:
+            raise HTTPException(status_code=400, detail="text is required")
+
+        prompt = """You are a community moderator for an academic student forum.
+Analyze the user's message for:
+- vulgarity, slurs, or sexually explicit content
+- spam (repeated characters, irrelevant ads, scam patterns, excessive links)
+
+You MUST respond with ONLY a valid JSON object (no markdown, no code fences, no extra text) in exactly this shape:
+{"isToxic": true or false, "reason": "brief reason in under 120 characters"}
+
+Use isToxic: true only for clear violations; err on the side of false for normal academic frustration or strong opinions without slurs.
+
+User message to analyze:
+"""
+        response = model.generate_content(prompt + text)
+        text_resp = (response.text or "").strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        data = json.loads(text_resp)
+        is_toxic = bool(data.get("isToxic"))
+        reason = str(data.get("reason") or ("Flagged by moderator" if is_toxic else "OK")).strip()[:500]
+        return {"isToxic": is_toxic, "reason": reason}
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON for moderation.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/community/assign-tag")
+async def community_assign_tag(req: CommunityAssignTagRequest):
+    try:
+        content = (req.content or "").strip()
+        if not content:
+            raise HTTPException(status_code=400, detail="content is required")
+        existing = req.existingTags if isinstance(req.existingTags, list) else []
+        existing_json = json.dumps(existing[:800])
+
+        prompt = f"""You assign exactly ONE Nexus Board "room" tag for a student forum post.
+
+existingTags (exact strings already in use — reuse one when the post clearly fits that topic):
+{existing_json}
+
+Instructions:
+1. Read the post content at the end.
+2. Compare it to existingTags. If it matches an existing concept well, return that EXACT string from the array (character-for-character, including the leading # if present).
+3. ONLY if the post is a completely new academic topic that does not fit any existing tag, invent ONE new tag: must start with #, use only letters, digits, and underscores, concise (e.g. #Compiler_Optimization).
+
+You MUST respond with ONLY valid JSON (no markdown code fences, no extra text) in exactly this shape:
+{{"tag": "your_chosen_tag_string"}}
+
+Post content:
+{content}
+"""
+        response = model.generate_content(prompt)
+        text_resp = (response.text or "").strip()
+
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+
+        data = json.loads(text_resp)
+        tag = str(data.get("tag", "")).strip()
+        if not tag:
+            raise HTTPException(status_code=500, detail="Model returned an empty tag.")
+        return {"tag": tag}
+    except HTTPException:
+        raise
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="AI returned invalid JSON for tag assignment.")
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -504,6 +626,175 @@ Academic Notes:
         raise
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="AI returned invalid JSON for the podcast script. Please try again.")
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/community/auto-answer")
+async def community_auto_answer(req: CommunityAutoAnswerRequest):
+    try:
+        title = (req.title or "").strip()
+        body = (req.content or "").strip()
+        if not title and not body:
+            raise HTTPException(status_code=400, detail="title or content is required")
+
+        query_text = (title + "\n\n" + body).strip()
+        context = ""
+        if req.topicId is not None and str(req.topicId).strip() != "":
+            context = retrieve_context(req.topicId, query_text, k=14, context_mode="both")
+
+        ctx_block = context.strip() if context.strip() else "(No indexed course materials matched this topic — use solid general knowledge.)"
+
+        prompt_intro = """You are a brilliant, approachable senior university student on an academic help forum.
+Write a helpful reply to the post below. Be accurate, encouraging, and concise where possible.
+Format your entire answer in **Markdown**: use **bold**, bullet lists when useful, and fenced code blocks with a language tag for any code (e.g. ```cpp).
+
+If "Course materials" below contains relevant excerpts, ground your answer in them and paraphrase key ideas.
+If the materials are empty or irrelevant, rely on general subject knowledge and say so briefly if needed.
+
+### Course materials (retrieved notes / transcripts)
+"""
+        text_prompt = (
+            prompt_intro
+            + ctx_block
+            + "\n\n### Forum post\n**Title:** "
+            + title
+            + "\n\n**Body:**\n"
+            + body
+        )
+
+        if req.imageUrl and str(req.imageUrl).strip():
+            try:
+                img_resp = requests.get(str(req.imageUrl).strip(), timeout=30)
+                img_resp.raise_for_status()
+                mime = (req.mimeType or img_resp.headers.get("Content-Type") or "image/jpeg").split(";")[0].strip()
+                if not mime.startswith("image/"):
+                    mime = "image/jpeg"
+                image_part = {"mime_type": mime, "data": img_resp.content}
+                full_prompt = text_prompt + "\n\nThe author attached an image — use it together with the text when answering."
+                response = vision_model.generate_content([full_prompt, image_part])
+            except Exception as img_err:
+                import traceback
+                traceback.print_exc()
+                response = model.generate_content(
+                    text_prompt + "\n\n(Note: could not load attached image: " + str(img_err) + ")"
+                )
+        else:
+            response = model.generate_content(text_prompt)
+
+        answer = (response.text or "").strip()
+        if not answer:
+            raise HTTPException(status_code=500, detail="Model returned an empty answer")
+
+        return {"answer": answer}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/community/ingest-solution")
+async def community_ingest_solution(req: CommunityIngestSolutionRequest):
+    try:
+        tag = (req.tag or "").strip()
+        question = (req.question or "").strip()
+        answer = (req.answer or "").strip()
+        if not tag:
+            raise HTTPException(status_code=400, detail="tag is required")
+        if not question and not answer:
+            raise HTTPException(status_code=400, detail="question and answer cannot both be empty")
+
+        chunk = f"Question (solved post):\n{question}\n\nAccepted community solution:\n{answer}"
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY")
+        )
+        splitter = RecursiveCharacterTextSplitter(chunk_size=1200, chunk_overlap=150)
+        chunks = splitter.split_text(chunk)
+        if not chunks:
+            chunks = [chunk[:50000]]
+
+        vectorstore = FAISS.from_texts(chunks, embeddings)
+        save_path = community_room_index_dir(tag)
+        os.makedirs(save_path, exist_ok=True)
+
+        if os.path.exists(os.path.join(save_path, "index.faiss")):
+            existing_db = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+            existing_db.merge_from(vectorstore)
+            existing_db.save_local(save_path)
+        else:
+            vectorstore.save_local(save_path)
+
+        return {"status": "success", "indexPath": save_path}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/community/mascot-chat")
+async def community_mascot_chat(req: CommunityMascotChatRequest):
+    try:
+        tag = (req.tag or "").strip()
+        query = (req.query or "").strip()
+        if not tag or tag == "#All":
+            raise HTTPException(status_code=400, detail="A specific room tag is required (not #All).")
+        if not query:
+            raise HTTPException(status_code=400, detail="query is required")
+
+        save_path = community_room_index_dir(tag)
+        faiss_path = os.path.join(save_path, "index.faiss")
+        if not os.path.exists(faiss_path):
+            return {
+                "reply": (
+                    "This room does not have any indexed solved threads yet. "
+                    "When someone marks a bounty post as solved, I learn from that Q&A — check back later, "
+                    "or start a new discussion on the board."
+                ),
+                "indexed": False,
+            }
+
+        embeddings = GoogleGenerativeAIEmbeddings(
+            model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY")
+        )
+        vectorstore = FAISS.load_local(save_path, embeddings, allow_dangerous_deserialization=True)
+        docs = vectorstore.similarity_search(query, k=8)
+        if not docs:
+            return {
+                "reply": (
+                    "I could not match your question to anything in this room's solved library yet. "
+                    "Try rephrasing, or open a new post for the community."
+                ),
+                "indexed": True,
+            }
+
+        context = "\n\n---\n\n".join(d.page_content for d in docs)
+        prompt = f"""You are the "Room Mascot" for the academic forum room: {tag}.
+Below are retrieved excerpts from previously SOLVED threads in this room only (question + accepted answer pairs).
+
+STRICT RULES:
+1. Base your answer ONLY on information supported by the excerpts. If they do not cover the student's question, say so clearly and suggest they post on the board or browse other threads — do NOT invent facts or use outside knowledge.
+2. If excerpts partially help, answer the parts you can and note what is missing.
+3. Use clear Markdown: **bold**, bullet lists, and fenced code blocks with a language tag when you include code.
+
+### Retrieved solved-thread excerpts
+{context}
+
+### Student question
+{query}
+"""
+        response = model.generate_content(prompt)
+        reply = (response.text or "").strip()
+        if not reply:
+            raise HTTPException(status_code=500, detail="Model returned an empty reply.")
+        return {"reply": reply, "indexed": True}
+    except HTTPException:
+        raise
     except Exception as e:
         import traceback
         traceback.print_exc()

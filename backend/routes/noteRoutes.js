@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const path = require('path');
 const auth = require('../middleware/auth');
+const requireVerified = require('../middleware/verified');
 const { uploadNote, getNote, unlockNote } = require('../controllers/noteController');
 
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
@@ -36,8 +37,8 @@ const upload = multer({
   }
 });
 
-router.post('/upload', auth, upload.single('file'), uploadNote);
-router.get('/:noteId', auth, getNote);
-router.post('/:noteId/unlock', auth, unlockNote);
+router.post('/upload', auth, requireVerified, upload.single('file'), uploadNote);
+router.get('/:noteId', auth, requireVerified, getNote);
+router.post('/:noteId/unlock', auth, requireVerified, unlockNote);
 
 module.exports = router;

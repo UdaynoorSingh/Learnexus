@@ -1,9 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Bot, Send, Sparkles, BookOpen, MessageSquare } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { processYouTubeVideo, generateLecture, sendChatMessage } from '../services/aiService';
 import { showToast } from '../services/toast';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiYoutube, FiArrowRight, FiBookOpen, FiMessageSquare, FiSend } from 'react-icons/fi';
+import { FiYoutube, FiArrowRight } from 'react-icons/fi';
 
 const VideoLearnPage = () => {
   const { user, refreshUser } = useAuth();
@@ -30,7 +32,7 @@ const VideoLearnPage = () => {
     if (chatBottomRef.current) {
       chatBottomRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [chatHistory]);
+  }, [chatHistory, chatLoading]);
 
   const extractVideoId = (fullUrl) => {
     const match = fullUrl.match(/(?:v=|\/v\/|youtu\.be\/|embed\/|^)([a-zA-Z0-9_-]{11})/);
@@ -132,7 +134,6 @@ const VideoLearnPage = () => {
 
   return (
     <div className="space-y-8 animate-fadeInUp max-w-7xl mx-auto">
-      {}
       <div className="glass-card p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-danger/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
         
@@ -175,13 +176,10 @@ const VideoLearnPage = () => {
         </div>
       </div>
 
-      {}
       {topicId && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeInUp">
           
-          {}
           <div className="lg:col-span-7 space-y-6">
-            {}
             <div className="glass-card overflow-hidden aspect-video border border-danger/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
               <iframe
                 src={`https://www.youtube.com/embed/${videoId}?autoplay=0&rel=0`}
@@ -193,11 +191,10 @@ const VideoLearnPage = () => {
               ></iframe>
             </div>
 
-            {}
             <div className="glass-card flex flex-col h-[500px] border border-primary/20">
               <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-primary/5">
-                <h2 className="text-lg font-bold text-text flex items-center gap-2">
-                  <FiBookOpen className="text-primary" /> Generated Lecture
+                <h2 className="text-lg font-bold text-text tracking-tight flex items-center gap-2">
+                  <BookOpen className="text-primary" size={20} strokeWidth={2} /> Generated Lecture
                 </h2>
               </div>
               <div className="p-6 overflow-y-auto flex-1 custom-scrollbar min-h-0">
@@ -213,59 +210,96 @@ const VideoLearnPage = () => {
             </div>
           </div>
 
-          {}
           <div className="lg:col-span-5">
-            <div className="glass-card flex flex-col h-full min-h-[600px] border border-secondary/20 sticky top-24">
-              <div className="p-4 border-b border-white/5 flex items-center gap-2 shrink-0 bg-secondary/5">
-                <FiMessageSquare className="text-secondary" />
-                <h2 className="text-lg font-bold text-text">Tutor Chat</h2>
+            <div className="glass-float flex flex-col h-full min-h-[600px] border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/40 sticky top-24">
+              <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0 bg-black/30">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
+                  <Bot size={18} strokeWidth={2} />
+                </div>
+                <div>
+                  <h2 className="text-sm font-bold text-text tracking-tight">Tutor</h2>
+                  <p className="text-[10px] text-text-muted uppercase tracking-widest font-medium flex items-center gap-1">
+                    <Sparkles size={10} className="text-accent" /> Video session
+                  </p>
+                </div>
               </div>
-              
-              <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-4 min-h-0">
-                {chatHistory.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl p-3 text-[14px] leading-relaxed ${
-                      msg.role === 'user' 
-                        ? 'bg-secondary text-white rounded-tr-sm shadow-md' 
-                        : 'bg-white/10 text-white rounded-tl-sm border border-white/10'
-                    }`}>
-                      {msg.role === 'model' ? (
-                        <div dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }} />
-                      ) : (
-                        msg.text
-                      )}
+
+              <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-3 min-h-0 bg-[#0a0a0a]/40">
+                {chatHistory.length === 0 && !lectureLoading && (
+                  <div className="flex flex-col items-center justify-center py-10 text-center px-4">
+                    <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                      <MessageSquare size={22} className="text-text-muted opacity-60" strokeWidth={2} />
                     </div>
+                    <p className="text-sm text-text-muted max-w-xs leading-relaxed">
+                      Ask about the lecture or the video. Replies use the same calm, terminal-inspired bubbles as your topic tutor.
+                    </p>
                   </div>
-                ))}
+                )}
+                <AnimatePresence initial={false}>
+                  {chatHistory.map((msg, i) => (
+                    <motion.div
+                      key={`${i}-${msg.role}-${msg.text?.slice(0, 12)}`}
+                      layout
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={{ type: 'spring', stiffness: 420, damping: 32 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                          msg.role === 'user'
+                            ? 'chat-bubble-user rounded-tr-md'
+                            : 'chat-bubble-ai rounded-tl-md text-text'
+                        }`}
+                      >
+                        {msg.role === 'model' ? (
+                          <div
+                            className="[&_a]:text-primary [&_code]:text-accent"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
+                          />
+                        ) : (
+                          msg.text
+                        )}
+                      </div>
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
                 {chatLoading && (
-                  <div className="flex justify-start">
-                    <div className="max-w-[80%] rounded-2xl p-3 bg-white/5 text-text-muted rounded-tl-sm border border-white/5 flex gap-1 items-center">
-                      <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-100"></span>
-                      <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-200"></span>
-                      <span className="w-2 h-2 rounded-full bg-text-muted animate-bounce delay-300"></span>
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex justify-start"
+                  >
+                    <div className="max-w-[80%] rounded-2xl px-4 py-3 chat-bubble-ai flex gap-1.5 items-center">
+                      <span className="w-2 h-2 rounded-full bg-primary/80 animate-bounce [animation-delay:0ms]" />
+                      <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
+                      <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
                     </div>
-                  </div>
+                  </motion.div>
                 )}
                 <div ref={chatBottomRef} />
               </div>
 
-              <div className="p-4 border-t border-white/5 shrink-0 bg-background/50">
+              <div className="border-t border-white/10 shrink-0 bg-black/35 backdrop-blur-md p-3">
                 <form onSubmit={handleSendMessage} className="flex gap-2">
                   <input
                     type="text"
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Ask about the video..."
-                    className="flex-1 input-glass py-2.5 px-4 rounded-full text-sm"
+                    placeholder="Ask about the video…"
+                    className="flex-1 input-premium py-2.5 px-4 rounded-full text-sm"
                     disabled={chatLoading || lectureLoading}
                   />
-                  <button 
-                    type="submit" 
+                  <motion.button
+                    type="submit"
                     disabled={!chatInput.trim() || chatLoading || lectureLoading}
-                    className="w-11 h-11 rounded-full bg-secondary text-white flex items-center justify-center hover:bg-secondary/80 disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="w-11 h-11 rounded-full btn-ai-primary flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
                   >
-                    <FiSend size={18} />
-                  </button>
+                    <Send size={18} strokeWidth={2} />
+                  </motion.button>
                 </form>
               </div>
             </div>

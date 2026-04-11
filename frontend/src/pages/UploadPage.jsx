@@ -1,11 +1,13 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import { academicCatalogParams } from '../utils/academicCatalog';
 import { FiUpload, FiFile, FiX, FiCheck, FiChevronDown } from 'react-icons/fi';
 
 const UploadPage = () => {
-  const { refreshUser } = useAuth();
+  const { refreshUser, user } = useAuth();
+  const catalogParams = useMemo(() => academicCatalogParams(user), [user]);
   const navigate = useNavigate();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -28,36 +30,57 @@ const UploadPage = () => {
   const [selectedTopic, setSelectedTopic] = useState('');
 
   useEffect(() => {
-    api.get('/degrees').then(res => setDegrees(res.data)).catch(console.error);
-  }, []);
+    api
+      .get('/degrees', { params: catalogParams })
+      .then((res) => setDegrees(res.data))
+      .catch(console.error);
+  }, [catalogParams]);
 
   useEffect(() => {
     if (selectedDegree) {
-      api.get(`/degrees/${selectedDegree}/branches`).then(res => setBranches(res.data)).catch(console.error);
-      setSelectedBranch(''); setSelectedSemester(''); setSelectedSubject(''); setSelectedTopic('');
+      api
+        .get(`/degrees/${selectedDegree}/branches`, { params: catalogParams })
+        .then((res) => setBranches(res.data))
+        .catch(console.error);
+      setSelectedBranch('');
+      setSelectedSemester('');
+      setSelectedSubject('');
+      setSelectedTopic('');
     }
-  }, [selectedDegree]);
+  }, [selectedDegree, catalogParams]);
 
   useEffect(() => {
     if (selectedBranch) {
-      api.get(`/branches/${selectedBranch}/semesters`).then(res => setSemesters(res.data)).catch(console.error);
-      setSelectedSemester(''); setSelectedSubject(''); setSelectedTopic('');
+      api
+        .get(`/branches/${selectedBranch}/semesters`, { params: catalogParams })
+        .then((res) => setSemesters(res.data))
+        .catch(console.error);
+      setSelectedSemester('');
+      setSelectedSubject('');
+      setSelectedTopic('');
     }
-  }, [selectedBranch]);
+  }, [selectedBranch, catalogParams]);
 
   useEffect(() => {
     if (selectedSemester) {
-      api.get(`/semesters/${selectedSemester}/subjects`).then(res => setSubjects(res.data)).catch(console.error);
-      setSelectedSubject(''); setSelectedTopic('');
+      api
+        .get(`/semesters/${selectedSemester}/subjects`, { params: catalogParams })
+        .then((res) => setSubjects(res.data))
+        .catch(console.error);
+      setSelectedSubject('');
+      setSelectedTopic('');
     }
-  }, [selectedSemester]);
+  }, [selectedSemester, catalogParams]);
 
   useEffect(() => {
     if (selectedSubject) {
-      api.get(`/subjects/${selectedSubject}/topics`).then(res => setTopics(res.data)).catch(console.error);
+      api
+        .get(`/subjects/${selectedSubject}/topics`, { params: catalogParams })
+        .then((res) => setTopics(res.data))
+        .catch(console.error);
       setSelectedTopic('');
     }
-  }, [selectedSubject]);
+  }, [selectedSubject, catalogParams]);
 
   const handleDrag = (e) => {
     e.preventDefault();
@@ -158,7 +181,6 @@ const UploadPage = () => {
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {}
         <div className="glass-card p-6">
           <h3 className="text-sm font-semibold text-text mb-4">Select File</h3>
           <div
@@ -204,7 +226,6 @@ const UploadPage = () => {
           </div>
         </div>
 
-        {}
         <div className="glass-card p-6">
           <h3 className="text-sm font-semibold text-text mb-4">Select Topic</h3>
           <div className="space-y-4">

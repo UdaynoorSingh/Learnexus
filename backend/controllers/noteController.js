@@ -15,16 +15,26 @@ exports.uploadNote = async (req, res) => {
       return res.status(400).json({ error: 'Topic ID is required.' });
     }
 
-    const topicCheck = await pool.query('SELECT id FROM topics WHERE id = $1', [topicId]);
+    const cid = req.user.college_id;
+    const topicCheck = await pool.query(
+      `SELECT t.id, t.college_id FROM topics t
+       JOIN subjects s ON t.subject_id = s.id
+       JOIN semesters sem ON s.semester_id = sem.id
+       JOIN branches b ON sem.branch_id = b.id
+       JOIN degrees d ON b.degree_id = d.id
+       WHERE t.id = $1 AND t.college_id = $2 AND s.college_id = $2
+         AND sem.college_id = $2 AND b.college_id = $2 AND d.college_id = $2`,
+      [topicId, cid]
+    );
     if (topicCheck.rows.length === 0) {
       return res.status(404).json({ error: 'Topic not found.' });
     }
 
-    const fileUrl = req.file.path; 
+    const fileUrl = req.file.path;
 
     const result = await pool.query(
-      'INSERT INTO notes (topic_id, uploaded_by, file_url) VALUES ($1, $2, $3) RETURNING *',
-      [topicId, userId, fileUrl]
+      'INSERT INTO notes (topic_id, uploaded_by, file_url, college_id) VALUES ($1, $2, $3, $4) RETURNING *',
+      [topicId, userId, fileUrl, cid]
     );
 
     const note = result.rows[0];
@@ -135,14 +145,15 @@ async function processNoteWithAI(noteId, fileUrl, aiUrl, io, userId, topicId) {
 
 exports.getNote = async (req, res) => {
   try {
+    const cid = req.user.college_id;
     const { noteId } = req.params;
     const result = await pool.query(
-      `SELECT n.*, u.name as uploader_name, t.name as topic_name 
-       FROM notes n 
-       JOIN users u ON n.uploaded_by = u.id 
-       JOIN topics t ON n.topic_id = t.id 
-       WHERE n.id = $1`,
-      [noteId]
+      `SELECT n.*, u.name as uploader_name, t.name as topic_name
+       FROM notes n
+       JOIN users u ON n.uploaded_by = u.id
+       JOIN topics t ON n.topic_id = t.id
+       WHERE n.id = $1 AND n.college_id = $2`,
+      [noteId, cid]
     );
 
     if (result.rows.length === 0) {
@@ -161,22 +172,28 @@ exports.unlockNote = async (req, res) => {
   try {
     const { noteId } = req.params;
     const userId = req.user.id;
+    const cid = req.user.college_id;
 
-    
+    const noteCheck = await pool.query('SELECT id FROM notes WHERE id = $1 AND college_id = $2', [
+      noteId,
+      cid
+    ]);
+    if (noteCheck.rows.length === 0) {
+      return res.status(404).json({ error: 'Note not found.' });
+    }
+
     const userResult = await pool.query('SELECT credits FROM users WHERE id = $1', [userId]);
     if (userResult.rows[0].credits < 2) {
       return res.status(400).json({ error: 'Insufficient credits. You need 2 credits to unlock.' });
     }
 
-    
     await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [userId]);
     await pool.query(
       'INSERT INTO transactions (user_id, credits_used, reason) VALUES ($1, 2, $2)',
       [userId, `Unlocked note #${noteId}`]
     );
 
-    
-    const note = await pool.query('SELECT * FROM notes WHERE id = $1', [noteId]);
+    const note = await pool.query('SELECT * FROM notes WHERE id = $1 AND college_id = $2', [noteId, cid]);
     res.json({ note: note.rows[0], message: 'Note unlocked!' });
   } catch (error) {
     console.error('unlockNote error:', error);

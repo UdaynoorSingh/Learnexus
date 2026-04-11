@@ -47,7 +47,6 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
 
   return (
     <div className="glass-card border border-danger/20 overflow-hidden animate-fadeInUp">
-      {}
       <div className="p-4 border-b border-white/5 flex items-center justify-between bg-danger/5">
         <h2 className="text-lg font-bold text-text flex items-center gap-2">
           <FiYoutube className="text-danger" /> YouTube to Knowledge Base
@@ -58,7 +57,6 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
       </div>
 
       <div className="p-6">
-        {}
         <p className="text-sm text-text-muted mb-5 leading-relaxed">
           Paste a YouTube lecture URL below. The AI will download the transcript, chunk it, and embed it into your
           FAISS vector database — making it available for <span className="text-accent font-medium">Flashcards</span>,{' '}
@@ -66,7 +64,6 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
           <span className="text-text font-medium">Tutor Chat</span>.
         </p>
 
-        {}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="relative">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -106,7 +103,6 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
           </button>
         </form>
 
-        {}
         {error && (
           <div className={`mt-4 p-4 rounded-xl border animate-fadeInUp flex items-start gap-3 ${
             creditError
@@ -123,7 +119,6 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
           </div>
         )}
 
-        {}
         {result && (
           <div className="mt-4 p-4 rounded-xl bg-success/10 border border-success/20 animate-fadeInUp">
             <div className="flex items-start gap-3">

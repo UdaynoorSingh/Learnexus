@@ -12,6 +12,14 @@ api.interceptors.request.use((config) => {
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  if (config.data instanceof FormData) {
+    const h = config.headers;
+    if (h && typeof h.delete === 'function') {
+      h.delete('Content-Type');
+    } else if (h) {
+      delete h['Content-Type'];
+    }
+  }
   return config;
 });
 
@@ -42,9 +50,16 @@ api.interceptors.response.use(
 
     
     if (status === 401) {
-      localStorage.removeItem('token');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+      const reqUrl = error.config?.url || '';
+      const onPublicAuth =
+        window.location.pathname === '/login' ||
+        window.location.pathname === '/admin' ||
+        reqUrl.includes('admin-login');
+      if (!onPublicAuth) {
+        localStorage.removeItem('token');
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
 
