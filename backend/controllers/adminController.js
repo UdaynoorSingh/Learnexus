@@ -441,3 +441,87 @@ exports.getChartStats = async (req, res) => {
     res.status(500).json({ error: 'Server error.' });
   }
 };
+
+exports.createChallenge = async (req, res) => {
+  try {
+    const { company_name, title, description, difficulty, bounty_credits, tags } = req.body;
+    if (!company_name || !title || !description || !difficulty) {
+      return res.status(400).json({ error: 'Missing required challenge fields.' });
+    }
+    
+    // tags can be an array or string
+    let tagsJSON = tags;
+    if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
+    if (!tagsJSON) tagsJSON = '[]';
+    
+    // Convert bounty_credits to int fallback to 0
+    let credits = parseInt(bounty_credits, 10);
+    if (isNaN(credits)) credits = 5;
+
+    const query = `
+      INSERT INTO company_challenges (company_name, title, description, difficulty, bounty_credits, tags)
+      VALUES ($1, $2, $3, $4, $5, $6)
+      RETURNING *
+    `;
+    const values = [company_name, title, description, difficulty, credits, tagsJSON];
+
+    const result = await pool.query(query, values);
+    res.status(201).json(result.rows[0]);
+  } catch (error) {
+    console.error('createChallenge error:', error);
+    res.status(500).json({ error: 'Server error creating company challenge.' });
+  }
+};
+
+exports.updateChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { company_name, title, description, difficulty, bounty_credits, tags } = req.body;
+    
+    // tags can be an array or string
+    let tagsJSON = tags;
+    if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
+    if (!tagsJSON) tagsJSON = '[]';
+    
+    let credits = parseInt(bounty_credits, 10);
+    if (isNaN(credits)) credits = 5;
+
+    const query = `
+      UPDATE company_challenges 
+      SET company_name = COALESCE($1, company_name),
+          title = COALESCE($2, title),
+          description = COALESCE($3, description),
+          difficulty = COALESCE($4, difficulty),
+          bounty_credits = COALESCE($5, bounty_credits),
+          tags = COALESCE($6, tags)
+      WHERE id = $7
+      RETURNING *
+    `;
+    const values = [company_name, title, description, difficulty, credits, tagsJSON, id];
+    
+    const result = await pool.query(query, values);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Challenge not found.' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error('updateChallenge error:', err);
+    res.status(500).json({ error: 'Server error updating challenge.' });
+  }
+};
+
+exports.deleteChallenge = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await pool.query('DELETE FROM challenge_submissions WHERE challenge_id = $1', [id]);
+    const result = await pool.query('DELETE FROM company_challenges WHERE id = $1 RETURNING id', [id]);
+    if (result.rows.length === 0) {
+      return res.status(404).json({ error: 'Challenge not found.' });
+    }
+    res.json({ message: 'Challenge deleted successfully.' });
+  } catch (err) {
+    console.error('deleteChallenge error:', err);
+    res.status(500).json({ error: 'Server error deleting challenge.' });
+  }
+};

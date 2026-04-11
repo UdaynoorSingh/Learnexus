@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
-import { FiCheck, FiX, FiTrash2, FiPlus, FiFileText, FiUsers, FiBookOpen, FiAlertTriangle, FiChevronDown, FiMail, FiEdit2 } from 'react-icons/fi';
+import { FiCheck, FiX, FiTrash2, FiPlus, FiFileText, FiUsers, FiBookOpen, FiAlertTriangle, FiChevronDown, FiMail, FiEdit2, FiExternalLink } from 'react-icons/fi';
+import NoteViewerModal from '../components/common/NoteViewerModal';
 
 /** Normalize domain suffix: "mit.edu", "@mit.edu", or "user@mit.edu" → "mit.edu" */
 function normalizeEmailDomainSuffix(raw) {
@@ -24,6 +25,7 @@ const AdminPage = () => {
   const [allNotes, setAllNotes] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewingNoteUrl, setViewingNoteUrl] = useState(null);
 
   const [degrees, setDegrees] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -48,6 +50,15 @@ const AdminPage = () => {
   const [editingCollegeId, setEditingCollegeId] = useState(null);
   const [editCollegeName, setEditCollegeName] = useState('');
   const [editCollegeDomain, setEditCollegeDomain] = useState('');
+
+  const [newChallengeCompany, setNewChallengeCompany] = useState('');
+  const [newChallengeTitle, setNewChallengeTitle] = useState('');
+  const [newChallengeDesc, setNewChallengeDesc] = useState('');
+  const [newChallengeDiff, setNewChallengeDiff] = useState('Medium');
+  const [newChallengeCredits, setNewChallengeCredits] = useState('5');
+  const [newChallengeTags, setNewChallengeTags] = useState('');
+  const [challengesList, setChallengesList] = useState([]);
+  const [editingChallengeId, setEditingChallengeId] = useState(null);
 
   const catalogParams =
     user?.role === 'superadmin' && adminCollegeId
@@ -92,14 +103,16 @@ const AdminPage = () => {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [statsRes, pendingRes, allRes] = await Promise.all([
+      const [statsRes, pendingRes, allRes, chalRes] = await Promise.all([
         api.get('/admin/stats'),
         api.get('/admin/notes/pending'),
-        api.get('/admin/notes')
+        api.get('/admin/notes'),
+        api.get('/challenges')
       ]);
       setStats(statsRes.data);
       setPendingNotes(pendingRes.data);
       setAllNotes(allRes.data);
+      setChallengesList(chalRes.data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -281,6 +294,88 @@ const AdminPage = () => {
     }
   };
 
+  const handleCreateChallenge = async (e) => {
+    e.preventDefault();
+    if (!newChallengeCompany || !newChallengeTitle || !newChallengeDesc) return;
+    try {
+      const tagsArray = newChallengeTags.split(',').map(s => s.trim()).filter(Boolean);
+      const payload = {
+        company_name: newChallengeCompany,
+        title: newChallengeTitle,
+        description: newChallengeDesc,
+        difficulty: newChallengeDiff,
+        bounty_credits: parseInt(newChallengeCredits, 10),
+        tags: tagsArray
+      };
+
+      if (editingChallengeId) {
+        await api.put(`/admin/challenges/${editingChallengeId}`, payload);
+        alert('Challenge updated successfully!');
+      } else {
+        await api.post('/admin/challenges', payload);
+        alert('Challenge posted successfully!');
+      }
+
+      setEditingChallengeId(null);
+      setNewChallengeCompany('');
+      setNewChallengeTitle('');
+      setNewChallengeDesc('');
+      setNewChallengeDiff('Medium');
+      setNewChallengeCredits('5');
+      setNewChallengeTags('');
+      
+      const refresh = await api.get('/challenges');
+      setChallengesList(refresh.data);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save challenge');
+    }
+  };
+
+  const startEditChallenge = (c) => {
+    setEditingChallengeId(c.id);
+    setNewChallengeCompany(c.company_name);
+    setNewChallengeTitle(c.title);
+    setNewChallengeDesc(c.description);
+    setNewChallengeDiff(c.difficulty || 'Medium');
+    setNewChallengeCredits(c.bounty_credits?.toString() || '5');
+    
+    let tagsStr = '';
+    if (Array.isArray(c.tags)) {
+      tagsStr = c.tags.join(', ');
+    } else if (typeof c.tags === 'string') {
+      try {
+        const parsed = JSON.parse(c.tags);
+        if (Array.isArray(parsed)) tagsStr = parsed.join(', ');
+      } catch {
+        tagsStr = c.tags;
+      }
+    }
+    setNewChallengeTags(tagsStr);
+  };
+
+  const cancelEditChallenge = () => {
+    setEditingChallengeId(null);
+    setNewChallengeCompany('');
+    setNewChallengeTitle('');
+    setNewChallengeDesc('');
+    setNewChallengeDiff('Medium');
+    setNewChallengeCredits('5');
+    setNewChallengeTags('');
+  };
+
+  const handleDeleteChallenge = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this challenge?')) return;
+    try {
+      await api.delete(`/admin/challenges/${id}`);
+      setChallengesList((prev) => prev.filter((c) => c.id !== id));
+      alert('Challenge deleted successfully');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to delete challenge');
+    }
+  };
+
   const startEditCollege = (c) => {
     setEditingCollegeId(c.id);
     setEditCollegeName(c.name);
@@ -342,6 +437,7 @@ const AdminPage = () => {
     { id: 'all', label: 'All Notes', count: allNotes.length },
     ...(user?.role === 'superadmin' ? [{ id: 'colleges', label: 'Colleges & domains' }] : []),
     { id: 'manage', label: 'Manage Content' },
+    { id: 'challenges', label: 'Post Challenges' }
   ];
 
   const SelectField = ({ label, value, onChange, options, labelKey = 'name', valueKey = 'id', placeholder }) => (
@@ -433,6 +529,14 @@ const AdminPage = () => {
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
+                      type="button"
+                      onClick={() => setViewingNoteUrl(note.file_url)}
+                      className="px-3 py-2 rounded-lg bg-surface-light text-text-muted hover:text-text text-sm font-medium flex items-center gap-1 transition-all"
+                      title="View Note Securely"
+                    >
+                      <FiExternalLink size={14} /> View
+                    </button>
+                    <button
                       onClick={() => handleVerify(note.id, true)}
                       className="px-4 py-2 rounded-lg bg-success/20 text-success text-sm font-medium flex items-center gap-1 transition-all"
                     >
@@ -462,9 +566,19 @@ const AdminPage = () => {
                   <span className="text-xs text-text-muted">{note.topic_name}</span>
                 </div>
               </div>
-              <button onClick={() => handleDelete(note.id)} className="p-2 rounded-lg text-danger hover:bg-danger/10 transition-all">
-                <FiTrash2 size={16} />
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setViewingNoteUrl(note.file_url)}
+                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-white/5 transition-all"
+                  title="View Note Securely"
+                >
+                  <FiExternalLink size={16} />
+                </button>
+                <button onClick={() => handleDelete(note.id)} className="p-2 rounded-lg text-danger hover:bg-danger/10 transition-all">
+                  <FiTrash2 size={16} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -697,6 +811,85 @@ const AdminPage = () => {
         </div>
         </div>
       )}
+
+      {activeTab === 'challenges' && (
+        <div className="space-y-6">
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-text mb-4">Post a new Company Challenge</h3>
+            <form onSubmit={handleCreateChallenge} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">Company Name</label>
+                  <input type="text" value={newChallengeCompany} onChange={e => setNewChallengeCompany(e.target.value)} placeholder="e.g. Google, Vercel" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">Bounty Credits</label>
+                  <input type="number" value={newChallengeCredits} onChange={e => setNewChallengeCredits(e.target.value)} placeholder="5" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required min="1" max="1000" />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">Challenge Title</label>
+                  <input type="text" value={newChallengeTitle} onChange={e => setNewChallengeTitle(e.target.value)} placeholder="e.g. Optimize React rendering performance" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-text-muted mb-2">Description</label>
+                  <textarea value={newChallengeDesc} onChange={e => setNewChallengeDesc(e.target.value)} placeholder="Provide full details, constraints, and instructions..." rows={4} className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30 resizenone" required />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">Difficulty</label>
+                  <select value={newChallengeDiff} onChange={e => setNewChallengeDiff(e.target.value)} className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium">Medium</option>
+                    <option value="Hard">Hard</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-text-muted mb-2">Tags (comma separated)</label>
+                  <input type="text" value={newChallengeTags} onChange={e => setNewChallengeTags(e.target.value)} placeholder="e.g. React, Performance, Typescript" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" />
+                </div>
+              </div>
+              <div className="flex gap-2.5 mt-2">
+                <button type="submit" className="px-6 py-3 bg-primary text-white rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-primary/90 transition-colors">
+                  <FiPlus size={16} /> {editingChallengeId ? 'Update Challenge' : 'Publish Challenge'}
+                </button>
+                {editingChallengeId && (
+                  <button type="button" onClick={cancelEditChallenge} className="px-6 py-3 bg-white/10 text-text rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/20 transition-colors">
+                    <FiX size={16} /> Cancel
+                  </button>
+                )}
+              </div>
+            </form>
+          </div>
+
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-text mb-4">Active Challenges</h3>
+            <div className="space-y-4">
+              {challengesList.length === 0 ? (
+                <p className="text-text-muted text-sm text-center py-4">No challenges posted yet.</p>
+              ) : (
+                challengesList.map(c => (
+                  <div key={c.id} className="p-4 rounded-xl border border-white/10 bg-surface-light flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-primary/30 transition-colors">
+                    <div className="max-w-2xl">
+                      <p className="text-xs text-text-muted uppercase tracking-wider font-semibold mb-1">{c.company_name} • {c.difficulty} • {c.bounty_credits} Credits</p>
+                      <h4 className="text-base font-bold text-text mb-1">{c.title}</h4>
+                      <p className="text-sm text-text-muted line-clamp-1">{c.description}</p>
+                    </div>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <button onClick={() => startEditChallenge(c)} className="p-2 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors" title="Edit">
+                        <FiEdit2 size={16} />
+                      </button>
+                      <button onClick={() => handleDeleteChallenge(c.id)} className="p-2 rounded-lg text-text-muted hover:text-danger hover:bg-danger/10 transition-colors" title="Delete">
+                        <FiTrash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <NoteViewerModal url={viewingNoteUrl} onClose={() => setViewingNoteUrl(null)} />
     </div>
   );
 };

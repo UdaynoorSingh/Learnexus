@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Any
 from dotenv import load_dotenv
 import google.generativeai as genai
+from openai import OpenAI
 
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
@@ -21,6 +22,18 @@ genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 model = genai.GenerativeModel('gemini-2.5-flash')
 vision_model = genai.GenerativeModel('gemini-2.5-flash')
+
+try:
+    groq_client = OpenAI(
+        api_key=os.environ.get("GROQ_API_KEY"),
+        base_url="https://api.groq.com/openai/v1",
+    )
+    openrouter_client = OpenAI(
+        api_key=os.environ.get("OPEN_ROUTER_API_KEY"),
+        base_url="https://openrouter.ai/api/v1",
+    )
+except Exception:
+    pass
 
 app = FastAPI(title="Learnexus AI Backend")
 
@@ -90,6 +103,33 @@ class CommunityIngestSolutionRequest(BaseModel):
 class CommunityMascotChatRequest(BaseModel):
     tag: str
     query: str
+
+
+def call_groq(prompt: str, fallback: bool = True) -> str:
+    try:
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        if fallback:
+            print(f"Groq API failed ({e}). Falling back to OpenRouter...")
+            return call_openrouter(prompt, fallback=False)
+        raise
+
+def call_openrouter(prompt: str, fallback: bool = True) -> str:
+    try:
+        response = openrouter_client.chat.completions.create(
+            model="meta-llama/llama-3.3-70b-instruct:free",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        if fallback:
+            print(f"OpenRouter API failed ({e}). Falling back to Groq...")
+            return call_groq(prompt, fallback=False)
+        raise
 
 
 def community_room_index_dir(tag: str) -> str:
@@ -205,8 +245,7 @@ Use isToxic: true only for clear violations; err on the side of false for normal
 
 User message to analyze:
 """
-        response = model.generate_content(prompt + text)
-        text_resp = (response.text or "").strip()
+        text_resp = call_groq(prompt + text).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -252,8 +291,7 @@ You MUST respond with ONLY valid JSON (no markdown code fences, no extra text) i
 Post content:
 {content}
 """
-        response = model.generate_content(prompt)
-        text_resp = (response.text or "").strip()
+        text_resp = call_groq(prompt).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -284,8 +322,8 @@ async def summarize_text(req: TextRequest):
         
         Text: {req.text}
         """
-        response = model.generate_content(prompt)
-        return {"summary": response.text.strip()}
+        text_resp = call_groq(prompt)
+        return {"summary": text_resp.strip()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -300,8 +338,7 @@ async def extract_keypoints(req: TextRequest):
         
         Text: {req.text}
         """
-        response = model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = call_groq(prompt).strip()
         
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -333,8 +370,8 @@ async def generate_lecture(req: TeachRequest):
         ## Key Takeaways
         ## Practice Questions
         """
-        response = model.generate_content(prompt)
-        return {"lecture": response.text.strip()}
+        text_resp = call_openrouter(prompt)
+        return {"lecture": text_resp.strip()}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -347,20 +384,24 @@ async def chat_interaction(req: ChatRequest):
         retrieved_context = retrieve_context(req.topicId, req.message, k=4, context_mode=req.contextMode)
 
         formatted_history = []
-        for msg in req.history:
-            role = "model" if msg.role == "assistant" else msg.role
-            formatted_history.append({"role": role, "parts": [msg.text]})
-        
-        chat_session = model.start_chat(history=formatted_history)
         
         system_instruction = f"You are an expert academic tutor. Base Context: {req.lectureContext}."
         if retrieved_context:
             system_instruction += f"\n\nStudent's Extracted Notes (Use this to answer their questions accurately):\n{retrieved_context}"
-            
-        prompt = f"{system_instruction}\n\nStudent Question: {req.message}"
         
-        response = chat_session.send_message(prompt)
-        return {"reply": response.text.strip()}
+        formatted_history.append({"role": "system", "content": system_instruction})
+        
+        for msg in req.history:
+            role = "assistant" if msg.role == "model" or msg.role == "assistant" else "user"
+            formatted_history.append({"role": role, "content": msg.text})
+            
+        formatted_history.append({"role": "user", "content": req.message})
+        
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=formatted_history
+        )
+        return {"reply": response.choices[0].message.content.strip()}
     except Exception as e:
         import traceback
         traceback.print_exc()
@@ -382,8 +423,7 @@ Format: [{{"q": "What is...?", "a": "It is..."}}]
 Academic Notes:
 {context}"""
 
-        response = model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = call_groq(prompt).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -417,8 +457,7 @@ Format: [{{"question": "...", "options": ["A. ...", "B. ...", "C. ...", "D. ..."
 Academic Notes:
 {context}"""
 
-        response = model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = call_groq(prompt).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -494,8 +533,7 @@ Focus on the main topics covered.
 
 Transcript excerpt:
 {summary_text}"""
-        summary_response = model.generate_content(summary_prompt)
-        summary = summary_response.text.strip()
+        summary = call_groq(summary_prompt).strip()
 
         return {
             "status": "success",
@@ -546,8 +584,7 @@ STRICT RULES:
 Academic Notes:
 {context}"""
 
-        response = model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = call_openrouter(prompt).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -605,8 +642,7 @@ STRICT: Return RAW JSON only. No ```json blocks. No markdown formatting.
 Academic Notes:
 {context}"""
 
-        response = model.generate_content(prompt)
-        text_resp = response.text.strip()
+        text_resp = call_openrouter(prompt).strip()
 
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -675,16 +711,16 @@ If the materials are empty or irrelevant, rely on general subject knowledge and 
                 image_part = {"mime_type": mime, "data": img_resp.content}
                 full_prompt = text_prompt + "\n\nThe author attached an image — use it together with the text when answering."
                 response = vision_model.generate_content([full_prompt, image_part])
+                answer = (response.text or "").strip()
             except Exception as img_err:
                 import traceback
                 traceback.print_exc()
-                response = model.generate_content(
+                answer = call_openrouter(
                     text_prompt + "\n\n(Note: could not load attached image: " + str(img_err) + ")"
-                )
+                ).strip()
         else:
-            response = model.generate_content(text_prompt)
+            answer = call_openrouter(text_prompt).strip()
 
-        answer = (response.text or "").strip()
         if not answer:
             raise HTTPException(status_code=500, detail="Model returned an empty answer")
 
@@ -788,8 +824,7 @@ STRICT RULES:
 ### Student question
 {query}
 """
-        response = model.generate_content(prompt)
-        reply = (response.text or "").strip()
+        reply = call_groq(prompt).strip()
         if not reply:
             raise HTTPException(status_code=500, detail="Model returned an empty reply.")
         return {"reply": reply, "indexed": True}

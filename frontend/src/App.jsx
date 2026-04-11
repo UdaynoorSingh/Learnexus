@@ -14,6 +14,8 @@ import ProfilePage from './pages/ProfilePage';
 import BookmarkedPostsPage from './pages/BookmarkedPostsPage';
 import VideoLearnPage from './pages/VideoLearnPage';
 import NexusBoard from './pages/NexusBoard';
+import NexusLibrary from './pages/NexusLibrary';
+import ChallengesPage from './pages/ChallengesPage';
 
 function App() {
   return (
@@ -25,9 +27,13 @@ function App() {
 
           <Route
             element={
-              <ProtectedRoute>
-                <Layout />
-              </ProtectedRoute>
+              <>
+                <div className="noise-overlay" />
+                <div className="mesh-bg" />
+                <ProtectedRoute>
+                  <Layout />
+                </ProtectedRoute>
+              </>
             }
           >
             <Route path="/dashboard" element={<DashboardPage />} />
@@ -36,6 +42,8 @@ function App() {
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/video-learn" element={<VideoLearnPage />} />
             <Route path="/nexus-board" element={<NexusBoard />} />
+            <Route path="/nexus-library" element={<NexusLibrary />} />
+            <Route path="/challenges" element={<ChallengesPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/bookmarks" element={<BookmarkedPostsPage />} />
           </Route>

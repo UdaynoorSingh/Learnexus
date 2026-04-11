@@ -13,14 +13,14 @@ import ExamSimulator from '../components/study/ExamSimulator';
 import MindMapViewer from '../components/study/MindMapViewer';
 import PodcastPlayer from '../components/study/PodcastPlayer';
 import YouTubeIngestor from '../components/upload/YouTubeIngestor';
-import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiLayers, FiAward, FiYoutube, FiShare2, FiHeadphones } from 'react-icons/fi';
+import NoteViewerModal from '../components/common/NoteViewerModal';
+import { FiFileText, FiStar, FiCheck, FiUser, FiLink, FiBookOpen, FiChevronDown, FiChevronUp, FiArrowLeft, FiClock, FiMessageSquare, FiLayers, FiAward, FiYoutube, FiShare2, FiHeadphones, FiExternalLink } from 'react-icons/fi';
 
 const TopicPage = () => {
   const { topicId } = useParams();
   const { user, refreshUser } = useAuth();
   const [topicData, setTopicData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
   
   const [lectureContent, setLectureContent] = useState('');
   const [lectureLoading, setLectureLoading] = useState(false);
@@ -34,6 +34,7 @@ const TopicPage = () => {
 
   const [showTeachMenu, setShowTeachMenu] = useState(false);
   const [expandedNote, setExpandedNote] = useState(null);
+  const [viewingNoteUrl, setViewingNoteUrl] = useState(null);
   const [showFlashcards, setShowFlashcards] = useState(false);
   const [showExam, setShowExam] = useState(false);
   const [showYouTube, setShowYouTube] = useState(false);
@@ -527,13 +528,15 @@ const TopicPage = () => {
                         </div>
                       )}
                       {note.file_url && (
-                        <div>
-                          <h4 className="text-xs font-semibold text-success uppercase tracking-wider mb-2">Preview</h4>
-                          <img
-                            src={note.file_url.startsWith('http') ? note.file_url : `http://localhost:5000${note.file_url}`}
-                            alt="Note preview"
-                            className="max-w-full max-h-96 rounded-xl border border-white/10"
-                          />
+                        <div className="pt-2">
+                          <button
+                            type="button"
+                            onClick={() => setViewingNoteUrl(note.file_url)}
+                            className="w-full sm:w-auto text-xs font-bold uppercase tracking-wider bg-success/15 text-success hover:bg-success/25 px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer border-0 mt-2"
+                            title="View full note securely"
+                          >
+                            <FiExternalLink size={14} /> Open Full Document Viewer
+                          </button>
                         </div>
                       )}
                     </div>
@@ -565,6 +568,7 @@ const TopicPage = () => {
           </div>
         </div>
       )}
+      <NoteViewerModal url={viewingNoteUrl} onClose={() => setViewingNoteUrl(null)} />
     </div>
   );
 };

@@ -211,7 +211,7 @@ const VideoLearnPage = () => {
           </div>
 
           <div className="lg:col-span-5">
-            <div className="glass-float flex flex-col h-full min-h-[600px] border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/40 sticky top-24">
+            <div className="glass-float flex flex-col h-[calc(100vh-8rem)] max-h-[800px] border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/40 sticky top-24">
               <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0 bg-black/30">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
                   <Bot size={18} strokeWidth={2} />

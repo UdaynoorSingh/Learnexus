@@ -1,5 +1,6 @@
 const pool = require('../config/db');
 const { GHOST_AI_EMAIL } = require('../config/ghostStudent');
+const generateAudioSummary = require('../utils/generateAudioSummary');
 
 const AI_BACKEND_URL = process.env.AI_BACKEND_URL || 'http://localhost:5001';
 const ANONYMOUS_POST_FEE = 2;
@@ -528,7 +529,19 @@ exports.createPost = async (req, res) => {
         [userId, postCollegeId, trimmedTitle, trimmedContent, img, trimmedTag, isAnonymous]
       );
       await upsertTagPostCount(pool, trimmedTag, postCollegeId);
-      const enriched = await fetchPostEnriched(result.rows[0].id, userId);
+
+      // Fire-and-forget: generate audio summary in background
+      const newPostId = result.rows[0].id;
+      generateAudioSummary(`${trimmedTitle}\n\n${trimmedContent}`)
+        .then(audioUrl => {
+          if (audioUrl) {
+            pool.query('UPDATE posts SET audio_url = $1 WHERE id = $2', [audioUrl, newPostId])
+              .catch(err => console.error('[AudioSummary] DB update failed:', err));
+          }
+        })
+        .catch(err => console.error('[AudioSummary] Pipeline error:', err));
+
+      const enriched = await fetchPostEnriched(newPostId, userId);
       return res.status(201).json(enriched);
     } catch (error) {
       console.error('createPost error:', error);
@@ -588,7 +601,18 @@ exports.createPost = async (req, res) => {
 
     await client.query('COMMIT');
 
-    const enriched = await fetchPostEnriched(insert.rows[0].id, userId);
+    // Fire-and-forget: generate audio summary in background
+    const newPostId = insert.rows[0].id;
+    generateAudioSummary(`${trimmedTitle}\n\n${trimmedContent}`)
+      .then(audioUrl => {
+        if (audioUrl) {
+          pool.query('UPDATE posts SET audio_url = $1 WHERE id = $2', [audioUrl, newPostId])
+            .catch(err => console.error('[AudioSummary] DB update failed:', err));
+        }
+      })
+      .catch(err => console.error('[AudioSummary] Pipeline error:', err));
+
+    const enriched = await fetchPostEnriched(newPostId, userId);
     res.status(201).json(enriched);
   } catch (error) {
     await client.query('ROLLBACK');

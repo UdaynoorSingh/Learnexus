@@ -554,6 +554,19 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               )}
             </div>
             <h3 className="mt-2 text-lg font-bold text-text leading-snug tracking-tight pr-1">{post.title}</h3>
+
+            {post.audio_url && (
+              <div className="mt-3 mb-1 flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3 shadow-sm shadow-primary/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary/80 shrink-0">🎧 Audio</span>
+                <audio
+                  controls
+                  src={post.audio_url}
+                  className="nexus-audio-player flex-1 h-8 rounded-lg"
+                  preload="none"
+                />
+              </div>
+            )}
+
             <div className="mt-2 min-w-0">
               <div
                 ref={bodyClampRef}

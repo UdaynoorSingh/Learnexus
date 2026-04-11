@@ -16,7 +16,9 @@ import {
   Menu,
   X,
   PlaySquare,
-  MessageSquare
+  MessageSquare,
+  Library,
+  Trophy
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -125,6 +127,8 @@ const Sidebar = () => {
     { path: '/upload', icon: Upload, label: 'Upload' },
     { path: '/video-learn', icon: PlaySquare, label: 'YouTube Learn' },
     { path: '/nexus-board', icon: MessageSquare, label: 'Nexus Board' },
+    { path: '/nexus-library', icon: Library, label: 'Nexus Library' },
+    { path: '/challenges', icon: Trophy, label: 'Challenges' },
     { path: '/profile', icon: User, label: 'Profile' }
   ];
 
@@ -198,23 +202,32 @@ const Sidebar = () => {
             {navItems.map((item) => {
               const active = isActive(item.path);
               return (
-                <MotionLink
-                  key={item.path}
-                  to={item.path}
-                  onClick={() => setMobileOpen(false)}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  transition={springNav}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
-                    ${
-                      active
-                        ? 'bg-primary/15 text-primary nav-active-glow border border-primary/25'
-                        : 'text-text-muted hover:text-text hover:bg-white/5 border border-transparent'
-                    }`}
-                >
-                  <item.icon size={18} strokeWidth={2} className="shrink-0" />
-                  {!collapsed && <span className="truncate">{item.label}</span>}
-                </MotionLink>
+                <div key={item.path} className="relative">
+                  {active && (
+                    <motion.div
+                      layoutId="active-nav"
+                      className="absolute inset-0 bg-primary/15 border border-primary/25 rounded-xl nav-active-glow"
+                      initial={false}
+                      transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                    />
+                  )}
+                  <MotionLink
+                    to={item.path}
+                    onClick={() => setMobileOpen(false)}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    transition={springNav}
+                    className={`relative z-10 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
+                      ${
+                        active
+                          ? 'text-primary drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]'
+                          : 'text-text-muted hover:text-text hover:bg-white/5 border border-transparent'
+                      }`}
+                  >
+                    <item.icon size={18} strokeWidth={2} className="shrink-0" />
+                    {!collapsed && <span className="truncate">{item.label}</span>}
+                  </MotionLink>
+                </div>
               );
             })}
           </div>

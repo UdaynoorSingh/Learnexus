@@ -18,7 +18,10 @@ const {
   getCollegesAdmin,
   createCollegeAdmin,
   updateCollegeAdmin,
-  deleteCollegeAdmin
+  deleteCollegeAdmin,
+  createChallenge,
+  updateChallenge,
+  deleteChallenge
 } = require('../controllers/adminController');
 
 router.use(auth);
@@ -41,5 +44,9 @@ router.get('/colleges', getCollegesAdmin);
 router.post('/colleges', createCollegeAdmin);
 router.put('/colleges/:id', updateCollegeAdmin);
 router.delete('/colleges/:id', deleteCollegeAdmin);
+
+router.post('/challenges', createChallenge);
+router.put('/challenges/:id', updateChallenge);
+router.delete('/challenges/:id', deleteChallenge);
 
 module.exports = router;
