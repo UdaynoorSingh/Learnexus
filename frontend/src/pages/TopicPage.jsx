@@ -197,32 +197,32 @@ const TopicPage = () => {
   };
 
   const getScoreColor = (score) => {
-    if (score >= 80) return 'text-success';
-    if (score >= 50) return 'text-warning';
-    return 'text-danger';
+    if (score >= 80) return 'text-green-600';
+    if (score >= 50) return 'text-amber-600';
+    return 'text-red-600';
   };
 
   if (loading) return <LoadingSpinner size="lg" text="Loading topic..." />;
-  if (!topicData) return <div className="text-center text-text-muted py-12">Topic not found.</div>;
+  if (!topicData) return <div className="text-center text-zinc-500 py-12">Topic not found.</div>;
 
   const { topic, subtopics, notes, relatedTopics } = topicData;
 
   const actionBtnClass =
-    'inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-xl border transition-all whitespace-nowrap px-3 py-2 sm:px-4 sm:py-2.5 shrink-0';
+    'inline-flex items-center justify-center gap-2 text-sm font-semibold rounded-none border transition-all whitespace-nowrap px-3 py-2 sm:px-4 sm:py-2.5 shrink-0';
 
   return (
     <div className="space-y-8 animate-fadeInUp max-w-full min-w-0">
       <div className="min-w-0">
-        <Link to="/explorer" className="inline-flex items-center gap-2 text-text-muted hover:text-text text-sm mb-4 transition-colors">
+        <Link to="/explorer" className="inline-flex items-center gap-2 text-zinc-500 hover:text-zinc-900 text-sm mb-4 transition-colors">
           <FiArrowLeft size={14} /> Back to Explorer
         </Link>
-        <div className="glass-card relative z-20 p-5 sm:p-6 rounded-2xl border border-white/10 min-w-0 shadow-lg shadow-black/20">
+        <div className="bg-white border border-zinc-200 shadow-sm rounded-none relative z-20 p-5 sm:p-6 rounded-none border border-zinc-200 min-w-0 shadow-lg shadow-sm">
           <div className="flex flex-col gap-5 min-w-0">
             <div className="min-w-0 pr-1">
-              <p className="text-xs text-primary font-medium uppercase tracking-wider mb-1">{topic.subject_name}</p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight break-words">{topic.name}</h1>
+              <p className="text-xs text-blue-600 font-medium uppercase tracking-wider mb-1">{topic.subject_name}</p>
+              <h1 className="text-2xl sm:text-3xl font-bold text-zinc-900 tracking-tight break-words">{topic.name}</h1>
               {topic.teacher_name && (
-                <p className="text-sm text-text-muted mt-1 flex items-center gap-1 flex-wrap">
+                <p className="text-sm text-zinc-500 mt-1 flex items-center gap-1 flex-wrap">
                   <FiUser size={12} /> Taught by {topic.teacher_name}
                 </p>
               )}
@@ -233,7 +233,7 @@ const TopicPage = () => {
                   type="button"
                   onClick={() => setShowTeachMenu(!showTeachMenu)}
                   disabled={lectureLoading}
-                  className={`${actionBtnClass} btn-gradient animate-pulseGlow`}
+                  className={`${actionBtnClass} bg-blue-600 text-white hover:bg-blue-700 shadow-sm border border-transparent `}
                   aria-expanded={showTeachMenu}
                   aria-haspopup="true"
                 >
@@ -244,26 +244,26 @@ const TopicPage = () => {
                 {showTeachMenu && (
                   <div
                     role="menu"
-                    className="absolute top-full left-0 mt-2 w-56 max-w-[min(100vw-2rem,16rem)] rounded-xl border border-white/15 bg-[#141418]/95 backdrop-blur-xl py-2 shadow-2xl shadow-black/60 ring-1 ring-white/10 z-[70] animate-fadeInUp"
+                    className="absolute top-full left-0 mt-2 w-56 max-w-[min(100vw-2rem,16rem)] rounded-none border border-zinc-200 bg-white  py-2 shadow-2xl shadow-sm ring-1 ring-white/10 z-[70] animate-fadeInUp"
                   >
-                    <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-text-muted border-b border-white/5 mb-1">Select Context</p>
-                    <button type="button" onClick={() => handleTeachMe('notes')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiFileText size={14} className="text-accent shrink-0" /> Notes Only
+                    <p className="px-4 py-2 text-xs font-semibold uppercase tracking-wider text-zinc-500 border-b border-zinc-200 mb-1">Select Context</p>
+                    <button type="button" onClick={() => handleTeachMe('notes')} className="w-full text-left px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-100 flex items-center gap-2 transition-colors">
+                      <FiFileText size={14} className="text-indigo-600 shrink-0" /> Notes Only
                     </button>
-                    <button type="button" onClick={() => handleTeachMe('youtube')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiYoutube size={14} className="text-danger shrink-0" /> YouTube Lecture Only
+                    <button type="button" onClick={() => handleTeachMe('youtube')} className="w-full text-left px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-100 flex items-center gap-2 transition-colors">
+                      <FiYoutube size={14} className="text-red-600 shrink-0" /> YouTube Lecture Only
                     </button>
-                    <button type="button" onClick={() => handleTeachMe('both')} className="w-full text-left px-4 py-2 text-sm text-text hover:bg-white/5 flex items-center gap-2 transition-colors">
-                      <FiLayers size={14} className="text-primary shrink-0" /> Both (Comprehensive)
+                    <button type="button" onClick={() => handleTeachMe('both')} className="w-full text-left px-4 py-2 text-sm text-zinc-900 hover:bg-zinc-100 flex items-center gap-2 transition-colors">
+                      <FiLayers size={14} className="text-blue-600 shrink-0" /> Both (Comprehensive)
                     </button>
                   </div>
                 )}
               </div>
-              <button type="button" onClick={handleFlashcards} className={`${actionBtnClass} bg-accent/15 text-accent border-accent/30 hover:bg-accent/25 hover:border-accent/50`}>
+              <button type="button" onClick={handleFlashcards} className={`${actionBtnClass} bg-indigo-50 text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-200`}>
                 <FiLayers size={16} className="shrink-0" />
                 Flashcards
               </button>
-              <button type="button" onClick={handleExam} className={`${actionBtnClass} bg-primary/15 text-primary border-primary/30 hover:bg-primary/25 hover:border-primary/50`}>
+              <button type="button" onClick={handleExam} className={`${actionBtnClass} bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-200`}>
                 <FiAward size={16} className="shrink-0" />
                 <span className="hidden sm:inline">Exam (1 ⚡)</span>
                 <span className="sm:hidden">Exam</span>
@@ -278,12 +278,12 @@ const TopicPage = () => {
                 <span className="hidden md:inline">Audio Overview (3 ⚡)</span>
                 <span className="md:hidden">Audio (3 ⚡)</span>
               </button>
-              <Link to={`/upload?topicId=${topicId}`} className={`${actionBtnClass} bg-white/5 text-text border-white/10 hover:bg-white/10`}>
+              <Link to={`/upload?topicId=${topicId}`} className={`${actionBtnClass} bg-zinc-100 text-zinc-900 border-zinc-200 hover:bg-zinc-100`}>
                 <FiFileText size={16} className="shrink-0" />
                 <span className="hidden sm:inline">Upload PDF</span>
                 <span className="sm:hidden">PDF</span>
               </Link>
-              <button type="button" onClick={handleYouTube} className={`${actionBtnClass} bg-danger/15 text-danger border-danger/30 hover:bg-danger/25 hover:border-danger/50`}>
+              <button type="button" onClick={handleYouTube} className={`${actionBtnClass} bg-red-50 text-red-600 border-red-200 hover:bg-red-50 hover:border-red-200`}>
                 <FiYoutube size={16} className="shrink-0" />
                 <span className="hidden sm:inline">Link YouTube</span>
                 <span className="sm:hidden">YouTube</span>
@@ -295,45 +295,45 @@ const TopicPage = () => {
 
       {showLecture && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div className="glass-card flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-primary/20">
-            <div className="p-4 border-b border-white/5 flex items-center justify-between shrink-0 bg-primary/5">
-              <h2 className="text-lg font-bold text-text flex items-center gap-2">
-                <FiBookOpen className="text-primary" /> Generated Lecture
+          <div className="bg-white border border-zinc-200 shadow-sm rounded-none flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-blue-200">
+            <div className="p-4 border-b border-zinc-200 flex items-center justify-between shrink-0 bg-blue-50">
+              <h2 className="text-lg font-bold text-zinc-900 flex items-center gap-2">
+                <FiBookOpen className="text-blue-600" /> Generated Lecture
               </h2>
-              <button onClick={() => setShowLecture(false)} className="text-text-muted hover:text-text text-sm">Close</button>
+              <button onClick={() => setShowLecture(false)} className="text-zinc-500 hover:text-zinc-900 text-sm">Close</button>
             </div>
             <div className="p-6 overflow-y-auto flex-1 custom-scrollbar min-h-0">
               {lectureLoading ? (
                 <LoadingSpinner text="AI is formulating the lecture..." />
               ) : (
                 <div
-                  className="lecture-content prose prose-invert max-w-none prose-p:text-text-muted prose-headings:text-text"
+                  className="lecture-content prose prose-gray max-w-none prose-p:text-zinc-500 prose-headings:text-zinc-900"
                   dangerouslySetInnerHTML={{ __html: renderMarkdown(lectureContent) }}
                 />
               )}
             </div>
           </div>
 
-          <div className="glass-float flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-white/10 rounded-2xl overflow-hidden shadow-2xl shadow-black/40">
-            <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0 bg-black/30">
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
+          <div className="bg-white border border-zinc-200 shadow-lg rounded-none flex flex-col h-[600px] max-h-[75vh] min-h-0 border border-zinc-200 rounded-none overflow-hidden shadow-2xl shadow-sm">
+            <div className="px-4 py-3 border-b border-zinc-200 flex items-center gap-3 shrink-0 bg-zinc-50">
+              <div className="flex h-9 w-9 items-center justify-center rounded-none bg-blue-50 text-blue-600 border border-blue-200">
                 <Bot size={18} strokeWidth={2} />
               </div>
               <div>
-                <h2 className="text-sm font-bold text-text tracking-tight">Tutor</h2>
-                <p className="text-[10px] text-text-muted uppercase tracking-widest font-medium flex items-center gap-1">
-                  <Sparkles size={10} className="text-accent" /> AI session
+                <h2 className="text-sm font-bold text-zinc-900 tracking-tight">Tutor</h2>
+                <p className="text-[10px] text-zinc-500 uppercase tracking-widest font-medium flex items-center gap-1">
+                  <Sparkles size={10} className="text-indigo-600" /> AI session
                 </p>
               </div>
             </div>
 
-            <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-3 min-h-0 bg-[#0a0a0a]/40">
+            <div className="p-4 overflow-y-auto flex-1 custom-scrollbar space-y-3 min-h-0 bg-zinc-50">
               {chatHistory.length === 0 && !lectureLoading && (
                 <div className="flex flex-col items-center justify-center py-12 text-center px-4">
-                  <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
-                    <FiMessageSquare className="text-text-muted opacity-60" size={22} />
+                  <div className="h-12 w-12 rounded-none bg-zinc-100 border border-zinc-200 flex items-center justify-center mb-3">
+                    <FiMessageSquare className="text-zinc-500 opacity-60" size={22} />
                   </div>
-                  <p className="text-sm text-text-muted max-w-xs leading-relaxed">
+                  <p className="text-sm text-zinc-500 max-w-xs leading-relaxed">
                     Ask anything about the lecture. Replies stream in with a calm, iMessage-style layout.
                   </p>
                 </div>
@@ -350,7 +350,7 @@ const TopicPage = () => {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user' ? 'chat-bubble-user rounded-tr-md' : 'chat-bubble-ai rounded-tl-md text-text'
+                      className={`max-w-[85%] rounded-none px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user' ? 'bg-blue-600 text-white rounded-tr-md' : 'bg-zinc-100 text-zinc-800 rounded-tl-md text-zinc-900'
                         }`}
                     >
                       {msg.text}
@@ -364,23 +364,23 @@ const TopicPage = () => {
                   animate={{ opacity: 1 }}
                   className="flex justify-start"
                 >
-                  <div className="max-w-[80%] rounded-2xl px-4 py-3 chat-bubble-ai flex gap-1.5 items-center">
-                    <span className="w-2 h-2 rounded-full bg-primary/80 animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
+                  <div className="max-w-[80%] rounded-none px-4 py-3 bg-zinc-100 text-zinc-800 flex gap-1.5 items-center">
+                    <span className="w-2 h-2 rounded-full bg-blue-50 animate-bounce [animation-delay:0ms]" />
+                    <span className="w-2 h-2 rounded-full bg-blue-50 animate-bounce [animation-delay:150ms]" />
+                    <span className="w-2 h-2 rounded-full bg-blue-50 animate-bounce [animation-delay:300ms]" />
                   </div>
                 </motion.div>
               )}
               <div ref={chatBottomRef} />
             </div>
 
-            <div className="border-t border-white/10 shrink-0 bg-black/35 backdrop-blur-md">
-              <div className="px-4 py-2 flex items-center gap-2 border-b border-white/5">
-                <span className="text-[10px] uppercase tracking-wider text-text-muted font-semibold">Context</span>
+            <div className="border-t border-zinc-200 shrink-0 bg-zinc-50 ">
+              <div className="px-4 py-2 flex items-center gap-2 border-b border-zinc-200">
+                <span className="text-[10px] uppercase tracking-wider text-zinc-500 font-semibold">Context</span>
                 <select
                   value={chatContextMode}
                   onChange={(e) => setChatContextMode(e.target.value)}
-                  className="flex-1 max-w-[200px] rounded-lg input-premium text-xs py-1.5 px-2"
+                  className="flex-1 max-w-[200px] rounded-sm border border-zinc-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-zinc-900 text-xs py-1.5 px-2"
                 >
                   <option value="both">Both (Comprehensive)</option>
                   <option value="notes">Notes Only</option>
@@ -393,7 +393,7 @@ const TopicPage = () => {
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Message your tutor…"
-                  className="flex-1 input-premium py-2.5 px-4 rounded-full text-sm"
+                  className="flex-1 border border-zinc-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-zinc-900 py-2.5 px-4 rounded-full text-sm"
                   disabled={chatLoading || lectureLoading}
                 />
                 <motion.button
@@ -401,7 +401,7 @@ const TopicPage = () => {
                   disabled={!chatInput.trim() || chatLoading || lectureLoading}
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
-                  className="w-11 h-11 rounded-full btn-ai-primary flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
+                  className="w-11 h-11 rounded-full bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
                 >
                   <Send size={18} strokeWidth={2} />
                 </motion.button>
@@ -433,15 +433,15 @@ const TopicPage = () => {
 
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && subtopics.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-text mb-4">Subtopics</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 mb-4">Subtopics</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {subtopics.map((sub) => (
-              <Link key={sub.id} to={`/topic/${sub.id}`} className="glass-card glass-card-hover p-4 transition-all duration-300">
+              <Link key={sub.id} to={`/topic/${sub.id}`} className="bg-white border border-zinc-200 shadow-sm rounded-none  hover:border-zinc-300 p-4 transition-all duration-300">
                 <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-accent/20 flex items-center justify-center">
-                    <FiFileText size={14} className="text-accent" />
+                  <div className="w-8 h-8 rounded-sm bg-indigo-50 flex items-center justify-center">
+                    <FiFileText size={14} className="text-indigo-600" />
                   </div>
-                  <span className="text-sm font-medium text-text">{sub.name}</span>
+                  <span className="text-sm font-medium text-zinc-900">{sub.name}</span>
                 </div>
               </Link>
             ))}
@@ -451,7 +451,7 @@ const TopicPage = () => {
 
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && (
         <div>
-          <h2 className="text-lg font-semibold text-text mb-4">Notes ({notes.length})</h2>
+          <h2 className="text-lg font-semibold text-zinc-900 mb-4">Notes ({notes.length})</h2>
           {notes.length === 0 ? (
             <EmptyState
               title="No notes for this topic yet"
@@ -462,64 +462,64 @@ const TopicPage = () => {
           ) : (
             <div className="space-y-4">
               {notes.map((note) => (
-                <div key={note.id} className="glass-card overflow-hidden transition-all duration-300">
+                <div key={note.id} className="bg-white border border-zinc-200 shadow-sm rounded-none overflow-hidden transition-all duration-300">
                   <div className="p-5 cursor-pointer hover:bg-white/[0.02] transition-colors" onClick={() => setExpandedNote(expandedNote === note.id ? null : note.id)}>
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center border border-white/5 shrink-0 overflow-hidden">
+                      <div className="w-16 h-16 rounded-none bg-background flex items-center justify-center border border-zinc-200 shrink-0 overflow-hidden">
                         {note.file_url ? (
                           <img
                             src={note.file_url.startsWith('http') ? note.file_url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${note.file_url}`}
                             alt="Note"
                             className="w-full h-full object-cover"
-                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'; }}
+                            onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class="w-6 h-6 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'; }}
                           />
                         ) : (
-                          <FiFileText size={24} className="text-text-muted" />
+                          <FiFileText size={24} className="text-zinc-500" />
                         )}
                       </div>
 
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-semibold text-text">Note #{note.id}</span>
+                          <span className="text-sm font-semibold text-zinc-900">Note #{note.id}</span>
                           {note.is_verified && (
-                            <span className="px-2 py-0.5 text-[10px] font-medium bg-success/20 text-success rounded-full flex items-center gap-1">
+                            <span className="px-2 py-0.5 text-[10px] font-medium bg-green-50 text-green-600 rounded-full flex items-center gap-1">
                               <FiCheck size={10} /> Verified
                             </span>
                           )}
                         </div>
-                        <p className="text-xs text-text-muted flex items-center gap-3">
+                        <p className="text-xs text-zinc-500 flex items-center gap-3">
                           <span className="flex items-center gap-1"><FiUser size={10} /> {note.uploader_name}</span>
                           <span className="flex items-center gap-1"><FiClock size={10} /> {new Date(note.created_at).toLocaleDateString()}</span>
                         </p>
-                        {note.summary && <p className="text-xs text-text-muted mt-1 line-clamp-2">{note.summary}</p>}
+                        {note.summary && <p className="text-xs text-zinc-500 mt-1 line-clamp-2">{note.summary}</p>}
                       </div>
 
                       <div className="text-center shrink-0">
                         <div className={`text-xl font-bold ${getScoreColor(note.quality_score)}`}>{note.quality_score}</div>
-                        <p className="text-[10px] text-text-muted">Quality</p>
+                        <p className="text-[10px] text-zinc-500">Quality</p>
                       </div>
 
                       <div className="shrink-0">
-                        {expandedNote === note.id ? <FiChevronUp className="text-text-muted" /> : <FiChevronDown className="text-text-muted" />}
+                        {expandedNote === note.id ? <FiChevronUp className="text-zinc-500" /> : <FiChevronDown className="text-zinc-500" />}
                       </div>
                     </div>
                   </div>
 
                   {expandedNote === note.id && (
-                    <div className="border-t border-white/5 p-5 bg-background/30 space-y-4">
+                    <div className="border-t border-zinc-200 p-5 bg-zinc-50 space-y-4">
                       {note.summary && (
                         <div>
-                          <h4 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">Summary</h4>
-                          <p className="text-sm text-text-muted leading-relaxed">{note.summary}</p>
+                          <h4 className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Summary</h4>
+                          <p className="text-sm text-zinc-500 leading-relaxed">{note.summary}</p>
                         </div>
                       )}
                       {note.key_points && note.key_points.length > 0 && (
                         <div>
-                          <h4 className="text-xs font-semibold text-accent uppercase tracking-wider mb-2">Key Points</h4>
+                          <h4 className="text-xs font-semibold text-indigo-600 uppercase tracking-wider mb-2">Key Points</h4>
                           <ul className="space-y-2">
                             {(typeof note.key_points === 'string' ? JSON.parse(note.key_points) : note.key_points).map((point, i) => (
-                              <li key={i} className="flex items-start gap-2 text-sm text-text-muted">
-                                <FiStar size={12} className="text-warning shrink-0 mt-1" />
+                              <li key={i} className="flex items-start gap-2 text-sm text-zinc-500">
+                                <FiStar size={12} className="text-amber-600 shrink-0 mt-1" />
                                 <span>{point}</span>
                               </li>
                             ))}
@@ -531,7 +531,7 @@ const TopicPage = () => {
                           <button
                             type="button"
                             onClick={() => setViewingNoteUrl(note.file_url)}
-                            className="w-full sm:w-auto text-xs font-bold uppercase tracking-wider bg-success/15 text-success hover:bg-success/25 px-4 py-2.5 rounded-xl transition-colors flex items-center justify-center gap-2 cursor-pointer border-0 mt-2"
+                            className="w-full sm:w-auto text-xs font-bold uppercase tracking-wider bg-green-50 text-green-600 hover:bg-green-50 px-4 py-2.5 rounded-none transition-colors flex items-center justify-center gap-2 cursor-pointer border-0 mt-2"
                             title="View full note securely"
                           >
                             <FiExternalLink size={14} /> Open Full Document Viewer
@@ -549,19 +549,19 @@ const TopicPage = () => {
 
       {!showLecture && !showFlashcards && !showExam && !showYouTube && !showMindMap && !showPodcast && relatedTopics.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-text mb-4 flex items-center gap-2">
-            <FiLink size={16} className="text-accent" /> Related Topics
+          <h2 className="text-lg font-semibold text-zinc-900 mb-4 flex items-center gap-2">
+            <FiLink size={16} className="text-indigo-600" /> Related Topics
           </h2>
           <div className="flex flex-wrap gap-3">
             {relatedTopics.map((rt) => (
               <Link
                 key={rt.id}
                 to={`/topic/${rt.id}`}
-                className="px-4 py-2 rounded-xl bg-accent/10 border border-accent/20 text-sm text-text hover:border-accent/40 transition-all flex items-center gap-2"
+                className="px-4 py-2 rounded-none bg-indigo-50 border border-indigo-200 text-sm text-zinc-900 hover:border-indigo-200 transition-all flex items-center gap-2"
               >
-                <FiLink size={12} className="text-accent" />
+                <FiLink size={12} className="text-indigo-600" />
                 {rt.name}
-                <span className="text-[10px] text-text-muted">({rt.relation_type})</span>
+                <span className="text-[10px] text-zinc-500">({rt.relation_type})</span>
               </Link>
             ))}
           </div>

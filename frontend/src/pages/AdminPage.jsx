@@ -603,8 +603,8 @@ const AdminPage = () => {
             {collegeBanner && (
               <div
                 className={`mb-4 px-4 py-3 rounded-xl text-sm ${collegeBanner.kind === 'error'
-                    ? 'bg-danger/15 text-danger border border-danger/25'
-                    : 'bg-success/15 text-success border border-success/25'
+                  ? 'bg-danger/15 text-danger border border-danger/25'
+                  : 'bg-success/15 text-success border border-success/25'
                   }`}
               >
                 {collegeBanner.text}

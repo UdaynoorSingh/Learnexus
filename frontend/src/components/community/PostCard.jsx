@@ -97,34 +97,34 @@ function CommentBranch({
   return (
     <li className="list-none">
       <div
-        className={`rounded-xl px-3 py-2.5 border transition-colors ${
+        className={`rounded-none px-3 py-2.5 border transition-colors ${
           accepted
-            ? 'bg-success/10 border-success/40 ring-1 ring-success/20'
-            : 'bg-surface/40 border-white/5'
+            ? 'bg-green-600/10 border-green-600/40 ring-1 ring-green-600/20'
+            : 'bg-surface/40 border-zinc-200'
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-text">{node.author_name}</span>
+              <span className="text-sm font-semibold text-zinc-900">{node.author_name}</span>
               {node.is_ai_tutor && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-accent/25 text-accent border border-accent/40">
+                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-indigo-600/25 text-indigo-600 border border-indigo-600/40">
                   🤖 AI Tutor
                 </span>
               )}
               {depth > 0 && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted/80">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500/80">
                   Reply
                 </span>
               )}
-              <span className="text-xs text-text-muted">{formatTime(node.created_at)}</span>
+              <span className="text-xs text-zinc-500">{formatTime(node.created_at)}</span>
               {accepted && (
-                <span className="text-[10px] font-bold uppercase tracking-wide text-success">
+                <span className="text-[10px] font-bold uppercase tracking-wide text-green-600">
                   Accepted answer
                 </span>
               )}
             </div>
-            <div className="mt-1.5 text-sm text-text-muted">
+            <div className="mt-1.5 text-sm text-zinc-500">
               <MarkdownBody>{node.content}</MarkdownBody>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -135,16 +135,16 @@ function CommentBranch({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={spring}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors disabled:opacity-50 ${
                   node.user_has_liked
-                    ? 'bg-primary/20 border-primary/40 text-primary'
-                    : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
+                    ? 'bg-blue-50 border-blue-600/40 text-blue-600'
+                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900'
                 }`}
               >
                 <ThumbsUp
                   size={14}
                   strokeWidth={2}
-                  className={node.user_has_liked ? 'fill-primary text-primary' : ''}
+                  className={node.user_has_liked ? 'fill-blue-600 text-blue-600' : ''}
                 />
                 {node.like_count ?? 0}
               </motion.button>
@@ -157,10 +157,10 @@ function CommentBranch({
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.97 }}
                   transition={spring}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors ${
                     replyingToId === node.id
-                      ? 'bg-accent/15 border-accent/35 text-accent'
-                      : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
+                      ? 'bg-indigo-600/15 border-indigo-600/35 text-indigo-600'
+                      : ' border-zinc-200 text-zinc-500 hover:text-zinc-900'
                   }`}
                 >
                   <Reply size={14} strokeWidth={2} />
@@ -174,7 +174,7 @@ function CommentBranch({
               type="button"
               disabled={resolveBusy === node.id}
               onClick={() => onResolve(node.id)}
-              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-success/20 text-success border border-success/40 hover:bg-success/30 transition-colors disabled:opacity-50"
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-sm bg-green-600/20 text-green-600 border border-green-600/40 hover:bg-green-600/30 transition-colors disabled:opacity-50"
             >
               {resolveBusy === node.id ? '…' : 'Mark as answer'}
             </button>
@@ -185,10 +185,10 @@ function CommentBranch({
       {!readOnly && replyingToId === node.id && (
         <form
           onSubmit={(e) => onSubmitReply(e, node.id)}
-          className="mt-2 ml-1 pl-3 border-l border-primary/25 space-y-2"
+          className="mt-2 ml-1 pl-3 border-l border-blue-600/25 space-y-2"
         >
           {replyError && (
-            <div className="rounded-lg bg-danger/15 border border-danger/30 text-danger text-xs px-2.5 py-1.5">
+            <div className="rounded-sm bg-red-600/15 border border-red-600/30 text-red-600 text-xs px-2.5 py-1.5">
               {replyError}
             </div>
           )}
@@ -197,19 +197,19 @@ function CommentBranch({
             onChange={(e) => setReplyText(e.target.value)}
             rows={2}
             placeholder="Write a reply… Markdown supported."
-            className="w-full input-premium px-3 py-2 text-sm resize-y min-h-[3.5rem] rounded-xl"
+            className="w-full border border-zinc-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none px-3 py-2 text-sm resize-y min-h-[3.5rem] rounded-none"
             disabled={submittingReply}
           />
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
-            <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-background/50 px-2.5 py-1.5 flex-1 min-w-0">
-              <span className="text-[11px] font-semibold text-text">Anonymous (2 ⚡)</span>
+            <div className="flex items-center justify-between gap-3 rounded-sm border border-zinc-200 bg-white px-2.5 py-1.5 flex-1 min-w-0">
+              <span className="text-[11px] font-semibold text-zinc-900">Anonymous (2 ⚡)</span>
               <button
                 type="button"
                 role="switch"
                 aria-checked={replyAnonymous}
                 onClick={() => setReplyAnonymous((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
-                  replyAnonymous ? 'bg-primary border-primary/40' : 'bg-white/10 border-white/15'
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600/50 ${
+                  replyAnonymous ? 'bg-blue-600 border-blue-600/40' : ' border-zinc-200'
                 }`}
               >
                 <span
@@ -228,14 +228,14 @@ function CommentBranch({
                   setReplyText('');
                   setReplyAnonymous(false);
                 }}
-                className="px-3 py-2 rounded-xl text-xs font-medium text-text-muted hover:text-text hover:bg-white/5"
+                className="px-3 py-2 rounded-none text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingReply || !replyText.trim()}
-                className="px-3 py-2 rounded-xl text-xs font-semibold bg-primary/90 text-white hover:bg-primary disabled:opacity-50"
+                className="px-3 py-2 rounded-none text-xs font-semibold bg-blue-50 text-white hover:bg-blue-600 disabled:opacity-50"
               >
                 {submittingReply ? 'Posting…' : 'Post reply'}
               </button>
@@ -245,7 +245,7 @@ function CommentBranch({
       )}
 
       {node.replies?.length > 0 && (
-        <ul className="mt-2 space-y-2 ml-2 sm:ml-3 pl-2 sm:pl-3 border-l border-white/10">
+        <ul className="mt-2 space-y-2 ml-2 sm:ml-3 pl-2 sm:pl-3 border-l border-zinc-200">
           {node.replies.map((child) => (
             <CommentBranch
               key={child.id}
@@ -510,7 +510,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
     setDeleteBusy(true);
     try {
       await deletePost(post.id);
-      showToast('success', 'Post removed.', 'Deleted');
+      showToast('green-600', 'Post removed.', 'Deleted');
       if (onRemoved) onRemoved(post.id);
       else setLocallyRemoved(true);
     } catch (e) {
@@ -533,35 +533,35 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
       whileHover={{ scale: 1.01, y: -2 }}
       whileTap={{ scale: 0.995 }}
       transition={spring}
-      className="glass-card border border-white/10 rounded-2xl overflow-hidden shadow-lg shadow-black/20 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5"
+      className="bg-white border border-zinc-200 rounded-none overflow-hidden shadow-lg shadow-sm hover:border-blue-600/20 hover:shadow-xl hover:shadow-sm"
     >
       <div className="p-6 sm:p-7">
         <div className="flex gap-4">
-          <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-primary/20">
+          <div className="w-11 h-11 rounded-none bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-sm">
             {initial}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 gap-y-1 pr-1">
-              <span className="font-semibold text-text truncate">{post.author_name}</span>
-              <span className="text-text-muted text-sm">· {formatTime(post.created_at)}</span>
-              <span className="text-xs font-medium px-2.5 py-0.5 rounded-lg bg-accent/20 text-accent border border-accent/30">
+              <span className="font-semibold text-zinc-900 truncate">{post.author_name}</span>
+              <span className="text-zinc-500 text-sm">· {formatTime(post.created_at)}</span>
+              <span className="text-xs font-medium px-2.5 py-0.5 rounded-sm bg-indigo-600/20 text-indigo-600 border border-indigo-600/30">
                 {post.tag}
               </span>
               {bounty > 0 && (
-                <span className="text-xs font-bold px-3 py-1.5 rounded-full bounty-badge-glow tracking-wide">
+                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 shadow-sm tracking-wide">
                   Bounty · {bounty} ⚡
                 </span>
               )}
             </div>
-            <h3 className="mt-2 text-lg font-bold text-text leading-snug tracking-tight pr-1">{post.title}</h3>
+            <h3 className="mt-2 text-lg font-bold text-zinc-900 leading-snug tracking-tight pr-1">{post.title}</h3>
 
             {post.audio_url && (
-              <div className="mt-3 mb-1 flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3 shadow-sm shadow-primary/5">
-                <span className="text-xs font-bold uppercase tracking-wider text-primary/80 shrink-0">🎧 Audio</span>
+              <div className="mt-3 mb-1 flex items-center gap-3 rounded-none bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent border border-blue-600/20 px-4 py-3 shadow-sm shadow-sm">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-500 shrink-0">🎧 Audio</span>
                 <audio
                   controls
                   src={post.audio_url}
-                  className="nexus-audio-player flex-1 h-8 rounded-lg"
+                  className="nexus-audio-player flex-1 h-8 rounded-sm"
                   preload="none"
                 />
               </div>
@@ -578,7 +578,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 <button
                   type="button"
                   onClick={() => setBodyExpanded((v) => !v)}
-                  className="mt-1.5 text-sm font-semibold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/40 rounded"
+                  className="mt-1.5 text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
                 >
                   {bodyExpanded ? 'Read less' : 'Read more'}
                 </button>
@@ -586,11 +586,11 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
             </div>
 
             {post.image_url && !imgError && (
-              <div className="mt-4 rounded-xl overflow-hidden border border-white/10 bg-background/50 ring-1 ring-white/5 shadow-lg relative">
+              <div className="mt-4 rounded-none overflow-hidden border border-zinc-200 bg-white ring-1 ring-white/5 shadow-lg relative">
                 <button
                   type="button"
                   onClick={() => setFullImageOpen(true)}
-                  className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-xl"
+                  className="block w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-600/50 focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-none"
                   aria-label="View full image"
                 >
                   <img
@@ -603,7 +603,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 <button
                   type="button"
                   onClick={() => setFullImageOpen(true)}
-                  className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-text bg-black/70 backdrop-blur-md border border-white/15 hover:bg-black/80 transition-colors shadow-lg"
+                  className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs font-semibold text-zinc-900   border border-zinc-200 hover: transition-colors shadow-lg"
                 >
                   <Maximize2 size={14} strokeWidth={2} aria-hidden />
                   Full image
@@ -619,16 +619,16 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={spring}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium transition-colors border ${
                   post.user_has_upvoted
-                    ? 'bg-primary/20 border-primary/40 text-primary'
-                    : 'bg-white/5 border-white/10 text-text-muted hover:text-text hover:border-white/20'
+                    ? 'bg-blue-50 border-blue-600/40 text-blue-600'
+                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200'
                 } disabled:opacity-50`}
               >
                 <ThumbsUp
                   size={16}
                   strokeWidth={2}
-                  className={post.user_has_upvoted ? 'fill-primary text-primary' : ''}
+                  className={post.user_has_upvoted ? 'fill-blue-600 text-blue-600' : ''}
                 />
                 {post.upvote_count ?? 0}
               </motion.button>
@@ -639,7 +639,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={spring}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-text-muted hover:text-text hover:border-white/20 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium  border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200 transition-colors"
               >
                 <MessageCircle size={16} strokeWidth={2} />
                 {post.comment_count ?? 0}
@@ -653,23 +653,23 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={spring}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border disabled:opacity-50 ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium transition-colors border disabled:opacity-50 ${
                   post.user_has_bookmarked
-                    ? 'bg-accent/20 border-accent/40 text-accent'
-                    : 'bg-white/5 border-white/10 text-text-muted hover:text-text hover:border-white/20'
+                    ? 'bg-indigo-600/20 border-indigo-600/40 text-indigo-600'
+                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200'
                 }`}
                 title="Save for later"
               >
                 <Bookmark
                   size={16}
                   strokeWidth={2}
-                  className={post.user_has_bookmarked ? 'fill-accent text-accent' : ''}
+                  className={post.user_has_bookmarked ? 'fill-indigo-600 text-indigo-600' : ''}
                 />
                 {post.bookmark_count ?? 0}
               </motion.button>
 
               {post.is_solved && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-success px-3 py-2 rounded-xl bg-success/15 border border-success/30">
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 px-3 py-2 rounded-none bg-green-600/15 border border-green-600/30">
                   <CircleCheck size={14} strokeWidth={2} />
                   Solved
                 </span>
@@ -678,7 +678,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
           </div>
           {isAdmin && (
             <div className="shrink-0 flex flex-col items-end gap-1 pt-0.5">
-              <span className="text-[9px] font-bold uppercase tracking-wider text-danger/80">Admin</span>
+              <span className="text-[9px] font-bold uppercase tracking-wider text-red-600/80">Admin</span>
               <motion.button
                 type="button"
                 onClick={handleAdminDelete}
@@ -686,7 +686,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 whileHover={{ scale: 1.04 }}
                 whileTap={{ scale: 0.96 }}
                 transition={spring}
-                className="inline-flex items-center justify-center rounded-xl p-2.5 border border-danger/40 bg-danger/10 text-danger hover:bg-danger/18 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-none p-2.5 border border-red-600/40 bg-red-600/10 text-red-600 hover:bg-red-600/18 disabled:opacity-50"
                 title="Delete this post (admin only)"
                 aria-label="Delete post as admin"
               >
@@ -698,9 +698,9 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
       </div>
 
       {commentsOpen && (
-        <div className="border-t border-white/10 bg-background/40 backdrop-blur-md px-5 sm:px-6 py-4">
+        <div className="border-t border-zinc-200 bg-white  px-5 sm:px-6 py-4">
           {commentsLoading ? (
-            <p className="text-sm text-text-muted">Loading comments…</p>
+            <p className="text-sm text-zinc-500">Loading comments…</p>
           ) : (
             <ul className="space-y-3">
               {buildCommentTree(comments).map((node) => (
@@ -733,7 +733,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
           {!readOnly && (
           <form onSubmit={handleAddComment} className="mt-4 flex flex-col gap-2">
             {commentError && (
-              <div className="rounded-xl bg-danger/15 border border-danger/30 text-danger text-sm px-3 py-2">
+              <div className="rounded-none bg-red-600/15 border border-red-600/30 text-red-600 text-sm px-3 py-2">
                 {commentError}
               </div>
             )}
@@ -742,11 +742,11 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               onChange={(e) => setNewComment(e.target.value)}
               rows={3}
               placeholder="Answer or ask a follow-up — Markdown and ```code``` blocks work."
-              className="w-full input-premium px-4 py-2.5 text-sm resize-y min-h-[4.5rem] rounded-xl"
+              className="w-full border border-zinc-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none px-4 py-2.5 text-sm resize-y min-h-[4.5rem] rounded-none"
             />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-background/50 px-3 py-2 flex-1 min-w-0">
-                <span className="text-xs font-semibold text-text">
+              <div className="flex items-center justify-between gap-4 rounded-none border border-zinc-200 bg-white px-3 py-2 flex-1 min-w-0">
+                <span className="text-xs font-semibold text-zinc-900">
                   Comment Anonymously (Costs 2 ⚡)
                 </span>
                 <button
@@ -754,10 +754,10 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                   role="switch"
                   aria-checked={commentAnonymously}
                   onClick={() => setCommentAnonymously((v) => !v)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600/50 ${
                     commentAnonymously
-                      ? 'bg-primary border-primary/40'
-                      : 'bg-white/10 border-white/15'
+                      ? 'bg-blue-600 border-blue-600/40'
+                      : ' border-zinc-200'
                   }`}
                 >
                   <span
@@ -771,7 +771,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               <button
                 type="submit"
                 disabled={submittingComment || !newComment.trim()}
-                className="self-end sm:self-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary/90 text-white hover:bg-primary disabled:opacity-50 shrink-0"
+                className="self-end sm:self-center px-4 py-2.5 rounded-none text-sm font-semibold bg-blue-50 text-white hover:bg-blue-600 disabled:opacity-50 shrink-0"
               >
                 Comment
               </button>
@@ -803,30 +803,30 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={spring}
-                  className="relative z-[101] max-w-[min(100vw-1.5rem,1200px)] max-h-[min(92vh,920px)] w-full flex flex-col glass-float border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden"
+                  className="relative z-[101] max-w-[min(100vw-1.5rem,1200px)] max-h-[min(92vh,920px)] w-full flex flex-col glass-float border border-zinc-200 rounded-none shadow-2xl shadow-sm overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/10 bg-black/40 shrink-0">
-                    <span className="text-xs font-semibold text-text-muted truncate pr-2">Full image</span>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-200  shrink-0">
+                    <span className="text-xs font-semibold text-zinc-500 truncate pr-2">Full image</span>
                     <motion.button
                       type="button"
                       onClick={() => setFullImageOpen(false)}
                       whileHover={{ scale: 1.06 }}
                       whileTap={{ scale: 0.94 }}
-                      className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-white/10 shrink-0"
+                      className="p-2 rounded-none text-zinc-500 hover:text-zinc-900 hover: shrink-0"
                       aria-label="Close"
                     >
                       <X size={20} strokeWidth={2} />
                     </motion.button>
                   </div>
-                  <div className="flex-1 min-h-0 overflow-auto custom-scrollbar flex items-center justify-center bg-black/50 p-2 sm:p-4">
+                  <div className="flex-1 min-h-0 overflow-auto custom-scrollbar flex items-center justify-center  p-2 sm:p-4">
                     <img
                       src={post.image_url}
                       alt=""
-                      className="max-w-full max-h-[min(85vh,880px)] w-auto h-auto object-contain rounded-lg"
+                      className="max-w-full max-h-[min(85vh,880px)] w-auto h-auto object-contain rounded-sm"
                     />
                   </div>
-                  <p className="text-[10px] text-text-muted text-center px-3 py-2 border-t border-white/10 bg-black/30 shrink-0">
+                  <p className="text-[10px] text-zinc-500 text-center px-3 py-2 border-t border-zinc-200  shrink-0">
                     Press Esc or click outside to close
                   </p>
                 </motion.div>

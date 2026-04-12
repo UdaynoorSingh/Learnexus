@@ -27,10 +27,10 @@ const NoteViewerModal = ({ url, onClose }) => {
                 <FiX size={20} />
               </button>
             </div>
-            
+
             <div className="flex-1 bg-black/40 overflow-hidden relative select-none w-full h-full flex items-center justify-center">
-              <div 
-                className="absolute inset-0 z-20 pointer-events-none" 
+              <div
+                className="absolute inset-0 z-20 pointer-events-none"
               />
               {isPdf ? (
                 <iframe

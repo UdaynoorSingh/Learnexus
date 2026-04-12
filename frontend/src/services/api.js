@@ -30,7 +30,7 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const errorMsg = JSON.stringify(error.response?.data || '').toLowerCase();
 
-    
+
     if (
       status === 429 ||
       (status === 500 && (
@@ -41,14 +41,14 @@ api.interceptors.response.use(
       ))
     ) {
       showRateLimitToast();
-      
+
       const rateLimitError = new Error('RATE_LIMIT');
       rateLimitError.isRateLimit = true;
       rateLimitError.response = error.response;
       return Promise.reject(rateLimitError);
     }
 
-    
+
     if (status === 401) {
       const reqUrl = error.config?.url || '';
       const onPublicAuth =
