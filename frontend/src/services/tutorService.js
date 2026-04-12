@@ -9,7 +9,7 @@
 import axios from 'axios';
 
 const tutor = axios.create({
-  baseURL: '/tutor',
+  baseURL: import.meta.env.VITE_TUTOR_API_URL || '/tutor',
   headers: { 'Content-Type': 'application/json' },
   timeout: 120_000, // roadmap generation can take 30-60s
 });

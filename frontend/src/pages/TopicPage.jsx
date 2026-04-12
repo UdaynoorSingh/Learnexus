@@ -468,7 +468,7 @@ const TopicPage = () => {
                       <div className="w-16 h-16 rounded-xl bg-background flex items-center justify-center border border-white/5 shrink-0 overflow-hidden">
                         {note.file_url ? (
                           <img
-                            src={note.file_url.startsWith('http') ? note.file_url : `http://localhost:5000${note.file_url}`}
+                            src={note.file_url.startsWith('http') ? note.file_url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${note.file_url}`}
                             alt="Note"
                             className="w-full h-full object-cover"
                             onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.innerHTML = '<svg class="w-6 h-6 text-text-muted" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>'; }}

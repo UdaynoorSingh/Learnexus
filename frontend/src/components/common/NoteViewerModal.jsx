@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const NoteViewerModal = ({ url, onClose }) => {
   if (!url) return null;
 
-  const fullUrl = url.startsWith('http') ? url : `http://localhost:5000${url}`;
+  const fullUrl = url.startsWith('http') ? url : `${import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'}${url}`;
   const isPdf = fullUrl.toLowerCase().split('?')[0].endsWith('.pdf');
 
   return (

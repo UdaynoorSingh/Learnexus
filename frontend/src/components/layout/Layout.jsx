@@ -6,7 +6,8 @@ import Sidebar from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2, CheckCircle2, XCircle, X } from 'lucide-react';
 
-const socket = io('http://localhost:5000', { autoConnect: false });
+const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
+const socket = io(socketUrl, { autoConnect: false });
 
 const pageTransition = {
   initial: { opacity: 0, y: 10 },
