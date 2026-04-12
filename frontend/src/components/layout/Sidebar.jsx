@@ -18,7 +18,8 @@ import {
   PlaySquare,
   MessageSquare,
   Library,
-  Trophy
+  Trophy,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -126,6 +127,7 @@ const Sidebar = () => {
     { path: '/explorer', icon: Compass, label: 'Explorer' },
     { path: '/upload', icon: Upload, label: 'Upload' },
     { path: '/video-learn', icon: PlaySquare, label: 'YouTube Learn' },
+    { path: '/ai-tutor', icon: GraduationCap, label: 'AI Tutor' },
     { path: '/nexus-board', icon: MessageSquare, label: 'Nexus Board' },
     { path: '/nexus-library', icon: Library, label: 'Nexus Library' },
     { path: '/challenges', icon: Trophy, label: 'Challenges' },

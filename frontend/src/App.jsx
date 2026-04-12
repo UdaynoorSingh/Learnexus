@@ -16,6 +16,7 @@ import VideoLearnPage from './pages/VideoLearnPage';
 import NexusBoard from './pages/NexusBoard';
 import NexusLibrary from './pages/NexusLibrary';
 import ChallengesPage from './pages/ChallengesPage';
+import AiTutorPage from './pages/AiTutorPage';
 
 function App() {
   return (
@@ -41,6 +42,7 @@ function App() {
             <Route path="/topic/:topicId" element={<TopicPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/video-learn" element={<VideoLearnPage />} />
+            <Route path="/ai-tutor" element={<AiTutorPage />} />
             <Route path="/nexus-board" element={<NexusBoard />} />
             <Route path="/nexus-library" element={<NexusLibrary />} />
             <Route path="/challenges" element={<ChallengesPage />} />
