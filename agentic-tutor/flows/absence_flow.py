@@ -12,7 +12,8 @@ import logging
 from crewai import Crew, Task
 from crewai.flow.flow import Flow, start
 
-from state.tutor_state import TutorState
+from state.tutor_state import TutorState, DayEntry, CalendarEvent
+from tools.calendar_tools import update_google_calendar_event
 from agents.absence_handler_agent import create_absence_handler_agent
 
 logger = logging.getLogger("agentic_tutor.flows.absence")

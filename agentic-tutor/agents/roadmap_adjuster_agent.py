@@ -2,7 +2,7 @@
 
 from crewai import Agent
 from utils.llm_fallback import roadmap_adjuster_llm
-from tools.mock_tools import update_google_calendar_event
+from tools.calendar_tools import update_google_calendar_event
 
 
 def create_roadmap_adjuster_agent() -> Agent:

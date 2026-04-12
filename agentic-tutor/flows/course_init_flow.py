@@ -19,7 +19,7 @@ from typing import Optional, List
 
 from state.tutor_state import TutorState, CourseRoadmap, DayEntry, Week, CalendarEvent
 from agents.roadmap_agent import create_roadmap_agent
-from tools.mock_tools import add_google_calendar_event
+from tools.calendar_tools import add_google_calendar_event
 
 logger = logging.getLogger("agentic_tutor.flows.course_init")
 

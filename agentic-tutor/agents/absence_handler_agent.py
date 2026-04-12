@@ -2,7 +2,7 @@
 
 from crewai import Agent
 from utils.llm_fallback import absence_handler_llm
-from tools.mock_tools import update_google_calendar_event
+from tools.calendar_tools import update_google_calendar_event
 
 
 def create_absence_handler_agent() -> Agent:

@@ -51,9 +51,9 @@ function shouldLogOtpToConsoleOnly() {
   );
 }
 
-async function sendOtpEmail(to, otp) {
+async function sendOtpEmail(to, otp, expiresMinutes = 10) {
   if (shouldLogOtpToConsoleOnly()) {
-    console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (not sent by email)`);
+    console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (not sent by email; expires in ${expiresMinutes} min)`);
     return;
   }
 
@@ -63,8 +63,8 @@ async function sendOtpEmail(to, otp) {
     from,
     to,
     subject: 'Your Learnexus login code',
-    text: `Your one-time code is ${otp}. It expires in 10 minutes.`,
-    html: `<p>Your one-time code is <strong>${otp}</strong>.</p><p>It expires in 10 minutes.</p>`
+    text: `Your one-time code is ${otp}. It expires in ${expiresMinutes} minutes.`,
+    html: `<p>Your one-time code is <strong>${otp}</strong>.</p><p>It expires in ${expiresMinutes} minutes.</p><p>If you did not request this, you can ignore this email.</p>`
   });
 }
 

@@ -29,8 +29,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const studentLogin = async (email, name) => {
-    const res = await api.post('/auth/student-login', { email, name });
+  const requestStudentOtp = async (email, name) => {
+    const res = await api.post('/auth/student-request-otp', { email, name });
+    return res.data;
+  };
+
+  const verifyStudentOtp = async (email, code) => {
+    const res = await api.post('/auth/student-verify-otp', { email, code });
     localStorage.setItem('token', res.data.token);
     setToken(res.data.token);
     setUser(res.data.user);
@@ -57,7 +62,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider
-      value={{ user, token, loading, studentLogin, adminLogin, logout, refreshUser }}
+      value={{ user, token, loading, requestStudentOtp, verifyStudentOtp, adminLogin, logout, refreshUser }}
     >
       {children}
     </AuthContext.Provider>
