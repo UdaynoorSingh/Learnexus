@@ -323,7 +323,7 @@ const AdminPage = () => {
       setNewChallengeDiff('Medium');
       setNewChallengeCredits('5');
       setNewChallengeTags('');
-      
+
       const refresh = await api.get('/challenges');
       setChallengesList(refresh.data);
     } catch (err) {
@@ -339,7 +339,7 @@ const AdminPage = () => {
     setNewChallengeDesc(c.description);
     setNewChallengeDiff(c.difficulty || 'Medium');
     setNewChallengeCredits(c.bounty_credits?.toString() || '5');
-    
+
     let tagsStr = '';
     if (Array.isArray(c.tags)) {
       tagsStr = c.tags.join(', ');
@@ -602,11 +602,10 @@ const AdminPage = () => {
             </div>
             {collegeBanner && (
               <div
-                className={`mb-4 px-4 py-3 rounded-xl text-sm ${
-                  collegeBanner.kind === 'error'
+                className={`mb-4 px-4 py-3 rounded-xl text-sm ${collegeBanner.kind === 'error'
                     ? 'bg-danger/15 text-danger border border-danger/25'
                     : 'bg-success/15 text-success border border-success/25'
-                }`}
+                  }`}
               >
                 {collegeBanner.text}
               </div>
@@ -757,58 +756,58 @@ const AdminPage = () => {
             </div>
           )}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="glass-card p-6">
-            <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
-            <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
-            <form onSubmit={handleCreateDegree} className="flex gap-2">
-              <input type="text" placeholder="New Degree Name" value={newDegree} onChange={e => setNewDegree(e.target.value)} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text" />
-              <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"><FiPlus size={16} /></button>
-            </form>
-          </div>
-
-          <div className="glass-card p-6 opacity-100 transition-opacity" style={{ opacity: selectedDegree ? 1 : 0.4 }}>
-            <h3 className="text-lg font-bold text-text mb-4">Branch</h3>
-            <SelectField label="Select Branch" value={selectedBranch} onChange={setSelectedBranch} options={branches} placeholder="Select branch..." />
-            <form onSubmit={handleCreateBranch} className="flex gap-2">
-              <input type="text" placeholder="New Branch Name" value={newBranch} onChange={e => setNewBranch(e.target.value)} disabled={!selectedDegree} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
-              <button type="submit" disabled={!selectedDegree} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
-            </form>
-          </div>
-
-          <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedBranch ? 1 : 0.4 }}>
-            <h3 className="text-lg font-bold text-text mb-4">Semester</h3>
-            <SelectField label="Select Semester" value={selectedSemester} onChange={setSelectedSemester} options={semesters} labelKey="number" placeholder="Select semester..." />
-            <form onSubmit={handleCreateSemester} className="flex gap-2">
-              <input type="number" placeholder="New Semester (Number)" value={newSemester} onChange={e => setNewSemester(e.target.value)} disabled={!selectedBranch} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
-              <button type="submit" disabled={!selectedBranch} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
-            </form>
-          </div>
-
-          <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedSemester ? 1 : 0.4 }}>
-            <h3 className="text-lg font-bold text-text mb-4">Subject</h3>
-            <SelectField label="Select Subject" value={selectedSubject} onChange={setSelectedSubject} options={subjects} placeholder="Select subject..." />
-            <form onSubmit={handleCreateSubject} className="flex gap-2">
-              <input type="text" placeholder="New Subject Name" value={newSubject} onChange={e => setNewSubject(e.target.value)} disabled={!selectedSemester} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
-              <button type="submit" disabled={!selectedSemester} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
-            </form>
-          </div>
-
-          <div className="glass-card p-6 md:col-span-2 transition-opacity" style={{ opacity: selectedSubject ? 1 : 0.4 }}>
-            <h3 className="text-lg font-bold text-text mb-4">Topics</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-text-muted mb-2">Current Topics in Subject</label>
-              <div className="flex flex-wrap gap-2">
-                {topics.length === 0 ? <span className="text-sm text-text-muted">No topics yet</span> :
-                  topics.map(t => <span key={t.id} className="px-3 py-1 bg-surface-light rounded-full text-xs text-text">{t.name}</span>)
-                }
-              </div>
+            <div className="glass-card p-6">
+              <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
+              <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
+              <form onSubmit={handleCreateDegree} className="flex gap-2">
+                <input type="text" placeholder="New Degree Name" value={newDegree} onChange={e => setNewDegree(e.target.value)} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text" />
+                <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"><FiPlus size={16} /></button>
+              </form>
             </div>
-            <form onSubmit={handleCreateTopic} className="flex gap-2 max-w-md">
-              <input type="text" placeholder="New Topic Name" value={newTopic} onChange={e => setNewTopic(e.target.value)} disabled={!selectedSubject} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
-              <button type="submit" disabled={!selectedSubject} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /> Add Topic</button>
-            </form>
+
+            <div className="glass-card p-6 opacity-100 transition-opacity" style={{ opacity: selectedDegree ? 1 : 0.4 }}>
+              <h3 className="text-lg font-bold text-text mb-4">Branch</h3>
+              <SelectField label="Select Branch" value={selectedBranch} onChange={setSelectedBranch} options={branches} placeholder="Select branch..." />
+              <form onSubmit={handleCreateBranch} className="flex gap-2">
+                <input type="text" placeholder="New Branch Name" value={newBranch} onChange={e => setNewBranch(e.target.value)} disabled={!selectedDegree} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <button type="submit" disabled={!selectedDegree} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
+              </form>
+            </div>
+
+            <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedBranch ? 1 : 0.4 }}>
+              <h3 className="text-lg font-bold text-text mb-4">Semester</h3>
+              <SelectField label="Select Semester" value={selectedSemester} onChange={setSelectedSemester} options={semesters} labelKey="number" placeholder="Select semester..." />
+              <form onSubmit={handleCreateSemester} className="flex gap-2">
+                <input type="number" placeholder="New Semester (Number)" value={newSemester} onChange={e => setNewSemester(e.target.value)} disabled={!selectedBranch} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <button type="submit" disabled={!selectedBranch} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
+              </form>
+            </div>
+
+            <div className="glass-card p-6 transition-opacity" style={{ opacity: selectedSemester ? 1 : 0.4 }}>
+              <h3 className="text-lg font-bold text-text mb-4">Subject</h3>
+              <SelectField label="Select Subject" value={selectedSubject} onChange={setSelectedSubject} options={subjects} placeholder="Select subject..." />
+              <form onSubmit={handleCreateSubject} className="flex gap-2">
+                <input type="text" placeholder="New Subject Name" value={newSubject} onChange={e => setNewSubject(e.target.value)} disabled={!selectedSemester} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <button type="submit" disabled={!selectedSemester} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
+              </form>
+            </div>
+
+            <div className="glass-card p-6 md:col-span-2 transition-opacity" style={{ opacity: selectedSubject ? 1 : 0.4 }}>
+              <h3 className="text-lg font-bold text-text mb-4">Topics</h3>
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-text-muted mb-2">Current Topics in Subject</label>
+                <div className="flex flex-wrap gap-2">
+                  {topics.length === 0 ? <span className="text-sm text-text-muted">No topics yet</span> :
+                    topics.map(t => <span key={t.id} className="px-3 py-1 bg-surface-light rounded-full text-xs text-text">{t.name}</span>)
+                  }
+                </div>
+              </div>
+              <form onSubmit={handleCreateTopic} className="flex gap-2 max-w-md">
+                <input type="text" placeholder="New Topic Name" value={newTopic} onChange={e => setNewTopic(e.target.value)} disabled={!selectedSubject} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <button type="submit" disabled={!selectedSubject} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /> Add Topic</button>
+              </form>
+            </div>
           </div>
-        </div>
         </div>
       )}
 

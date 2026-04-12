@@ -344,11 +344,10 @@ const DashboardPage = () => {
                     className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5
                       hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 group/tx"
                   >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black shadow-lg shrink-0 ${
-                      tx.credits_added > 0
+                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black shadow-lg shrink-0 ${tx.credits_added > 0
                         ? 'bg-success/15 text-success border border-success/20'
                         : 'bg-danger/15 text-danger border border-danger/20'
-                    }`}>
+                      }`}>
                       {tx.credits_added > 0 ? `+${tx.credits_added}` : `-${tx.credits_used}`}
                     </div>
                     <div className="flex-1 min-w-0">

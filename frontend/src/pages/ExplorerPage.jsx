@@ -11,8 +11,8 @@ const ExplorerPage = () => {
   const catalogParams = useMemo(() => academicCatalogParams(user), [user]);
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  
-  const [level, setLevel] = useState('degrees'); 
+
+  const [level, setLevel] = useState('degrees');
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [breadcrumb, setBreadcrumb] = useState([]);

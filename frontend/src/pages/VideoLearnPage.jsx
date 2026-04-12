@@ -9,20 +9,20 @@ import { FiYoutube, FiArrowRight } from 'react-icons/fi';
 
 const VideoLearnPage = () => {
   const { user, refreshUser } = useAuth();
-  
-  
+
+
   const [url, setUrl] = useState('');
   const [processing, setProcessing] = useState(false);
-  
-  
+
+
   const [topicId, setTopicId] = useState(null);
   const [videoId, setVideoId] = useState(null);
-  
-  
+
+
   const [lectureContent, setLectureContent] = useState('');
   const [lectureLoading, setLectureLoading] = useState(false);
-  
-  
+
+
   const [chatHistory, setChatHistory] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatLoading, setChatLoading] = useState(false);
@@ -60,15 +60,15 @@ const VideoLearnPage = () => {
     setChatHistory([]);
     setVideoId(vidId);
 
-    const tempTopicId = `yt-${Date.now()}-${vidId}`; 
-    
+    const tempTopicId = `yt-${Date.now()}-${vidId}`;
+
     try {
       await processYouTubeVideo(tempTopicId, url);
       showToast('success', 'Video processed successfully! Generating your personalized lecture...', 'Success');
       setTopicId(tempTopicId);
       refreshUser();
-      
-      
+
+
       handleGenerateLecture(tempTopicId);
     } catch (err) {
       console.error(err);
@@ -84,7 +84,7 @@ const VideoLearnPage = () => {
     try {
       const lecture = await generateLecture(targetTopicId, 'YouTube Video Lesson', 'youtube');
       setLectureContent(lecture);
-      
+
       setChatHistory([
         { role: 'model', text: `Hi ${user.name}! I've analyzed this video and generated a lecture for you. What would you like to explore further?` }
       ]);
@@ -102,7 +102,7 @@ const VideoLearnPage = () => {
 
     const userMsg = { role: 'user', text: chatInput };
     const currentHistory = [...chatHistory];
-    
+
     setChatHistory([...currentHistory, userMsg]);
     setChatInput('');
     setChatLoading(true);
@@ -136,7 +136,7 @@ const VideoLearnPage = () => {
     <div className="space-y-8 animate-fadeInUp max-w-7xl mx-auto">
       <div className="glass-card p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-danger/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-        
+
         <div className="relative z-10 max-w-3xl">
           <h1 className="text-3xl font-bold text-text mb-2 flex items-center gap-3">
             <FiYoutube className="text-danger" /> YouTube Fast-Learn
@@ -144,7 +144,7 @@ const VideoLearnPage = () => {
           <p className="text-text-muted mb-6">
             Paste any educational YouTube link below to instantly generate a comprehensive lecture and chat environment. No pre-uploaded notes required. (Costs 5 ⚡)
           </p>
-          
+
           <form onSubmit={handleStartLearning} className="flex flex-col sm:flex-row gap-3">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -178,7 +178,7 @@ const VideoLearnPage = () => {
 
       {topicId && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeInUp">
-          
+
           <div className="lg:col-span-7 space-y-6">
             <div className="glass-card overflow-hidden aspect-video border border-danger/20 shadow-[0_0_30px_rgba(239,68,68,0.1)]">
               <iframe
@@ -247,11 +247,10 @@ const VideoLearnPage = () => {
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                          msg.role === 'user'
+                        className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user'
                             ? 'chat-bubble-user rounded-tr-md'
                             : 'chat-bubble-ai rounded-tl-md text-text'
-                        }`}
+                          }`}
                       >
                         {msg.role === 'model' ? (
                           <div
@@ -304,7 +303,7 @@ const VideoLearnPage = () => {
               </div>
             </div>
           </div>
-          
+
         </div>
       )}
     </div>

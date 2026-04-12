@@ -257,11 +257,10 @@ const NexusBoard = () => {
                 setFeedTab('global');
                 setExploreCollegeId(null);
               }}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                feedTab === 'global'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${feedTab === 'global'
                   ? 'bg-primary/20 border-primary/45 text-primary'
                   : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
-              }`}
+                }`}
             >
               Global Nexus
             </button>
@@ -271,11 +270,10 @@ const NexusBoard = () => {
                 setFeedTab('college');
                 setExploreCollegeId(null);
               }}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${
-                feedTab === 'college'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${feedTab === 'college'
                   ? 'bg-primary/20 border-primary/45 text-primary'
                   : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
-              }`}
+                }`}
               title={collegeLabel}
             >
               {collegeLabel} Nexus
@@ -283,11 +281,10 @@ const NexusBoard = () => {
             <button
               type="button"
               onClick={() => setFeedTab('explore')}
-              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-                feedTab === 'explore'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${feedTab === 'explore'
                   ? 'bg-primary/20 border-primary/45 text-primary'
                   : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
-              }`}
+                }`}
             >
               Explore other colleges
             </button>
@@ -410,11 +407,10 @@ const NexusBoard = () => {
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
-                          msg.role === 'user'
+                        className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
                             ? 'chat-bubble-user rounded-tr-md'
                             : 'chat-bubble-ai rounded-tl-md text-text'
-                        }`}
+                          }`}
                       >
                         {msg.text}
                       </div>
@@ -534,18 +530,16 @@ const NexusBoard = () => {
                           if (tag === '#All') setSearchParams({});
                           else setSearchParams({ tag });
                         }}
-                        className={`group w-full text-left rounded-xl pl-2 pr-3 py-2.5 flex items-center gap-2.5 transition-all border ${
-                          active
+                        className={`group w-full text-left rounded-xl pl-2 pr-3 py-2.5 flex items-center gap-2.5 transition-all border ${active
                             ? 'bg-primary/[0.14] border-primary/40 text-primary shadow-[0_0_28px_rgba(14,165,233,0.12)] nav-active-glow'
                             : 'border-transparent text-text-muted hover:text-text hover:bg-white/[0.04] hover:border-white/10'
-                        }`}
+                          }`}
                       >
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-                            active
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors ${active
                               ? 'border-primary/50 bg-primary/20 text-primary'
                               : 'border-white/10 bg-white/[0.03] text-text-muted group-hover:border-white/15'
-                          }`}
+                            }`}
                         >
                           {active ? (
                             <Radio className="h-3.5 w-3.5" strokeWidth={2.5} />

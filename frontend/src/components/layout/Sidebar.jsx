@@ -220,10 +220,9 @@ const Sidebar = () => {
                     whileTap={{ scale: 0.98 }}
                     transition={springNav}
                     className={`relative z-10 flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors
-                      ${
-                        active
-                          ? 'text-primary drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]'
-                          : 'text-text-muted hover:text-text hover:bg-white/5 border border-transparent'
+                      ${active
+                        ? 'text-primary drop-shadow-[0_0_8px_rgba(14,165,233,0.5)]'
+                        : 'text-text-muted hover:text-text hover:bg-white/5 border border-transparent'
                       }`}
                   >
                     <item.icon size={18} strokeWidth={2} className="shrink-0" />

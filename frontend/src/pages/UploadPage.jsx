@@ -16,7 +16,7 @@ const UploadPage = () => {
   const [error, setError] = useState('');
   const [dragActive, setDragActive] = useState(false);
 
-  
+
   const [degrees, setDegrees] = useState([]);
   const [branches, setBranches] = useState([]);
   const [semesters, setSemesters] = useState([]);
@@ -230,19 +230,19 @@ const UploadPage = () => {
           <h3 className="text-sm font-semibold text-text mb-4">Select Topic</h3>
           <div className="space-y-4">
             <SelectField label="Degree" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
-            
+
             {selectedDegree && (
               <SelectField label="Branch" value={selectedBranch} onChange={setSelectedBranch} options={branches} placeholder="Select branch..." />
             )}
-            
+
             {selectedBranch && (
               <SelectField label="Semester" value={selectedSemester} onChange={setSelectedSemester} options={semesters} labelKey="number" placeholder="Select semester..." />
             )}
-            
+
             {selectedSemester && (
               <SelectField label="Subject" value={selectedSubject} onChange={setSelectedSubject} options={subjects} placeholder="Select subject..." />
             )}
-            
+
             {selectedSubject && (
               <SelectField label="Topic" value={selectedTopic} onChange={setSelectedTopic} options={topics} placeholder="Select topic..." />
             )}

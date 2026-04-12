@@ -637,16 +637,14 @@ const AiTutorPage = () => {
                       whileTap={{ scale: 0.97 }}
                       transition={spring}
                       onClick={() => openDay(day, wIdx)}
-                      className={`text-left p-4 rounded-xl border transition-all duration-200 ${
-                        isLecture
+                      className={`text-left p-4 rounded-xl border transition-all duration-200 ${isLecture
                           ? 'bg-primary/5 border-primary/15 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(14,165,233,0.12)]'
                           : 'bg-accent/5 border-accent/15 hover:border-accent/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.12)]'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-2">
-                        <span className={`text-[10px] font-bold uppercase tracking-wider ${
-                          isLecture ? 'text-primary' : 'text-accent'
-                        }`}>
+                        <span className={`text-[10px] font-bold uppercase tracking-wider ${isLecture ? 'text-primary' : 'text-accent'
+                          }`}>
                           {isLecture ? '📘 Lecture' : '📝 Quiz'}
                         </span>
                         <span className="text-[10px] text-text-muted">{day.date}</span>
@@ -694,19 +692,16 @@ const AiTutorPage = () => {
         </button>
 
         {/* Day header */}
-        <div className={`glass-card p-6 relative overflow-hidden border ${
-          isLecture ? 'border-primary/20' : 'border-accent/20'
-        }`}>
-          <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none ${
-            isLecture ? 'bg-primary/10' : 'bg-accent/10'
-          }`} />
+        <div className={`glass-card p-6 relative overflow-hidden border ${isLecture ? 'border-primary/20' : 'border-accent/20'
+          }`}>
+          <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none ${isLecture ? 'bg-primary/10' : 'bg-accent/10'
+            }`} />
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
-              <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${
-                isLecture
+              <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${isLecture
                   ? 'bg-primary/15 text-primary border border-primary/25'
                   : 'bg-accent/15 text-accent border border-accent/25'
-              }`}>
+                }`}>
                 {isLecture ? 'Lecture' : 'Quiz'}
               </span>
               <span className="text-text-muted text-sm">{selectedDay.date} · {selectedDay.day}</span>
@@ -835,11 +830,10 @@ const AiTutorPage = () => {
                                   }, 50);
                                 }
                               }}
-                              className={`text-[11px] px-2 py-1 rounded-md font-medium transition-all ${
-                                ttsRate === rate
+                              className={`text-[11px] px-2 py-1 rounded-md font-medium transition-all ${ttsRate === rate
                                   ? 'bg-primary/20 text-primary border border-primary/30'
                                   : 'bg-white/5 text-text-muted border border-white/8 hover:bg-white/10'
-                              }`}
+                                }`}
                             >
                               {rate}x
                             </button>
@@ -849,7 +843,7 @@ const AiTutorPage = () => {
                       {ttsPlaying && (
                         <div className="mt-3 flex items-center gap-2">
                           <div className="flex gap-1 items-end h-4">
-                            {[1,2,3,4,5].map(i => (
+                            {[1, 2, 3, 4, 5].map(i => (
                               <motion.div
                                 key={i}
                                 animate={{ height: [4, 16, 4] }}
@@ -930,11 +924,10 @@ const AiTutorPage = () => {
                         transition={spring}
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
-                        <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                          msg.role === 'user'
+                        <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user'
                             ? 'chat-bubble-user rounded-tr-md'
                             : 'chat-bubble-ai rounded-tl-md text-text'
-                        }`}>
+                          }`}>
                           {msg.text}
                         </div>
                       </motion.div>
@@ -1003,11 +996,10 @@ const AiTutorPage = () => {
                               key={opt}
                               type="button"
                               onClick={() => setQuizAnswers(prev => ({ ...prev, [qid]: opt }))}
-                              className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all border ${
-                                quizAnswers[qid] === opt
+                              className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all border ${quizAnswers[qid] === opt
                                   ? 'bg-accent/20 border-accent/40 text-accent'
                                   : 'bg-white/3 border-white/8 text-text-muted hover:bg-white/6 hover:border-white/15'
-                              }`}
+                                }`}
                             >
                               {opt}
                             </button>
@@ -1038,11 +1030,10 @@ const AiTutorPage = () => {
             ) : (
               <div className="glass-card p-6 space-y-5">
                 <div className="text-center">
-                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${
-                    quizResult.percentage >= 60
+                  <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${quizResult.percentage >= 60
                       ? 'bg-success/15 border-2 border-success/30'
                       : 'bg-danger/15 border-2 border-danger/30'
-                  }`}>
+                    }`}>
                     {quizResult.percentage >= 60
                       ? <Trophy size={32} className="text-success" />
                       : <AlertTriangle size={32} className="text-danger" />}

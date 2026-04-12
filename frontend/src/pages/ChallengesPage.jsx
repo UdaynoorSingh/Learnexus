@@ -40,21 +40,21 @@ const springAnim = { type: 'spring', stiffness: 400, damping: 30 };
 
 const CompanyLogo = ({ companyName }) => {
   const [error, setError] = useState(false);
-  
+
   // Attempt to guess domain (e.g. "Google" -> "google.com")
   const cleanName = typeof companyName === 'string' ? companyName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'company';
   const domain = `${cleanName}.com`;
-  
+
   if (error) {
     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName || 'Company')}&background=random&color=fff&rounded=true&bold=true`;
     return (
       <img src={avatarUrl} alt={companyName} className="w-10 h-10 rounded-xl shadow-sm border border-white/10" />
     );
   }
-  
+
   return (
-    <img 
-      src={`https://logo.clearbit.com/${domain}?size=80`} 
+    <img
+      src={`https://logo.clearbit.com/${domain}?size=80`}
       alt={`${companyName} logo`}
       onError={() => setError(true)}
       className="w-10 h-10 rounded-xl object-contain bg-white p-1 border border-white/10 shadow-sm"
@@ -185,7 +185,7 @@ const ChallengesPage = () => {
             >
               {/* Dynamic hover glow effect */}
               <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl z-0" />
-              
+
               {/* Top accent bar */}
               <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-primary via-accent to-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -384,11 +384,10 @@ const ChallengesPage = () => {
                 whileHover={!submitting ? { scale: 1.02 } : {}}
                 whileTap={!submitting ? { scale: 0.98 } : {}}
                 transition={springAnim}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${
-                  submitting || !githubUrl.trim()
+                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${submitting || !githubUrl.trim()
                     ? 'bg-white/10 text-text-muted cursor-not-allowed'
                     : 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-primary/40'
-                }`}
+                  }`}
               >
                 {submitting ? (
                   <>

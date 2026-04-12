@@ -21,7 +21,7 @@ const TopicPage = () => {
   const { user, refreshUser } = useAuth();
   const [topicData, setTopicData] = useState(null);
   const [loading, setLoading] = useState(true);
-  
+
   const [lectureContent, setLectureContent] = useState('');
   const [lectureLoading, setLectureLoading] = useState(false);
   const [showLecture, setShowLecture] = useState(false);
@@ -100,12 +100,12 @@ const TopicPage = () => {
     try {
       const lecture = await generateLecture(topicId, topicData.topic.name, mode, topicData.topic.subject_name);
       setLectureContent(lecture);
-      
+
       setChatHistory([
         { role: 'model', text: `Hi ${user.name}! I'm your AI tutor. I just generated this lecture using your ${mode === 'both' ? 'Notes and YouTube videos' : mode === 'notes' ? 'Notes' : 'YouTube videos'}. Do you have any questions?` }
       ]);
 
-      await api.post(`/notes/1/unlock`).catch(() => {}); 
+      await api.post(`/notes/1/unlock`).catch(() => { });
       refreshUser();
     } catch (err) {
       console.error(err);
@@ -121,7 +121,7 @@ const TopicPage = () => {
 
     const userMsg = { role: 'user', text: chatInput };
     const currentHistory = [...chatHistory];
-    
+
     setChatHistory([...currentHistory, userMsg]);
     setChatInput('');
     setChatLoading(true);
@@ -350,9 +350,8 @@ const TopicPage = () => {
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
                     <div
-                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                        msg.role === 'user' ? 'chat-bubble-user rounded-tr-md' : 'chat-bubble-ai rounded-tl-md text-text'
-                      }`}
+                      className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user' ? 'chat-bubble-user rounded-tr-md' : 'chat-bubble-ai rounded-tl-md text-text'
+                        }`}
                     >
                       {msg.text}
                     </div>

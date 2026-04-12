@@ -142,11 +142,10 @@ const NexusLibrary = () => {
           <button
             type="button"
             onClick={() => setScope('college')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${
-              scope === 'college'
+            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${scope === 'college'
                 ? 'bg-primary/20 border-primary/45 text-primary'
                 : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
-            }`}
+              }`}
             title={collegeLabel}
           >
             {collegeLabel}
@@ -154,11 +153,10 @@ const NexusLibrary = () => {
           <button
             type="button"
             onClick={() => setScope('global')}
-            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${
-              scope === 'global'
+            className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${scope === 'global'
                 ? 'bg-primary/20 border-primary/45 text-primary'
                 : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
-            }`}
+              }`}
           >
             Global
           </button>
