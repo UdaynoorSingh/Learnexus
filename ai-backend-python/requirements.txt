@@ -1,7 +1,7 @@
 fastapi
-uvicorn
+uvicorn[standard]
 python-dotenv
-pydantic
+pydantic>=2.0
 google-generativeai
 requests
 langchain
@@ -12,9 +12,3 @@ faiss-cpu
 tiktoken
 youtube-transcript-api
 openai
-fastapi
-uvicorn[standard]
-python-dotenv
-pydantic>=2.0
-crewai[tools]
-litellm

@@ -128,17 +128,17 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 16, scale: 0.98 }}
             transition={spring}
-            className="relative w-full max-w-lg glass-float border border-white/10 shadow-2xl shadow-black/50 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
+            className="relative w-full max-w-lg glass-float border border-black/10 shadow-xl shadow-black/10 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
           >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/10 bg-surface/40">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 bg-white/70">
           <h2 className="text-lg font-bold text-text tracking-tight">Create post</h2>
           <motion.button
             type="button"
             onClick={onClose}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1 }}
+            whileTap={{ scale: 1 }}
             transition={spring}
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-white/5 transition-colors"
+            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-black/5 transition-colors"
           >
             <X size={20} strokeWidth={2} />
           </motion.button>
@@ -196,7 +196,7 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
                 Upload from your device, or paste a link. If you do both, the uploaded file is used.
               </p>
 
-              <div className="rounded-xl border border-white/10 bg-background/50 p-4 space-y-3">
+              <div className="rounded-xl border border-black/10 bg-white/60 p-4 space-y-3">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -225,14 +225,14 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
                 </div>
 
                 {imagePreview && (
-                  <div className="relative rounded-lg overflow-hidden border border-white/10 max-h-40 w-full bg-black/20">
+                  <div className="relative rounded-lg overflow-hidden border border-black/10 max-h-40 w-full bg-white/60">
                     <img src={imagePreview} alt="" className="w-full h-full max-h-40 object-contain" />
                   </div>
                 )}
 
                 <div className="flex items-center gap-2 text-text-muted text-xs">
                   <span className="shrink-0">or</span>
-                  <div className="h-px flex-1 bg-white/10" />
+                  <div className="h-px flex-1 bg-black/10" />
                   <ImageIcon size={12} strokeWidth={2} className="shrink-0" />
                 </div>
 
@@ -247,7 +247,7 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
               </div>
             </div>
 
-            <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-background/50 px-4 py-3">
+            <div className="flex items-center justify-between gap-4 rounded-xl border border-black/10 bg-white/60 px-4 py-3">
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-text">Post Anonymously (Costs 2 ⚡)</p>
                 <p className="text-[11px] text-text-muted mt-0.5">
@@ -262,12 +262,12 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
                 className={`relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
                   postAnonymously
                     ? 'bg-primary border-primary/40'
-                    : 'bg-white/10 border-white/15'
+                    : 'bg-white/80 border-black/10'
                 }`}
               >
                 <span
                   aria-hidden
-                  className={`pointer-events-none absolute top-1 left-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-200 ease-out ${
+                  className={`pointer-events-none absolute top-1 left-1 h-5 w-5 rounded-full bg-surface-light shadow transition-transform duration-200 ease-out ${
                     postAnonymously ? 'translate-x-5' : 'translate-x-0'
                   }`}
                 />
@@ -293,11 +293,11 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
             </div>
           </div>
 
-          <div className="px-6 py-4 border-t border-white/10 bg-surface/30 flex justify-end gap-3">
+          <div className="px-6 py-4 border-t border-black/10 bg-white/70 flex justify-end gap-3">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-text hover:bg-white/5 transition-colors"
+              className="px-4 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-text hover:bg-black/5 transition-colors"
             >
               Cancel
             </button>

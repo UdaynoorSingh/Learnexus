@@ -100,31 +100,31 @@ function CommentBranch({
         className={`rounded-none px-3 py-2.5 border transition-colors ${
           accepted
             ? 'bg-green-600/10 border-green-600/40 ring-1 ring-green-600/20'
-            : 'bg-surface/40 border-zinc-200'
+            : 'bg-white/70 border-black/10'
         }`}
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-semibold text-zinc-900">{node.author_name}</span>
+              <span className="text-sm font-semibold text-text">{node.author_name}</span>
               {node.is_ai_tutor && (
                 <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-indigo-600/25 text-indigo-600 border border-indigo-600/40">
                   🤖 AI Tutor
                 </span>
               )}
               {depth > 0 && (
-                <span className="text-[10px] font-semibold uppercase tracking-wide text-zinc-500/80">
+                <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
                   Reply
                 </span>
               )}
-              <span className="text-xs text-zinc-500">{formatTime(node.created_at)}</span>
+              <span className="text-xs text-text-muted">{formatTime(node.created_at)}</span>
               {accepted && (
                 <span className="text-[10px] font-bold uppercase tracking-wide text-green-600">
                   Accepted answer
                 </span>
               )}
             </div>
-            <div className="mt-1.5 text-sm text-zinc-500">
+            <div className="mt-1.5 text-sm text-text-muted">
               <MarkdownBody>{node.content}</MarkdownBody>
             </div>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -132,13 +132,13 @@ function CommentBranch({
                 type="button"
                 disabled={likeBusyId === node.id}
                 onClick={() => onCommentLike(node.id)}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
                 className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors disabled:opacity-50 ${
                   node.user_has_liked
-                    ? 'bg-blue-50 border-blue-600/40 text-blue-600'
-                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900'
+                    ? 'bg-primary/15 border-primary/40 text-primary'
+                    : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5'
                 }`}
               >
                 <ThumbsUp
@@ -154,13 +154,13 @@ function CommentBranch({
                   onClick={() =>
                     setReplyingToId((prev) => (prev === node.id ? null : node.id))
                   }
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.97 }}
+                  whileHover={{ scale: 1 }}
+                  whileTap={{ scale: 1 }}
                   transition={spring}
                   className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors ${
                     replyingToId === node.id
-                      ? 'bg-indigo-600/15 border-indigo-600/35 text-indigo-600'
-                      : ' border-zinc-200 text-zinc-500 hover:text-zinc-900'
+                      ? 'bg-accent/15 border-accent/35 text-accent'
+                      : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5'
                   }`}
                 >
                   <Reply size={14} strokeWidth={2} />
@@ -197,24 +197,24 @@ function CommentBranch({
             onChange={(e) => setReplyText(e.target.value)}
             rows={2}
             placeholder="Write a reply… Markdown supported."
-            className="w-full border border-zinc-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none px-3 py-2 text-sm resize-y min-h-[3.5rem] rounded-none"
+            className="w-full border border-black/10 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/15 outline-none px-3 py-2 text-sm resize-y min-h-[3.5rem] bg-white/80 text-text"
             disabled={submittingReply}
           />
           <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:justify-between">
-            <div className="flex items-center justify-between gap-3 rounded-sm border border-zinc-200 bg-white px-2.5 py-1.5 flex-1 min-w-0">
-              <span className="text-[11px] font-semibold text-zinc-900">Anonymous (2 ⚡)</span>
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-black/10 bg-white/60 px-2.5 py-1.5 flex-1 min-w-0">
+              <span className="text-[11px] font-semibold text-text">Anonymous (2 ⚡)</span>
               <button
                 type="button"
                 role="switch"
                 aria-checked={replyAnonymous}
                 onClick={() => setReplyAnonymous((v) => !v)}
-                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600/50 ${
-                  replyAnonymous ? 'bg-blue-600 border-blue-600/40' : ' border-zinc-200'
+                className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
+                  replyAnonymous ? 'bg-primary border-primary/40' : 'bg-white/80 border-black/10'
                 }`}
               >
                 <span
                   aria-hidden
-                  className={`pointer-events-none absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ${
+                  className={`pointer-events-none absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-surface-light shadow transition-transform duration-200 ${
                     replyAnonymous ? 'translate-x-4' : 'translate-x-0'
                   }`}
                 />
@@ -228,14 +228,14 @@ function CommentBranch({
                   setReplyText('');
                   setReplyAnonymous(false);
                 }}
-                className="px-3 py-2 rounded-none text-xs font-medium text-zinc-500 hover:text-zinc-900 hover:"
+                className="px-3 py-2 rounded-lg text-xs font-medium text-text-muted hover:text-text"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={submittingReply || !replyText.trim()}
-                className="px-3 py-2 rounded-none text-xs font-semibold bg-blue-50 text-white hover:bg-blue-600 disabled:opacity-50"
+                className="px-3 py-2 rounded-lg text-xs font-semibold bg-primary text-white hover:opacity-90 disabled:opacity-50"
               >
                 {submittingReply ? 'Posting…' : 'Post reply'}
               </button>
@@ -245,7 +245,7 @@ function CommentBranch({
       )}
 
       {node.replies?.length > 0 && (
-        <ul className="mt-2 space-y-2 ml-2 sm:ml-3 pl-2 sm:pl-3 border-l border-zinc-200">
+        <ul className="mt-2 space-y-2 ml-2 sm:ml-3 pl-2 sm:pl-3 border-l border-black/10">
           {node.replies.map((child) => (
             <CommentBranch
               key={child.id}
@@ -530,10 +530,10 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
   return (
     <motion.article
       layout
-      whileHover={{ scale: 1.01, y: -2 }}
-      whileTap={{ scale: 0.995 }}
+      whileHover={{ scale: 1, y: 0 }}
+      whileTap={{ scale: 1 }}
       transition={spring}
-      className="bg-white border border-zinc-200 rounded-none overflow-hidden shadow-lg shadow-sm hover:border-blue-600/20 hover:shadow-xl hover:shadow-sm"
+      className="glass-card border border-black/10 rounded-2xl overflow-hidden shadow-xl hover:border-primary/25 transition-colors"
     >
       <div className="p-6 sm:p-7">
         <div className="flex gap-4">
@@ -542,18 +542,18 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 gap-y-1 pr-1">
-              <span className="font-semibold text-zinc-900 truncate">{post.author_name}</span>
-              <span className="text-zinc-500 text-sm">· {formatTime(post.created_at)}</span>
+              <span className="font-semibold text-text truncate">{post.author_name}</span>
+              <span className="text-text-muted text-sm">· {formatTime(post.created_at)}</span>
               <span className="text-xs font-medium px-2.5 py-0.5 rounded-sm bg-indigo-600/20 text-indigo-600 border border-indigo-600/30">
                 {post.tag}
               </span>
               {bounty > 0 && (
-                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-amber-100 text-amber-700 border border-amber-300 shadow-sm tracking-wide">
+                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-warning/15 text-warning border border-warning/30 tracking-wide">
                   Bounty · {bounty} ⚡
                 </span>
               )}
             </div>
-            <h3 className="mt-2 text-lg font-bold text-zinc-900 leading-snug tracking-tight pr-1">{post.title}</h3>
+            <h3 className="mt-2 text-lg font-bold text-text leading-snug tracking-tight pr-1">{post.title}</h3>
 
             {post.audio_url && (
               <div className="mt-3 mb-1 flex items-center gap-3 rounded-none bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent border border-blue-600/20 px-4 py-3 shadow-sm shadow-sm">
@@ -586,7 +586,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
             </div>
 
             {post.image_url && !imgError && (
-              <div className="mt-4 rounded-none overflow-hidden border border-zinc-200 bg-white ring-1 ring-white/5 shadow-lg relative">
+              <div className="mt-4 rounded-xl overflow-hidden border border-black/10 bg-white/60 ring-1 ring-black/5 shadow-lg relative">
                 <button
                   type="button"
                   onClick={() => setFullImageOpen(true)}
@@ -603,7 +603,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 <button
                   type="button"
                   onClick={() => setFullImageOpen(true)}
-                  className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-xs font-semibold text-zinc-900   border border-zinc-200 hover: transition-colors shadow-lg"
+                  className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-text border border-black/10 bg-white/90 hover:bg-white transition-colors shadow-lg"
                 >
                   <Maximize2 size={14} strokeWidth={2} aria-hidden />
                   Full image
@@ -616,13 +616,13 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 type="button"
                 onClick={handleUpvote}
                 disabled={upvoteBusy}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium transition-colors border ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border ${
                   post.user_has_upvoted
-                    ? 'bg-blue-50 border-blue-600/40 text-blue-600'
-                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200'
+                    ? 'bg-primary/15 border-primary/40 text-primary'
+                    : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5 hover:border-black/20'
                 } disabled:opacity-50`}
               >
                 <ThumbsUp
@@ -636,10 +636,10 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               <motion.button
                 type="button"
                 onClick={openComments}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium  border border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200 transition-colors"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium border border-black/10 text-text-muted hover:text-text hover:bg-black/5 hover:border-black/20 transition-colors"
               >
                 <MessageCircle size={16} strokeWidth={2} />
                 {post.comment_count ?? 0}
@@ -650,13 +650,13 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 type="button"
                 onClick={handleBookmark}
                 disabled={bookmarkBusy}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
-                className={`inline-flex items-center gap-2 px-4 py-2 rounded-none text-sm font-medium transition-colors border disabled:opacity-50 ${
+                className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-colors border disabled:opacity-50 ${
                   post.user_has_bookmarked
-                    ? 'bg-indigo-600/20 border-indigo-600/40 text-indigo-600'
-                    : ' border-zinc-200 text-zinc-500 hover:text-zinc-900 hover:border-zinc-200'
+                    ? 'bg-accent/20 border-accent/40 text-accent'
+                    : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5 hover:border-black/20'
                 }`}
                 title="Save for later"
               >
@@ -683,8 +683,8 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 type="button"
                 onClick={handleAdminDelete}
                 disabled={deleteBusy}
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
                 className="inline-flex items-center justify-center rounded-none p-2.5 border border-red-600/40 bg-red-600/10 text-red-600 hover:bg-red-600/18 disabled:opacity-50"
                 title="Delete this post (admin only)"
@@ -698,9 +698,9 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
       </div>
 
       {commentsOpen && (
-        <div className="border-t border-zinc-200 bg-white  px-5 sm:px-6 py-4">
+        <div className="border-t border-black/10 bg-white/40 px-5 sm:px-6 py-4">
           {commentsLoading ? (
-            <p className="text-sm text-zinc-500">Loading comments…</p>
+            <p className="text-sm text-text-muted">Loading comments…</p>
           ) : (
             <ul className="space-y-3">
               {buildCommentTree(comments).map((node) => (
@@ -742,11 +742,11 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               onChange={(e) => setNewComment(e.target.value)}
               rows={3}
               placeholder="Answer or ask a follow-up — Markdown and ```code``` blocks work."
-              className="w-full border border-zinc-300 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none px-4 py-2.5 text-sm resize-y min-h-[4.5rem] rounded-none"
+              className="w-full border border-black/10 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/15 outline-none px-4 py-2.5 text-sm resize-y min-h-[4.5rem] bg-white/80 text-text"
             />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <div className="flex items-center justify-between gap-4 rounded-none border border-zinc-200 bg-white px-3 py-2 flex-1 min-w-0">
-                <span className="text-xs font-semibold text-zinc-900">
+              <div className="flex items-center justify-between gap-4 rounded-lg border border-black/10 bg-white/60 px-3 py-2 flex-1 min-w-0">
+                <span className="text-xs font-semibold text-text">
                   Comment Anonymously (Costs 2 ⚡)
                 </span>
                 <button
@@ -754,15 +754,15 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                   role="switch"
                   aria-checked={commentAnonymously}
                   onClick={() => setCommentAnonymously((v) => !v)}
-                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-blue-600/50 ${
+                  className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border transition-colors focus:outline-none focus:ring-2 focus:ring-primary/50 ${
                     commentAnonymously
-                      ? 'bg-blue-600 border-blue-600/40'
-                      : ' border-zinc-200'
+                      ? 'bg-primary border-primary/40'
+                      : 'bg-white/80 border-black/10'
                   }`}
                 >
                   <span
                     aria-hidden
-                    className={`pointer-events-none absolute top-1 left-1 h-4 w-4 rounded-full bg-white shadow transition-transform duration-200 ease-out ${
+                    className={`pointer-events-none absolute top-1 left-1 h-4 w-4 rounded-full bg-surface-light shadow transition-transform duration-200 ease-out ${
                       commentAnonymously ? 'translate-x-5' : 'translate-x-0'
                     }`}
                   />
@@ -771,7 +771,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               <button
                 type="submit"
                 disabled={submittingComment || !newComment.trim()}
-                className="self-end sm:self-center px-4 py-2.5 rounded-none text-sm font-semibold bg-blue-50 text-white hover:bg-blue-600 disabled:opacity-50 shrink-0"
+                className="self-end sm:self-center px-4 py-2.5 rounded-xl text-sm font-semibold bg-primary text-white hover:opacity-90 disabled:opacity-50 shrink-0"
               >
                 Comment
               </button>
@@ -803,17 +803,17 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.96 }}
                   transition={spring}
-                  className="relative z-[101] max-w-[min(100vw-1.5rem,1200px)] max-h-[min(92vh,920px)] w-full flex flex-col glass-float border border-zinc-200 rounded-none shadow-2xl shadow-sm overflow-hidden"
+                  className="relative z-[101] max-w-[min(100vw-1.5rem,1200px)] max-h-[min(92vh,920px)] w-full flex flex-col glass-float border border-black/10 rounded-2xl shadow-xl shadow-black/10 overflow-hidden"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-zinc-200  shrink-0">
-                    <span className="text-xs font-semibold text-zinc-500 truncate pr-2">Full image</span>
+                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-black/10 shrink-0 bg-white/70">
+                    <span className="text-xs font-semibold text-text-muted truncate pr-2">Full image</span>
                     <motion.button
                       type="button"
                       onClick={() => setFullImageOpen(false)}
-                      whileHover={{ scale: 1.06 }}
-                      whileTap={{ scale: 0.94 }}
-                      className="p-2 rounded-none text-zinc-500 hover:text-zinc-900 hover: shrink-0"
+                      whileHover={{ scale: 1 }}
+                      whileTap={{ scale: 1 }}
+                      className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 shrink-0"
                       aria-label="Close"
                     >
                       <X size={20} strokeWidth={2} />
@@ -826,7 +826,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                       className="max-w-full max-h-[min(85vh,880px)] w-auto h-auto object-contain rounded-sm"
                     />
                   </div>
-                  <p className="text-[10px] text-zinc-500 text-center px-3 py-2 border-t border-zinc-200  shrink-0">
+                  <p className="text-[10px] text-text-muted text-center px-3 py-2 border-t border-black/10 shrink-0 bg-white/70">
                     Press Esc or click outside to close
                   </p>
                 </motion.div>

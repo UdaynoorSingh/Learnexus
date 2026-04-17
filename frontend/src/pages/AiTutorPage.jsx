@@ -11,6 +11,7 @@ import {
   initCourse, prepNextLecture, askDoubt, submitQuiz,
   reportAbsence, getPerformanceReport,
 } from '../services/tutorService';
+import api from '../services/api';
 
 /* ── animation presets ── */
 const spring = { type: 'spring', stiffness: 420, damping: 32 };
@@ -117,6 +118,26 @@ const AiTutorPage = () => {
     if (roadmap) sessionStorage.setItem('tutor_roadmap', JSON.stringify(roadmap));
   }, [studentId, roadmap]);
 
+  // Rehydrate from DB (survives server restarts) if sessionStorage is empty
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      if (roadmap || studentId) return;
+      try {
+        const { data } = await api.get('/dashboard/tutor-state');
+        const s = data?.state;
+        if (!s || cancelled) return;
+        if (s.studentId) setStudentId(String(s.studentId));
+        if (s.roadmap) setRoadmap(s.roadmap);
+        if (Array.isArray(s.calendarEvents)) setCalendarEvents(s.calendarEvents);
+        if (s.roadmap) setView('roadmap');
+      } catch {
+        // ignore
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [doubtHistory, doubtLoading]);
@@ -151,6 +172,20 @@ const AiTutorPage = () => {
       setRoadmap(result.roadmap);
       setCalendarEvents(result.calendar_events || []);
       setView('roadmap');
+
+      // Persist roadmap (best-effort) so it survives reloads/server restarts
+      try {
+        await api.put('/dashboard/tutor-state', {
+          state: {
+            studentId: result.student_id,
+            roadmap: result.roadmap,
+            calendarEvents: result.calendar_events || [],
+            createdAt: new Date().toISOString(),
+          }
+        });
+      } catch {
+        // ignore persistence errors
+      }
     } catch (err) {
       console.error(err);
       const msg = err.response?.data?.detail || err.message || 'Failed to initialize course.';
@@ -407,8 +442,8 @@ const AiTutorPage = () => {
           <motion.button
             type="submit"
             disabled={initLoading || !formData.topic.trim()}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+            whileHover={{ scale: 1 }}
+            whileTap={{ scale: 1 }}
             transition={spring}
             className="w-full btn-gradient py-4 rounded-xl text-base font-semibold flex items-center justify-center gap-3 disabled:opacity-50"
           >
@@ -454,8 +489,8 @@ const AiTutorPage = () => {
             </div>
             <div className="flex items-center gap-2">
               <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
                 onClick={() => setShowAbsence(true)}
                 className="btn-secondary-outline py-2 px-4 rounded-xl text-sm flex items-center gap-2"
@@ -463,8 +498,8 @@ const AiTutorPage = () => {
                 <CalendarOff size={16} /> Report Absence
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
                 onClick={handlePerformanceReport}
                 className="btn-secondary-outline py-2 px-4 rounded-xl text-sm flex items-center gap-2"
@@ -472,8 +507,8 @@ const AiTutorPage = () => {
                 <BarChart3 size={16} /> Performance
               </motion.button>
               <motion.button
-                whileHover={{ scale: 1.04 }}
-                whileTap={{ scale: 0.96 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
                 onClick={newSession}
                 className="btn-secondary-outline py-2 px-4 rounded-xl text-sm flex items-center gap-2 text-danger border-danger/20 hover:bg-danger/10"
@@ -633,13 +668,13 @@ const AiTutorPage = () => {
                     <motion.button
                       key={dIdx}
                       type="button"
-                      whileHover={{ scale: 1.03, y: -3 }}
-                      whileTap={{ scale: 0.97 }}
+                      whileHover={{ scale: 1, y: 0 }}
+                      whileTap={{ scale: 1 }}
                       transition={spring}
                       onClick={() => openDay(day, wIdx)}
                       className={`text-left p-4 rounded-xl border transition-all duration-200 ${isLecture
-                          ? 'bg-primary/5 border-primary/15 hover:border-primary/40 hover:shadow-[0_0_24px_rgba(14,165,233,0.12)]'
-                          : 'bg-accent/5 border-accent/15 hover:border-accent/40 hover:shadow-[0_0_24px_rgba(139,92,246,0.12)]'
+                        ? 'bg-primary/5 border-primary/15 hover:border-primary/40'
+                        : 'bg-accent/5 border-accent/15 hover:border-accent/40'
                         }`}
                     >
                       <div className="flex items-center justify-between mb-2">
@@ -699,8 +734,8 @@ const AiTutorPage = () => {
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-2">
               <span className={`px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-wider ${isLecture
-                  ? 'bg-primary/15 text-primary border border-primary/25'
-                  : 'bg-accent/15 text-accent border border-accent/25'
+                ? 'bg-primary/15 text-primary border border-primary/25'
+                : 'bg-accent/15 text-accent border border-accent/25'
                 }`}>
                 {isLecture ? 'Lecture' : 'Quiz'}
               </span>
@@ -710,7 +745,7 @@ const AiTutorPage = () => {
             {selectedDay.topics?.length > 0 && (
               <div className="flex flex-wrap gap-2 mt-3">
                 {selectedDay.topics.map((t, i) => (
-                  <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 text-text-muted">{t}</span>
+                  <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-white/70 border border-black/10 text-text-muted">{t}</span>
                 ))}
               </div>
             )}
@@ -733,8 +768,8 @@ const AiTutorPage = () => {
                     write an engaging script, and generate audio for you.
                   </p>
                   <motion.button
-                    whileHover={{ scale: 1.04 }}
-                    whileTap={{ scale: 0.96 }}
+                    whileHover={{ scale: 1 }}
+                    whileTap={{ scale: 1 }}
                     transition={spring}
                     onClick={handlePrepLecture}
                     className="btn-gradient py-3 px-8 rounded-xl text-sm font-semibold flex items-center gap-2"
@@ -772,8 +807,8 @@ const AiTutorPage = () => {
                         {/* Play / Pause */}
                         {!ttsPlaying ? (
                           <motion.button
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.92 }}
+                            whileHover={{ scale: 1 }}
+                            whileTap={{ scale: 1 }}
                             onClick={() => ttsSpeak(lectureData.script)}
                             className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/25"
                           >
@@ -781,8 +816,8 @@ const AiTutorPage = () => {
                           </motion.button>
                         ) : ttsPaused ? (
                           <motion.button
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.92 }}
+                            whileHover={{ scale: 1 }}
+                            whileTap={{ scale: 1 }}
                             onClick={ttsResume}
                             className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white shadow-lg shadow-primary/25"
                           >
@@ -790,8 +825,8 @@ const AiTutorPage = () => {
                           </motion.button>
                         ) : (
                           <motion.button
-                            whileHover={{ scale: 1.08 }}
-                            whileTap={{ scale: 0.92 }}
+                            whileHover={{ scale: 1 }}
+                            whileTap={{ scale: 1 }}
                             onClick={ttsPause}
                             className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center text-text"
                           >
@@ -801,11 +836,11 @@ const AiTutorPage = () => {
 
                         {/* Stop */}
                         <motion.button
-                          whileHover={{ scale: 1.08 }}
-                          whileTap={{ scale: 0.92 }}
+                          whileHover={{ scale: 1 }}
+                          whileTap={{ scale: 1 }}
                           onClick={ttsStop}
                           disabled={!ttsPlaying}
-                          className="w-10 h-10 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-text-muted disabled:opacity-30"
+                          className="w-10 h-10 rounded-full bg-white/70 border border-black/10 flex items-center justify-center text-text-muted disabled:opacity-30"
                         >
                           <Square size={16} />
                         </motion.button>
@@ -831,8 +866,8 @@ const AiTutorPage = () => {
                                 }
                               }}
                               className={`text-[11px] px-2 py-1 rounded-md font-medium transition-all ${ttsRate === rate
-                                  ? 'bg-primary/20 text-primary border border-primary/30'
-                                  : 'bg-white/5 text-text-muted border border-white/8 hover:bg-white/10'
+                                ? 'bg-primary/20 text-primary border border-primary/30'
+                                : 'bg-white/5 text-text-muted border border-white/8 hover:bg-white/10'
                                 }`}
                             >
                               {rate}x
@@ -862,12 +897,12 @@ const AiTutorPage = () => {
 
                   {/* Script */}
                   <div className="glass-card flex flex-col max-h-[600px]">
-                    <div className="p-4 border-b border-white/5 flex items-center gap-2 shrink-0">
+                    <div className="p-4 border-b border-black/10 flex items-center gap-2 shrink-0">
                       <BookOpen size={18} className="text-primary" />
                       <h3 className="font-bold text-text text-sm">Lecture Script</h3>
                     </div>
                     <div className="p-6 overflow-y-auto flex-1 min-h-0">
-                      <div className="lecture-content prose prose-invert max-w-none text-sm leading-relaxed whitespace-pre-wrap text-text-muted">
+                      <div className="lecture-content prose max-w-none text-sm leading-relaxed whitespace-pre-wrap text-text-muted">
                         {lectureData.script}
                       </div>
                     </div>
@@ -888,9 +923,9 @@ const AiTutorPage = () => {
 
             {/* Doubt chat */}
             <div className="lg:col-span-5">
-              <div className="glass-float flex flex-col h-[calc(100vh-12rem)] max-h-[700px] border border-white/10 rounded-2xl overflow-hidden sticky top-24">
+              <div className="glass-float flex flex-col h-[calc(100vh-12rem)] max-h-[700px] border border-black/10 rounded-2xl overflow-hidden sticky top-24 shadow-xl shadow-black/10">
                 {/* Chat header */}
-                <div className="px-4 py-3 border-b border-white/10 flex items-center gap-3 shrink-0 bg-black/30">
+                <div className="px-4 py-3 border-b border-black/10 flex items-center gap-3 shrink-0 bg-white/70">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
                     <Bot size={18} />
                   </div>
@@ -903,10 +938,10 @@ const AiTutorPage = () => {
                 </div>
 
                 {/* Chat messages */}
-                <div className="p-4 overflow-y-auto flex-1 space-y-3 min-h-0 bg-[#0a0a0a]/40">
+                <div className="p-4 overflow-y-auto flex-1 space-y-3 min-h-0 bg-white/40">
                   {doubtHistory.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-center px-4">
-                      <div className="h-12 w-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-3">
+                      <div className="h-12 w-12 rounded-2xl bg-white/80 border border-black/10 flex items-center justify-center mb-3">
                         <MessageSquare size={22} className="text-text-muted opacity-60" />
                       </div>
                       <p className="text-sm text-text-muted max-w-xs leading-relaxed">
@@ -925,8 +960,8 @@ const AiTutorPage = () => {
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${msg.role === 'user'
-                            ? 'chat-bubble-user rounded-tr-md'
-                            : 'chat-bubble-ai rounded-tl-md text-text'
+                          ? 'chat-bubble-user rounded-tr-md'
+                          : 'chat-bubble-ai rounded-tl-md text-text'
                           }`}>
                           {msg.text}
                         </div>
@@ -946,7 +981,7 @@ const AiTutorPage = () => {
                 </div>
 
                 {/* Chat input */}
-                <div className="border-t border-white/10 shrink-0 bg-black/35 backdrop-blur-md p-3">
+                <div className="border-t border-black/10 shrink-0 bg-white/70 backdrop-blur-md p-3">
                   <form onSubmit={handleAskDoubt} className="flex gap-2">
                     <input
                       type="text"
@@ -959,8 +994,8 @@ const AiTutorPage = () => {
                     <motion.button
                       type="submit"
                       disabled={!doubtInput.trim() || doubtLoading || !lectureData}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
+                      whileHover={{ scale: 1 }}
+                      whileTap={{ scale: 1 }}
                       className="w-11 h-11 rounded-full btn-ai-primary flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
                     >
                       <Send size={18} />
@@ -997,8 +1032,8 @@ const AiTutorPage = () => {
                               type="button"
                               onClick={() => setQuizAnswers(prev => ({ ...prev, [qid]: opt }))}
                               className={`py-2.5 px-4 rounded-lg text-sm font-medium transition-all border ${quizAnswers[qid] === opt
-                                  ? 'bg-accent/20 border-accent/40 text-accent'
-                                  : 'bg-white/3 border-white/8 text-text-muted hover:bg-white/6 hover:border-white/15'
+                                ? 'bg-accent/20 border-accent/40 text-accent'
+                                : 'bg-white/3 border-white/8 text-text-muted hover:bg-white/6 hover:border-white/15'
                                 }`}
                             >
                               {opt}
@@ -1010,8 +1045,8 @@ const AiTutorPage = () => {
                   })}
 
                   <motion.button
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1 }}
+                    whileTap={{ scale: 1 }}
                     transition={spring}
                     onClick={handleSubmitQuiz}
                     disabled={quizLoading || Object.keys(quizAnswers).length === 0}
@@ -1031,8 +1066,8 @@ const AiTutorPage = () => {
               <div className="glass-card p-6 space-y-5">
                 <div className="text-center">
                   <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full mb-4 ${quizResult.percentage >= 60
-                      ? 'bg-success/15 border-2 border-success/30'
-                      : 'bg-danger/15 border-2 border-danger/30'
+                    ? 'bg-success/15 border-2 border-success/30'
+                    : 'bg-danger/15 border-2 border-danger/30'
                     }`}>
                     {quizResult.percentage >= 60
                       ? <Trophy size={32} className="text-success" />

@@ -99,10 +99,10 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
     <>
       <motion.div
         layout
-        whileHover={{ scale: 1.015, y: -3 }}
-        whileTap={{ scale: 0.995 }}
+        whileHover={{ scale: 1, y: 0 }}
+        whileTap={{ scale: 1 }}
         transition={spring}
-        className="glass-card border border-white/10 rounded-2xl overflow-hidden shadow-lg shadow-black/20 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
+        className="glass-card border border-black/10 rounded-2xl overflow-hidden shadow-lg shadow-black/10 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
       >
         {/* Top gradient accent */}
         <div className="h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
@@ -129,8 +129,8 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
                   type="button"
                   onClick={handleDelete}
                   disabled={deleteBusy}
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
+                  whileHover={{ scale: 1 }}
+                  whileTap={{ scale: 1 }}
                   transition={spring}
                   className="p-1.5 rounded-lg border border-danger/30 bg-danger/10 text-danger hover:bg-danger/20 disabled:opacity-50 transition-colors"
                   title="Delete post"
@@ -167,7 +167,7 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               />
             </div>
           ) : (
-            <div className="flex items-center gap-2 rounded-xl bg-white/[0.03] border border-white/8 px-4 py-3 mb-4">
+            <div className="flex items-center gap-2 rounded-xl bg-white/70 border border-black/10 px-4 py-3 mb-4">
               <Loader2 size={14} strokeWidth={2} className="text-text-muted animate-spin" />
               <span className="text-[11px] text-text-muted font-medium">Generating audio summary…</span>
             </div>
@@ -180,13 +180,13 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               type="button"
               onClick={() => handleVote('like')}
               disabled={voteBusy}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 1 }}
               transition={spring}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50 ${
                 post.user_vote === 'like'
                   ? 'bg-primary/20 border-primary/40 text-primary'
-                  : 'bg-white/5 border-white/10 text-text-muted hover:text-text hover:border-white/20'
+                  : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90 hover:border-black/20'
               }`}
             >
               <ThumbsUp
@@ -202,13 +202,13 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               type="button"
               onClick={() => handleVote('dislike')}
               disabled={voteBusy}
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 1 }}
               transition={spring}
               className={`inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium border transition-colors disabled:opacity-50 ${
                 post.user_vote === 'dislike'
                   ? 'bg-danger/20 border-danger/40 text-danger'
-                  : 'bg-white/5 border-white/10 text-text-muted hover:text-text hover:border-white/20'
+                  : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90 hover:border-black/20'
               }`}
             >
               <ThumbsDown
@@ -223,8 +223,8 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
             <motion.button
               type="button"
               onClick={() => setContentOpen(true)}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 1 }}
               transition={spring}
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold bg-primary/15 text-primary border border-primary/25 hover:bg-primary/25 hover:border-primary/40 transition-colors"
             >
@@ -256,11 +256,11 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.96, y: 12 }}
               transition={spring}
-              className="relative z-[101] w-full max-w-2xl max-h-[90vh] glass-float border border-white/10 rounded-2xl shadow-2xl shadow-black/60 overflow-hidden flex flex-col"
+              className="relative z-[101] w-full max-w-2xl max-h-[90vh] glass-float border border-black/10 rounded-2xl shadow-xl shadow-black/10 overflow-hidden flex flex-col"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal header */}
-              <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-white/10 bg-surface/40 shrink-0">
+              <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-black/10 bg-white/70 shrink-0">
                 <div className="min-w-0">
                   <h2 className="text-lg font-bold text-text tracking-tight truncate">{post.topic}</h2>
                   <div className="flex items-center gap-3 mt-1">
@@ -280,9 +280,9 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
                 <motion.button
                   type="button"
                   onClick={() => setContentOpen(false)}
-                  whileHover={{ scale: 1.06 }}
-                  whileTap={{ scale: 0.94 }}
-                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-white/10 shrink-0"
+                  whileHover={{ scale: 1 }}
+                  whileTap={{ scale: 1 }}
+                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-black/5 shrink-0"
                   aria-label="Close"
                 >
                   <X size={20} strokeWidth={2} />
@@ -312,7 +312,7 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
                 </div>
               </div>
 
-              <div className="text-[10px] text-text-muted text-center px-4 py-2 border-t border-white/10 bg-black/30 shrink-0">
+              <div className="text-[10px] text-text-muted text-center px-4 py-2 border-t border-black/10 bg-white/70 shrink-0">
                 Press Esc or click outside to close
               </div>
             </motion.div>

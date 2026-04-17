@@ -83,6 +83,8 @@ app.use('/api/ai', require('./routes/aiRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/library', require('./routes/libraryRoutes'));
 app.use('/api/challenges', require('./routes/challengeRoutes'));
+app.use('/api/dashboard', require('./routes/dashboardRoutes'));
+app.use('/api/sessions', require('./routes/sessionsRoutes'));
 
 
 app.get('/api/health', (req, res) => {

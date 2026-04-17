@@ -55,13 +55,13 @@ const LoginPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/12 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-secondary/10 rounded-full blur-3xl" />
       </div>
 
       <div className="relative w-full max-w-md animate-fadeInUp overflow-hidden">
         <div className="text-center mb-8">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center mb-4 glow">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center mb-4 shadow-sm">
             <span className="text-2xl font-bold text-white">L</span>
           </div>
           <h1 className="text-3xl font-bold gradient-text">Learnexus</h1>
@@ -72,7 +72,7 @@ const LoginPage = () => {
           </p>
         </div>
 
-        <div className="glass-card p-8 relative min-h-[320px]">
+        <div className="glass-card p-8 relative min-h-[320px] shadow-xl shadow-black/5">
           {error && (
             <div className="mb-4 p-3 rounded-lg bg-danger/10 border border-danger/20 text-danger text-sm" role="alert">
               {error}
@@ -108,7 +108,7 @@ const LoginPage = () => {
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-white/10 rounded-xl text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                     placeholder="you@university.edu"
                     required
                     autoComplete="email"
@@ -130,7 +130,7 @@ const LoginPage = () => {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-white/10 rounded-xl text-text placeholder:text-text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                     placeholder="Your name"
                     required
                     autoComplete="name"
@@ -181,7 +181,7 @@ const LoginPage = () => {
                     maxLength={8}
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                    className="w-full pl-10 pr-4 py-3 bg-background border border-white/10 rounded-xl text-text text-lg tracking-[0.35em] font-mono focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                    className="w-full pl-10 pr-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text text-lg tracking-[0.35em] font-mono focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                     placeholder="000000"
                     required
                     autoComplete="one-time-code"

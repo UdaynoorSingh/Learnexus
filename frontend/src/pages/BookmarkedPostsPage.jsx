@@ -70,11 +70,11 @@ const BookmarkedPostsPage = () => {
       )}
 
       {loading ? (
-        <div className="glass-card border border-white/10 rounded-2xl p-12 text-center text-text-muted">
+        <div className="glass-card border border-black/10 rounded-2xl p-12 text-center text-text-muted">
           Loading bookmarks…
         </div>
       ) : posts.length === 0 ? (
-        <div className="glass-card border border-white/10 rounded-2xl p-12 text-center">
+        <div className="glass-card border border-black/10 rounded-2xl p-12 text-center">
           <FiBookmark size={40} className="mx-auto mb-3 text-text-muted opacity-40" />
           <p className="text-text-muted">No bookmarked posts yet.</p>
           <Link

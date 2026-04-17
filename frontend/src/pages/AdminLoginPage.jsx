@@ -58,7 +58,7 @@ const AdminLoginPage = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-background border border-white/10 rounded-xl text-text placeholder-text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                  className="w-full pl-10 pr-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text placeholder-text-muted/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                   placeholder="admin@learnexus.com"
                   required
                   autoComplete="username"
@@ -74,7 +74,7 @@ const AdminLoginPage = () => {
                   type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-12 py-3 bg-background border border-white/10 rounded-xl text-text placeholder-text-muted/50 focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+                  className="w-full pl-10 pr-12 py-3 bg-white/80 border border-black/10 rounded-xl text-text placeholder-text-muted/50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                   placeholder="••••••••"
                   required
                   autoComplete="current-password"

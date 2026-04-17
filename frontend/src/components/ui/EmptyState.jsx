@@ -54,7 +54,7 @@ export default function EmptyState({
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      className="surface-card border border-white/10 rounded-2xl p-10 text-center max-w-lg mx-auto"
+      className="surface-card border border-black/10 rounded-2xl p-10 text-center max-w-lg mx-auto"
     >
       <EmptyStateIllustration variant={illustration} />
       <h3 className="mt-6 text-lg font-bold text-text tracking-tight">{title}</h3>

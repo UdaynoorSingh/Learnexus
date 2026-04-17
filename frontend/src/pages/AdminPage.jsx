@@ -447,7 +447,7 @@ const AdminPage = () => {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+          className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text appearance-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
         >
           <option value="">{placeholder}</option>
           {options.map(opt => (
@@ -487,7 +487,7 @@ const AdminPage = () => {
         </div>
       )}
 
-      <div className="flex gap-1 bg-surface rounded-xl p-1">
+      <div className="flex gap-1 bg-white/70 border border-black/10 rounded-xl p-1">
         {tabs.map(tab => (
           <button
             key={tab.id}
@@ -531,7 +531,7 @@ const AdminPage = () => {
                     <button
                       type="button"
                       onClick={() => setViewingNoteUrl(note.file_url)}
-                      className="px-3 py-2 rounded-lg bg-surface-light text-text-muted hover:text-text text-sm font-medium flex items-center gap-1 transition-all"
+                      className="px-3 py-2 rounded-lg bg-white/70 border border-black/10 text-text-muted hover:text-text hover:bg-white/90 text-sm font-medium flex items-center gap-1 transition-all"
                       title="View Note Securely"
                     >
                       <FiExternalLink size={14} /> View
@@ -610,7 +610,7 @@ const AdminPage = () => {
                 {collegeBanner.text}
               </div>
             )}
-            <form onSubmit={handleCreateCollege} className="flex flex-col sm:flex-row flex-wrap gap-3 items-end border-t border-white/10 pt-6">
+            <form onSubmit={handleCreateCollege} className="flex flex-col sm:flex-row flex-wrap gap-3 items-end border-t border-black/10 pt-6">
               <div className="flex-1 min-w-[10rem] w-full sm:w-auto">
                 <label className="block text-xs font-medium text-text-muted mb-1.5">College name</label>
                 <input
@@ -618,7 +618,7 @@ const AdminPage = () => {
                   value={newCollegeName}
                   onChange={(e) => setNewCollegeName(e.target.value)}
                   placeholder="e.g. State University"
-                  className="w-full px-3 py-2.5 bg-background border border-white/10 rounded-lg text-sm text-text"
+                  className="w-full px-3 py-2.5 bg-white/80 border border-black/10 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                 />
               </div>
               <div className="flex-1 min-w-[10rem] w-full sm:w-auto">
@@ -628,7 +628,7 @@ const AdminPage = () => {
                   value={newCollegeDomain}
                   onChange={(e) => setNewCollegeDomain(e.target.value)}
                   placeholder="univ.edu (no @)"
-                  className="w-full px-3 py-2.5 bg-background border border-white/10 rounded-lg text-sm text-text"
+                  className="w-full px-3 py-2.5 bg-white/80 border border-black/10 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                 />
               </div>
               <button
@@ -641,13 +641,13 @@ const AdminPage = () => {
           </div>
 
           <div className="glass-card overflow-hidden">
-            <div className="px-6 py-4 border-b border-white/10">
+            <div className="px-6 py-4 border-b border-black/10">
               <h4 className="text-sm font-semibold text-text">Registered colleges</h4>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm text-left">
                 <thead>
-                  <tr className="text-text-muted border-b border-white/10">
+                  <tr className="text-text-muted border-b border-black/10">
                     <th className="px-6 py-3 font-medium">Name</th>
                     <th className="px-6 py-3 font-medium">Email domain</th>
                     <th className="px-6 py-3 font-medium w-40">Actions</th>
@@ -662,21 +662,21 @@ const AdminPage = () => {
                     </tr>
                   ) : (
                     adminColleges.map((c) => (
-                      <tr key={c.id} className="border-b border-white/5 hover:bg-white/[0.02]">
+                      <tr key={c.id} className="border-b border-black/5 hover:bg-black/[0.02]">
                         {editingCollegeId === c.id ? (
                           <>
                             <td className="px-6 py-3 align-top">
                               <input
                                 value={editCollegeName}
                                 onChange={(e) => setEditCollegeName(e.target.value)}
-                                className="w-full px-2 py-1.5 bg-background border border-white/10 rounded-lg text-text"
+                                className="w-full px-2 py-1.5 bg-white/80 border border-black/10 rounded-lg text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                               />
                             </td>
                             <td className="px-6 py-3 align-top">
                               <input
                                 value={editCollegeDomain}
                                 onChange={(e) => setEditCollegeDomain(e.target.value)}
-                                className="w-full px-2 py-1.5 bg-background border border-white/10 rounded-lg text-text font-mono text-xs"
+                                className="w-full px-2 py-1.5 bg-white/80 border border-black/10 rounded-lg text-text font-mono text-xs focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
                               />
                             </td>
                             <td className="px-6 py-3 align-top">
@@ -687,7 +687,7 @@ const AdminPage = () => {
                                 <button
                                   type="button"
                                   onClick={cancelEditCollege}
-                                  className="px-3 py-1.5 rounded-lg bg-surface-light text-text text-xs"
+                                  className="px-3 py-1.5 rounded-lg bg-white/70 border border-black/10 text-text text-xs hover:bg-white/90"
                                 >
                                   Cancel
                                 </button>
@@ -703,7 +703,7 @@ const AdminPage = () => {
                                 <button
                                   type="button"
                                   onClick={() => startEditCollege(c)}
-                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-surface-light text-text text-xs font-medium hover:bg-white/10"
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/70 border border-black/10 text-text text-xs font-medium hover:bg-white/90"
                                 >
                                   <FiEdit2 size={12} /> Edit
                                 </button>
@@ -742,7 +742,7 @@ const AdminPage = () => {
                   setSelectedSemester('');
                   setSelectedSubject('');
                 }}
-                className="px-4 py-2 bg-background border border-white/10 rounded-xl text-sm text-text min-w-[12rem]"
+                className="px-4 py-2 bg-white/80 border border-black/10 rounded-xl text-sm text-text min-w-[12rem] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
               >
                 {adminColleges.map((c) => (
                   <option key={c.id} value={String(c.id)}>
@@ -760,7 +760,7 @@ const AdminPage = () => {
               <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
               <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
               <form onSubmit={handleCreateDegree} className="flex gap-2">
-                <input type="text" placeholder="New Degree Name" value={newDegree} onChange={e => setNewDegree(e.target.value)} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text" />
+                <input type="text" placeholder="New Degree Name" value={newDegree} onChange={e => setNewDegree(e.target.value)} className="flex-1 px-3 py-2 bg-white/80 border border-black/10 rounded-lg text-sm text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 <button type="submit" className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium"><FiPlus size={16} /></button>
               </form>
             </div>
@@ -769,7 +769,7 @@ const AdminPage = () => {
               <h3 className="text-lg font-bold text-text mb-4">Branch</h3>
               <SelectField label="Select Branch" value={selectedBranch} onChange={setSelectedBranch} options={branches} placeholder="Select branch..." />
               <form onSubmit={handleCreateBranch} className="flex gap-2">
-                <input type="text" placeholder="New Branch Name" value={newBranch} onChange={e => setNewBranch(e.target.value)} disabled={!selectedDegree} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <input type="text" placeholder="New Branch Name" value={newBranch} onChange={e => setNewBranch(e.target.value)} disabled={!selectedDegree} className="flex-1 px-3 py-2 bg-white/80 border border-black/10 rounded-lg text-sm text-text disabled:opacity-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 <button type="submit" disabled={!selectedDegree} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
               </form>
             </div>
@@ -778,7 +778,7 @@ const AdminPage = () => {
               <h3 className="text-lg font-bold text-text mb-4">Semester</h3>
               <SelectField label="Select Semester" value={selectedSemester} onChange={setSelectedSemester} options={semesters} labelKey="number" placeholder="Select semester..." />
               <form onSubmit={handleCreateSemester} className="flex gap-2">
-                <input type="number" placeholder="New Semester (Number)" value={newSemester} onChange={e => setNewSemester(e.target.value)} disabled={!selectedBranch} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <input type="number" placeholder="New Semester (Number)" value={newSemester} onChange={e => setNewSemester(e.target.value)} disabled={!selectedBranch} className="flex-1 px-3 py-2 bg-white/80 border border-black/10 rounded-lg text-sm text-text disabled:opacity-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 <button type="submit" disabled={!selectedBranch} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
               </form>
             </div>
@@ -787,7 +787,7 @@ const AdminPage = () => {
               <h3 className="text-lg font-bold text-text mb-4">Subject</h3>
               <SelectField label="Select Subject" value={selectedSubject} onChange={setSelectedSubject} options={subjects} placeholder="Select subject..." />
               <form onSubmit={handleCreateSubject} className="flex gap-2">
-                <input type="text" placeholder="New Subject Name" value={newSubject} onChange={e => setNewSubject(e.target.value)} disabled={!selectedSemester} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <input type="text" placeholder="New Subject Name" value={newSubject} onChange={e => setNewSubject(e.target.value)} disabled={!selectedSemester} className="flex-1 px-3 py-2 bg-white/80 border border-black/10 rounded-lg text-sm text-text disabled:opacity-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 <button type="submit" disabled={!selectedSemester} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /></button>
               </form>
             </div>
@@ -798,12 +798,12 @@ const AdminPage = () => {
                 <label className="block text-sm font-medium text-text-muted mb-2">Current Topics in Subject</label>
                 <div className="flex flex-wrap gap-2">
                   {topics.length === 0 ? <span className="text-sm text-text-muted">No topics yet</span> :
-                    topics.map(t => <span key={t.id} className="px-3 py-1 bg-surface-light rounded-full text-xs text-text">{t.name}</span>)
+                    topics.map(t => <span key={t.id} className="px-3 py-1 bg-white/70 border border-black/10 rounded-full text-xs text-text">{t.name}</span>)
                   }
                 </div>
               </div>
               <form onSubmit={handleCreateTopic} className="flex gap-2 max-w-md">
-                <input type="text" placeholder="New Topic Name" value={newTopic} onChange={e => setNewTopic(e.target.value)} disabled={!selectedSubject} className="flex-1 px-3 py-2 bg-background border border-white/10 rounded-lg text-sm text-text disabled:opacity-50" />
+                <input type="text" placeholder="New Topic Name" value={newTopic} onChange={e => setNewTopic(e.target.value)} disabled={!selectedSubject} className="flex-1 px-3 py-2 bg-white/80 border border-black/10 rounded-lg text-sm text-text disabled:opacity-50 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 <button type="submit" disabled={!selectedSubject} className="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium disabled:opacity-50"><FiPlus size={16} /> Add Topic</button>
               </form>
             </div>
@@ -819,23 +819,23 @@ const AdminPage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-2">Company Name</label>
-                  <input type="text" value={newChallengeCompany} onChange={e => setNewChallengeCompany(e.target.value)} placeholder="e.g. Google, Vercel" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required />
+                  <input type="text" value={newChallengeCompany} onChange={e => setNewChallengeCompany(e.target.value)} placeholder="e.g. Google, Vercel" className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-2">Bounty Credits</label>
-                  <input type="number" value={newChallengeCredits} onChange={e => setNewChallengeCredits(e.target.value)} placeholder="5" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required min="1" max="1000" />
+                  <input type="number" value={newChallengeCredits} onChange={e => setNewChallengeCredits(e.target.value)} placeholder="5" className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" required min="1" max="1000" />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-text-muted mb-2">Challenge Title</label>
-                  <input type="text" value={newChallengeTitle} onChange={e => setNewChallengeTitle(e.target.value)} placeholder="e.g. Optimize React rendering performance" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" required />
+                  <input type="text" value={newChallengeTitle} onChange={e => setNewChallengeTitle(e.target.value)} placeholder="e.g. Optimize React rendering performance" className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" required />
                 </div>
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-text-muted mb-2">Description</label>
-                  <textarea value={newChallengeDesc} onChange={e => setNewChallengeDesc(e.target.value)} placeholder="Provide full details, constraints, and instructions..." rows={4} className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30 resizenone" required />
+                  <textarea value={newChallengeDesc} onChange={e => setNewChallengeDesc(e.target.value)} placeholder="Provide full details, constraints, and instructions..." rows={4} className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 resizenone" required />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-2">Difficulty</label>
-                  <select value={newChallengeDiff} onChange={e => setNewChallengeDiff(e.target.value)} className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30">
+                  <select value={newChallengeDiff} onChange={e => setNewChallengeDiff(e.target.value)} className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15">
                     <option value="Easy">Easy</option>
                     <option value="Medium">Medium</option>
                     <option value="Hard">Hard</option>
@@ -843,7 +843,7 @@ const AdminPage = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-text-muted mb-2">Tags (comma separated)</label>
-                  <input type="text" value={newChallengeTags} onChange={e => setNewChallengeTags(e.target.value)} placeholder="e.g. React, Performance, Typescript" className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text focus:border-primary focus:ring-1 focus:ring-primary/30" />
+                  <input type="text" value={newChallengeTags} onChange={e => setNewChallengeTags(e.target.value)} placeholder="e.g. React, Performance, Typescript" className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15" />
                 </div>
               </div>
               <div className="flex gap-2.5 mt-2">
@@ -851,7 +851,7 @@ const AdminPage = () => {
                   <FiPlus size={16} /> {editingChallengeId ? 'Update Challenge' : 'Publish Challenge'}
                 </button>
                 {editingChallengeId && (
-                  <button type="button" onClick={cancelEditChallenge} className="px-6 py-3 bg-white/10 text-text rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/20 transition-colors">
+                  <button type="button" onClick={cancelEditChallenge} className="px-6 py-3 bg-white/70 border border-black/10 text-text rounded-xl text-sm font-bold flex items-center justify-center gap-2 hover:bg-white/90 transition-colors">
                     <FiX size={16} /> Cancel
                   </button>
                 )}
@@ -866,7 +866,7 @@ const AdminPage = () => {
                 <p className="text-text-muted text-sm text-center py-4">No challenges posted yet.</p>
               ) : (
                 challengesList.map(c => (
-                  <div key={c.id} className="p-4 rounded-xl border border-white/10 bg-surface-light flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-primary/30 transition-colors">
+                  <div key={c.id} className="p-4 rounded-xl border border-black/10 bg-white/70 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center hover:border-primary/30 transition-colors">
                     <div className="max-w-2xl">
                       <p className="text-xs text-text-muted uppercase tracking-wider font-semibold mb-1">{c.company_name} • {c.difficulty} • {c.bounty_credits} Credits</p>
                       <h4 className="text-base font-bold text-text mb-1">{c.title}</h4>

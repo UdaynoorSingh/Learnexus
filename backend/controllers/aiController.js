@@ -10,7 +10,7 @@ exports.teach = async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topicId, topicName, contextMode, context })
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`AI Backend Error: ${errorText}`);
@@ -32,7 +32,7 @@ exports.chat = async (req, res) => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ topicId, contextMode, history, message, lectureContext })
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`AI Backend Error: ${errorText}`);

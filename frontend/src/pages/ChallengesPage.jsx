@@ -48,7 +48,7 @@ const CompanyLogo = ({ companyName }) => {
   if (error) {
     const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(companyName || 'Company')}&background=random&color=fff&rounded=true&bold=true`;
     return (
-      <img src={avatarUrl} alt={companyName} className="w-10 h-10 rounded-xl shadow-sm border border-white/10" />
+      <img src={avatarUrl} alt={companyName} className="w-10 h-10 rounded-xl shadow-sm border border-black/10" />
     );
   }
 
@@ -57,7 +57,7 @@ const CompanyLogo = ({ companyName }) => {
       src={`https://logo.clearbit.com/${domain}?size=80`}
       alt={`${companyName} logo`}
       onError={() => setError(true)}
-      className="w-10 h-10 rounded-xl object-contain bg-white p-1 border border-white/10 shadow-sm"
+      className="w-10 h-10 rounded-xl object-contain bg-white p-1 border border-black/10 shadow-sm"
     />
   );
 };
@@ -180,12 +180,9 @@ const ChallengesPage = () => {
               initial={{ opacity: 0, y: 24, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ type: 'spring', stiffness: 350, damping: 25, delay: i * 0.05 }}
-              whileHover={{ y: -8, scale: 1.02, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
+              whileHover={{ y: 0, scale: 1, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
               className="group relative rounded-3xl glass-panel overflow-hidden hover:border-primary/40 transition-all duration-500 hover:shadow-[0_20px_60px_-15px_rgba(14,165,233,0.3)]"
             >
-              {/* Dynamic hover glow effect */}
-              <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-2xl z-0" />
-
               {/* Top accent bar */}
               <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-primary via-accent to-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />
 
@@ -222,7 +219,7 @@ const ChallengesPage = () => {
                   {tags.slice(0, 5).map((tag) => (
                     <span
                       key={tag}
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white/5 text-text-muted border border-white/10 hover:border-primary/30 hover:text-primary transition-colors"
+                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white/70 text-text-muted border border-black/10 hover:border-primary/30 hover:text-primary transition-colors"
                     >
                       {tag}
                     </span>
@@ -230,7 +227,7 @@ const ChallengesPage = () => {
                 </div>
 
                 {/* Footer: Bounty + Submissions + CTA */}
-                <div className="flex items-center justify-between pt-4 border-t border-white/10">
+                <div className="flex items-center justify-between pt-4 border-t border-black/10">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
                       <Coins size={16} className="text-amber-400" />
@@ -252,8 +249,8 @@ const ChallengesPage = () => {
                       setActiveModal(challenge.id);
                       setGithubUrl('');
                     }}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
+                    whileHover={{ scale: 1 }}
+                    whileTap={{ scale: 1 }}
                     transition={springAnim}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow"
                   >
@@ -274,7 +271,7 @@ const ChallengesPage = () => {
           animate={{ opacity: 1, scale: 1 }}
           className="text-center py-20"
         >
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/70 border border-black/10 flex items-center justify-center">
             <Trophy size={36} className="text-text-muted" />
           </div>
           <h3 className="text-xl font-bold text-text mb-2">No Challenges Yet</h3>
@@ -292,7 +289,7 @@ const ChallengesPage = () => {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
             onClick={() => setActiveModal(null)}
           >
             <motion.div
@@ -300,7 +297,7 @@ const ChallengesPage = () => {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
               transition={springAnim}
-              className="w-full max-w-md rounded-2xl border border-white/10 bg-[#1a1a2e]/95 backdrop-blur-xl p-6 shadow-2xl"
+              className="w-full max-w-md rounded-2xl border border-black/10 bg-white/90 backdrop-blur-xl p-6 shadow-xl shadow-black/10"
               onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
@@ -317,7 +314,7 @@ const ChallengesPage = () => {
                 <button
                   type="button"
                   onClick={() => setActiveModal(null)}
-                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-white/5 transition-colors"
+                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 transition-colors"
                 >
                   <X size={18} />
                 </button>
@@ -329,7 +326,7 @@ const ChallengesPage = () => {
                 if (!ch) return null;
                 const diff = difficultyConfig[ch.difficulty] || difficultyConfig.Medium;
                 return (
-                  <div className="mb-6 p-4 rounded-xl bg-white/5 border border-white/10">
+                  <div className="mb-6 p-4 rounded-xl bg-white/70 border border-black/10">
                     <p className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-1">
                       {ch.company_name}
                     </p>
@@ -365,7 +362,7 @@ const ChallengesPage = () => {
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     placeholder="https://github.com/you/solution-repo"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/5 border border-white/10 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/80 border border-black/10 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
                     autoFocus
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !submitting) {
@@ -381,12 +378,12 @@ const ChallengesPage = () => {
                 type="button"
                 onClick={() => handleSubmit(activeModal)}
                 disabled={submitting || !githubUrl.trim()}
-                whileHover={!submitting ? { scale: 1.02 } : {}}
-                whileTap={!submitting ? { scale: 0.98 } : {}}
+                whileHover={!submitting ? { scale: 1 } : {}}
+                whileTap={!submitting ? { scale: 1 } : {}}
                 transition={springAnim}
                 className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${submitting || !githubUrl.trim()
-                    ? 'bg-white/10 text-text-muted cursor-not-allowed'
-                    : 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-primary/40'
+                  ? 'bg-white/10 text-text-muted cursor-not-allowed'
+                  : 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-primary/40'
                   }`}
               >
                 {submitting ? (

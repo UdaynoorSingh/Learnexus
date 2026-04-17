@@ -10,25 +10,25 @@ const NoteViewerModal = ({ url, onClose }) => {
   return (
     <AnimatePresence>
       {url && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 sm:p-8">
+        <div className="fixed inset-0 z-[100] flex items-center justify-center modal-backdrop p-4 sm:p-8">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            className="w-full max-w-5xl h-full flex flex-col bg-background border border-white/10 rounded-2xl overflow-hidden shadow-2xl relative"
+            className="w-full max-w-5xl h-full flex flex-col bg-white/90 border border-black/10 rounded-2xl overflow-hidden shadow-xl shadow-black/10 relative"
             onContextMenu={(e) => e.preventDefault()}
           >
-            <div className="px-4 py-3 border-b border-white/10 flex justify-between items-center bg-black/20 shrink-0">
+            <div className="px-4 py-3 border-b border-black/10 flex justify-between items-center bg-white/70 shrink-0">
               <h3 className="text-sm font-semibold text-text">Note Viewer</h3>
               <button
                 onClick={onClose}
-                className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-white/10 transition-colors"
+                className="p-1.5 rounded-lg text-text-muted hover:text-text hover:bg-black/5 transition-colors"
               >
                 <FiX size={20} />
               </button>
             </div>
 
-            <div className="flex-1 bg-black/40 overflow-hidden relative select-none w-full h-full flex items-center justify-center">
+            <div className="flex-1 bg-white/40 overflow-hidden relative select-none w-full h-full flex items-center justify-center">
               <div
                 className="absolute inset-0 z-20 pointer-events-none"
               />

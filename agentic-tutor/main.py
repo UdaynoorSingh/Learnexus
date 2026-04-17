@@ -1,11 +1,13 @@
 """
 Agentic AI Tutor — FastAPI Entrypoint
 
-Runs on port 5002. Uses shared .env from ai-backend-python.
+Local default: port 5002 (TUTOR_PORT). On Render, bind to the platform PORT (never hardcode in Start Command).
+
+Render Start Command: uvicorn main:app --host 0.0.0.0 --port $PORT
+Do not set PORT manually in Render; the platform injects it. Do not use --port 5002 in production.
 """
 
 import os
-import sys
 import logging
 from pathlib import Path
 
@@ -15,7 +17,10 @@ from dotenv import load_dotenv
 import uvicorn
 
 # ──────────────── Load shared .env ────────────────
-# Try the shared .env from ai-backend-python first, then local
+# Try the shared .env from ai-backend-python first, then local.
+# ai-backend-python/.env often sets PORT=5001 for that service. This app must use
+# TUTOR_PORT (default 5002) locally, or Render's injected PORT in production.
+_host_port = os.environ.get("PORT")
 env_paths = [
     Path(__file__).parent.parent / "ai-backend-python" / ".env",
     Path(__file__).parent / ".env",
@@ -24,6 +29,11 @@ for env_path in env_paths:
     if env_path.exists():
         load_dotenv(env_path)
         break
+if _host_port is not None:
+    os.environ["PORT"] = _host_port
+else:
+    # Drop PORT copied from shared .env so we bind to TUTOR_PORT / 5002, not 5001.
+    os.environ.pop("PORT", None)
 
 # ──────────────── Logging ─────────────────────────
 logging.basicConfig(
@@ -75,6 +85,8 @@ async def root():
 
 # ──────────────── Run ─────────────────────────────
 if __name__ == "__main__":
-    port = int(os.getenv("TUTOR_PORT", "5002"))
+    # Render and other hosts set PORT; local dev can use TUTOR_PORT (default 5002).
+    port = int(os.environ.get("PORT") or os.getenv("TUTOR_PORT") or "5002")
+    reload = os.environ.get("PORT") is None
     logger.info(f"Starting Agentic AI Tutor on port {port}...")
-    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=True)
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload)

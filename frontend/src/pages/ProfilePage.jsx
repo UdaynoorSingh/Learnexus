@@ -104,7 +104,7 @@ const ProfilePage = () => {
             {transactions.map((tx, i) => (
               <div
                 key={i}
-                className="flex items-center gap-4 p-3 rounded-xl bg-background/50 border border-white/5 hover:border-white/10 transition-all"
+                className="flex items-center gap-4 p-3 rounded-xl bg-white/60 border border-black/10 hover:border-black/20 transition-all"
               >
                 <div
                   className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold shrink-0

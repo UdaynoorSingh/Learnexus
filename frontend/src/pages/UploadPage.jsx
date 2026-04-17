@@ -144,7 +144,7 @@ const UploadPage = () => {
         <select
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full px-4 py-3 bg-background border border-white/10 rounded-xl text-text appearance-none focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/30 transition-all"
+          className="w-full px-4 py-3 bg-white/80 border border-black/10 rounded-xl text-text appearance-none focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
         >
           <option value="">{placeholder}</option>
           {options.map(opt => (
@@ -189,7 +189,7 @@ const UploadPage = () => {
             onDragOver={handleDrag}
             onDrop={handleDrop}
             className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer
-              ${dragActive ? 'border-primary bg-primary/10' : 'border-white/10 hover:border-white/20'}`}
+              ${dragActive ? 'border-primary bg-primary/10' : 'border-black/10 hover:border-black/20 bg-white/50'}`}
             onClick={() => document.getElementById('file-input').click()}
           >
             {file ? (

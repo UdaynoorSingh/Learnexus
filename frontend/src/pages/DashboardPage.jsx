@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
@@ -7,12 +7,18 @@ import {
   FiBook, FiFileText, FiTrendingUp, FiZap, FiUpload, FiCompass, FiClock,
   FiPlay, FiMessageSquare, FiAward, FiBookOpen, FiGlobe, FiYoutube,
 } from 'react-icons/fi';
-import { GraduationCap, Library, Trophy, Sparkles } from 'lucide-react';
+import { GraduationCap, Library, Trophy, Sparkles, Pin, Wand2, Calendar, ArrowRight, Flame, CheckCircle2 } from 'lucide-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import GradientText from '../components/reactbits/GradientText';
 import Particles from '../components/reactbits/Particles';
 import SplitText from '../components/reactbits/SplitText';
+import DigitalGraph3D from '../components/reactbits/DigitalGraph3D';
+import heroIllustration from '../assets/illustrations/dashboard-hero.svg';
+import planningIllustration from '../assets/illustrations/planning-notes.svg';
+import collaborationWhiteboardIllustration from '../assets/illustrations/collaboration-whiteboard.svg';
+import collaborationChatIllustration from '../assets/illustrations/collaboration-chat.svg';
+import workspaceSnapshotIllustration from '../assets/illustrations/workspace-snapshot.svg';
 
 /* ── Animation constants ── */
 const spring = { type: 'spring', stiffness: 420, damping: 32 };
@@ -25,47 +31,33 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 350, damping: 25 } }
 };
 
-/* ── Antigravity float keyframes (different delays = organic drift) ── */
-const floatVariants = (delay = 0) => ({
-  animate: {
-    y: [0, -8, 0, -4, 0],
-    transition: { duration: 6, ease: 'easeInOut', repeat: Infinity, delay }
-  }
-});
+const toDayKey = (d) => {
+  const dt = new Date(d);
+  if (Number.isNaN(dt.getTime())) return null;
+  const y = dt.getFullYear();
+  const m = String(dt.getMonth() + 1).padStart(2, '0');
+  const day = String(dt.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+};
+
+const addDays = (d, delta) => {
+  const dt = new Date(d);
+  dt.setDate(dt.getDate() + delta);
+  return dt;
+};
 
 /* ═══════════════════════════════════════════════════════════
    TiltCard — Physics-based 3D hover tilt via mouse position
    ═══════════════════════════════════════════════════════════ */
 const TiltCard = ({ children, className = '', glowColor = 'rgba(14,165,233,0.15)', floatDelay = 0 }) => {
   const ref = useRef(null);
-  const mx = useMotionValue(0);
-  const my = useMotionValue(0);
-  const rotateX = useSpring(useTransform(my, [-0.5, 0.5], [8, -8]), { stiffness: 250, damping: 20 });
-  const rotateY = useSpring(useTransform(mx, [-0.5, 0.5], [-8, 8]), { stiffness: 250, damping: 20 });
-  const scale = useSpring(1, { stiffness: 300, damping: 25 });
-
-  const handleMouse = (e) => {
-    const rect = ref.current.getBoundingClientRect();
-    mx.set((e.clientX - rect.left) / rect.width - 0.5);
-    my.set((e.clientY - rect.top) / rect.height - 0.5);
-  };
 
   return (
     <motion.div
       ref={ref}
-      onMouseMove={handleMouse}
-      onMouseEnter={() => scale.set(1.03)}
-      onMouseLeave={() => { mx.set(0); my.set(0); scale.set(1); }}
-      style={{ rotateX, rotateY, scale, transformStyle: 'preserve-3d', perspective: 800 }}
       variants={itemVariants}
-      {...floatVariants(floatDelay)}
       className={`relative group cursor-default ${className}`}
     >
-      {/* Hover glow */}
-      <div
-        className="absolute -inset-1 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-500 blur-xl z-0 pointer-events-none"
-        style={{ background: glowColor }}
-      />
       <div className="relative z-10 h-full">{children}</div>
     </motion.div>
   );
@@ -79,12 +71,54 @@ const DashboardPage = () => {
   const [stats, setStats] = useState(null);
   const [chartData, setChartData] = useState(null);
   const [recentNotes, setRecentNotes] = useState([]);
+  const [conceptGraph, setConceptGraph] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [pinned, setPinned] = useState([]);
+  const [pinsIndex, setPinsIndex] = useState({});
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [timelineEvents, setTimelineEvents] = useState([]);
+  const [taskPrompt, setTaskPrompt] = useState('');
+  const [taskIdeas, setTaskIdeas] = useState([]);
 
   useEffect(() => { fetchDashboardData(); }, []);
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('learnexus:pinnedActions');
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) setPinned(parsed);
+    } catch {
+      setPinned([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('learnexus:pinnedActions', JSON.stringify(pinned));
+    } catch {
+      // ignore
+    }
+  }, [pinned]);
 
   const fetchDashboardData = async () => {
     try {
+      // Overview (pins, sessions, events) - best effort
+      try {
+        const overviewRes = await api.get('/dashboard/overview');
+        const pins = Array.isArray(overviewRes.data?.pins) ? overviewRes.data.pins : [];
+        const pinHrefList = pins.map((p) => p.href).filter(Boolean).slice(0, 6);
+        const idx = {};
+        for (const p of pins) {
+          if (p?.href) idx[p.href] = p;
+        }
+        setPinsIndex(idx);
+        if (pinHrefList.length > 0) setPinned(pinHrefList);
+
+        setUpcomingSessions(Array.isArray(overviewRes.data?.upcomingSessions) ? overviewRes.data.upcomingSessions : []);
+        setTimelineEvents(Array.isArray(overviewRes.data?.events) ? overviewRes.data.events : []);
+      } catch {
+        // ignore
+      }
+
       try {
         const [statsRes, chartRes] = await Promise.all([
           api.get('/admin/stats'),
@@ -98,6 +132,14 @@ const DashboardPage = () => {
       }
       const creditsRes = await api.get('/credits/history');
       setRecentNotes(creditsRes.data.slice(0, 5));
+
+      // Concept graph (cached in Postgres; computed by AI backend if needed)
+      try {
+        const graphRes = await api.get('/dashboard/concept-graph');
+        setConceptGraph(graphRes.data);
+      } catch {
+        setConceptGraph(null);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -105,30 +147,105 @@ const DashboardPage = () => {
     }
   };
 
+  const activity = useMemo(() => {
+    const days = new Set();
+    for (const tx of recentNotes) {
+      const k = toDayKey(tx.created_at);
+      if (k) days.add(k);
+    }
+    // streak: consecutive days including today (or yesterday if nothing today)
+    const todayKey = toDayKey(new Date());
+    const yesterdayKey = toDayKey(addDays(new Date(), -1));
+    const streakAnchor = days.has(todayKey) ? new Date() : days.has(yesterdayKey) ? addDays(new Date(), -1) : null;
+    let streak = 0;
+    if (streakAnchor) {
+      for (let i = 0; i < 365; i++) {
+        const k = toDayKey(addDays(streakAnchor, -i));
+        if (!k || !days.has(k)) break;
+        streak += 1;
+      }
+    }
+    const last7 = [];
+    for (let i = 6; i >= 0; i--) {
+      const dt = addDays(new Date(), -i);
+      const k = toDayKey(dt);
+      last7.push({ key: k, label: dt.toLocaleDateString(undefined, { weekday: 'short' }), active: k ? days.has(k) : false });
+    }
+    return { streak, last7, activeDaysLast7: last7.filter((x) => x.active).length };
+  }, [recentNotes]);
+
   if (loading) return <LoadingSpinner size="lg" text="Loading dashboard..." />;
 
   const statCards = [
-    { label: 'Credits', value: user?.credits || 0, icon: FiZap, gradient: 'from-amber-500 to-orange-500', glow: 'rgba(245,158,11,0.2)' },
-    { label: 'Total Topics', value: stats?.totalTopics || 0, icon: FiBook, gradient: 'from-primary to-cyan-400', glow: 'rgba(14,165,233,0.2)' },
-    { label: 'Total Notes', value: stats?.totalNotes || 0, icon: FiFileText, gradient: 'from-accent to-fuchsia-400', glow: 'rgba(139,92,246,0.2)' },
-    { label: 'Pending Review', value: stats?.pendingNotes || 0, icon: FiTrendingUp, gradient: 'from-emerald-500 to-green-400', glow: 'rgba(34,197,94,0.2)' },
+    { label: 'Credits', value: user?.credits || 0, icon: FiZap, chip: 'bg-warning/10 text-warning border border-warning/25' },
+    { label: 'Total Topics', value: stats?.totalTopics || 0, icon: FiBook, chip: 'bg-primary/10 text-primary border border-primary/25' },
+    { label: 'Total Notes', value: stats?.totalNotes || 0, icon: FiFileText, chip: 'bg-secondary/10 text-secondary border border-secondary/25' },
+    { label: 'Pending Review', value: stats?.pendingNotes || 0, icon: FiTrendingUp, chip: 'bg-success/10 text-success border border-success/25' },
   ];
 
   const quickActions = [
-    { to: '/explorer', icon: FiCompass, label: 'Browse Topics', desc: 'Explore resources', gradient: 'from-primary/20 to-cyan-500/10', border: 'border-primary/25', text: 'text-primary' },
-    { to: '/upload', icon: FiUpload, label: 'Upload Notes', desc: 'Earn credits', gradient: 'from-accent/20 to-fuchsia-500/10', border: 'border-accent/25', text: 'text-accent' },
-    { to: '/video-learn', icon: FiYoutube, label: 'YouTube Learn', desc: 'Video lectures', gradient: 'from-red-500/20 to-pink-500/10', border: 'border-red-500/25', text: 'text-red-400' },
-    { to: '/ai-tutor', icon: GraduationCap, label: 'AI Tutor', desc: 'Personal tutor', gradient: 'from-emerald-500/20 to-teal-500/10', border: 'border-emerald-500/25', text: 'text-emerald-400' },
-    { to: '/nexus-board', icon: FiMessageSquare, label: 'Nexus Board', desc: 'Community hub', gradient: 'from-indigo-500/20 to-blue-500/10', border: 'border-indigo-500/25', text: 'text-indigo-400' },
-    { to: '/nexus-library', icon: Library, label: 'Nexus Library', desc: 'Study material', gradient: 'from-amber-500/20 to-yellow-500/10', border: 'border-amber-500/25', text: 'text-amber-400' },
-    { to: '/challenges', icon: Trophy, label: 'Challenges', desc: 'Compete & earn', gradient: 'from-pink-500/20 to-rose-500/10', border: 'border-pink-500/25', text: 'text-pink-400' },
-    { to: '/profile', icon: FiAward, label: 'Profile', desc: 'Your journey', gradient: 'from-sky-500/20 to-cyan-500/10', border: 'border-sky-500/25', text: 'text-sky-400' },
+    { to: '/upload', icon: FiUpload, label: 'Upload Notes', desc: 'Earn credits', chip: 'bg-primary/10 text-primary border border-primary/25' },
+    { to: '/explorer', icon: FiCompass, label: 'Browse Topics', desc: 'Explore resources', chip: 'bg-secondary/10 text-secondary border border-secondary/25' },
+    { to: '/video-learn', icon: FiYoutube, label: 'YouTube Learn', desc: 'Video lectures', chip: 'bg-danger/10 text-danger border border-danger/25' },
+    { to: '/ai-tutor', icon: GraduationCap, label: 'AI Tutor', desc: 'Personal tutor', chip: 'bg-success/10 text-success border border-success/25' },
+    { to: '/nexus-board', icon: FiMessageSquare, label: 'Nexus Board', desc: 'Community hub', chip: 'bg-accent/5 text-text border border-black/10' },
+    { to: '/nexus-library', icon: Library, label: 'Nexus Library', desc: 'Study material', chip: 'bg-warning/10 text-warning border border-warning/25' },
+    { to: '/challenges', icon: Trophy, label: 'Challenges', desc: 'Compete & earn', chip: 'bg-black/5 text-text border border-black/10' },
+    { to: '/profile', icon: FiAward, label: 'Profile', desc: 'Your journey', chip: 'bg-black/5 text-text border border-black/10' },
   ];
+
+  const togglePin = async (to) => {
+    // Optimistic local update
+    const nextPinned = pinned.includes(to) ? pinned.filter((x) => x !== to) : [to, ...pinned].slice(0, 6);
+    setPinned(nextPinned);
+
+    // Persist best-effort
+    try {
+      if (pinsIndex?.[to]?.id) {
+        await api.delete(`/dashboard/pins/${pinsIndex[to].id}`);
+        setPinsIndex((prev) => {
+          const copy = { ...(prev || {}) };
+          delete copy[to];
+          return copy;
+        });
+      } else {
+        const action = quickActions.find((a) => a.to === to);
+        const created = await api.post('/dashboard/pins', {
+          kind: 'route',
+          label: action?.label || 'Pinned action',
+          href: to,
+          icon: action?.label || null,
+          position: 0,
+        });
+        setPinsIndex((prev) => ({ ...(prev || {}), [to]: created.data || created }));
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const sortedActions = [
+    ...quickActions.filter((a) => pinned.includes(a.to)).sort((a, b) => pinned.indexOf(a.to) - pinned.indexOf(b.to)),
+    ...quickActions.filter((a) => !pinned.includes(a.to)),
+  ];
+
+  const handleGenerateTaskIdeas = (e) => {
+    e.preventDefault();
+    const t = taskPrompt.trim();
+    if (!t) return;
+    const base = [
+      `Make a 20‑minute plan for: ${t}`,
+      `List key concepts + 5 practice questions on: ${t}`,
+      `Summarize your notes for: ${t} (3 bullet takeaways)`,
+      `Create a study checklist for: ${t} (Today / This week)`,
+    ];
+    setTaskIdeas(base);
+  };
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
-        <div className="bg-surface/95 backdrop-blur-xl border border-white/10 p-3 rounded-xl shadow-2xl shadow-black/50">
+        <div className="bg-surface/95 backdrop-blur-xl border border-black/10 p-3 rounded-xl shadow-xl shadow-black/10">
           <p className="text-text font-bold mb-1 text-xs">{label}</p>
           <p className="text-primary text-sm font-bold">{payload[0].value}</p>
         </div>
@@ -144,103 +261,126 @@ const DashboardPage = () => {
       initial="hidden"
       animate="show"
     >
-      {/* ══════ HERO SECTION ══════ */}
-      <motion.div variants={itemVariants} className="relative rounded-3xl overflow-hidden min-h-[240px]">
-        {/* Particles background */}
+      {/* ══════ HEADER / HERO (light) ══════ */}
+      <motion.div
+        variants={itemVariants}
+        className="relative rounded-3xl overflow-hidden"
+        style={{
+          backgroundImage:
+            'radial-gradient(circle at 20% 10%, rgba(239, 68, 68, 0.10), transparent 40%), radial-gradient(circle at 85% 20%, rgba(249, 115, 22, 0.10), transparent 45%), radial-gradient(circle at 55% 90%, rgba(15, 23, 42, 0.05), transparent 55%)',
+        }}
+      >
         <div className="absolute inset-0 z-0">
           <Particles
-            particleCount={120}
-            particleSpread={12}
-            speed={0.08}
-            particleColors={['#0ea5e9', '#8b5cf6', '#ec4899', '#22c55e']}
+            particleCount={90}
+            particleSpread={10}
+            speed={0.06}
+            particleColors={['#ef4444', '#f97316', '#111827']}
             moveParticlesOnHover={true}
-            particleHoverFactor={1.5}
+            particleHoverFactor={1.25}
             alphaParticles={true}
-            particleBaseSize={80}
+            particleBaseSize={70}
             sizeRandomness={0.8}
             cameraDistance={22}
           />
         </div>
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px] z-[1]" />
+        <div
+          className="absolute inset-0 z-[1] opacity-[0.22]"
+          style={{
+            backgroundImage:
+              'radial-gradient(rgba(15,23,42,0.35) 0.7px, transparent 0.7px)',
+            backgroundSize: '18px 18px',
+            backgroundPosition: '0 0',
+            maskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0))',
+            WebkitMaskImage: 'linear-gradient(to bottom, rgba(0,0,0,0.85), rgba(0,0,0,0))',
+          }}
+        />
 
-        {/* Glass overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-black/40 to-transparent backdrop-blur-[2px] z-[1]" />
-
-        {/* Content */}
-        <div className="relative z-[2] p-8 md:p-10 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="relative z-[2] p-7 md:p-9 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
           <div className="max-w-2xl">
-            <div className="flex items-center gap-3 mb-4">
-              <GradientText
-                colors={['#0ea5e9', '#8b5cf6', '#ec4899', '#22c55e', '#0ea5e9']}
-                animationSpeed={6}
-                showBorder={true}
-                className="px-1 py-0.5"
-              >
-                <span className="text-xs font-bold uppercase tracking-widest flex items-center gap-1.5">
-                  <Sparkles size={12} /> Smart Resource Hub
-                </span>
-              </GradientText>
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-black/10 px-3 py-1 text-xs font-semibold text-text shadow-sm">
+              <Sparkles size={14} className="text-primary" />
+              Your workspace
             </div>
 
             <SplitText
               text={`Welcome back, ${user?.name || 'Student'}`}
-              className="text-4xl md:text-5xl font-black text-text tracking-tight leading-tight"
-              delay={35}
-              duration={0.5}
+              className="text-3xl md:text-4xl font-black text-text tracking-tight leading-tight mt-3"
+              delay={25}
+              duration={0.45}
               splitType="words"
-              from={{ opacity: 0, y: 30, rotateX: -40 }}
+              from={{ opacity: 0, y: 18, rotateX: -20 }}
               to={{ opacity: 1, y: 0, rotateX: 0 }}
               tag="h1"
             />
 
             <motion.p
-              className="text-text-muted text-lg mt-3 max-w-lg"
-              initial={{ opacity: 0, y: 16 }}
+              className="text-text-muted text-sm md:text-base mt-2 max-w-xl"
+              initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6, duration: 0.5 }}
+              transition={{ delay: 0.45, duration: 0.45 }}
             >
-              Your personalized learning command center. All resources,{' '}
-              <span className="text-primary font-medium">one platform</span>.
+              All your study tools in one place — notes, AI help, and progress.
             </motion.p>
           </div>
 
           <motion.div
-            className="flex gap-3"
-            initial={{ opacity: 0, x: 20 }}
+            className="flex flex-wrap gap-3"
+            initial={{ opacity: 0, x: 14 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8 }}
+            transition={{ delay: 0.55 }}
           >
-            <Link to="/upload" className="btn-gradient py-3 px-7 rounded-2xl flex items-center gap-2.5 text-sm font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow">
+            <Link
+              to="/upload"
+              className="btn-gradient py-3 px-6 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-sm"
+            >
               <FiUpload size={18} /> Upload Notes
             </Link>
-            <Link to="/explorer" className="flex items-center gap-2.5 px-7 py-3 rounded-2xl bg-white/5 backdrop-blur-md border border-white/15 hover:bg-white/10 hover:border-white/25 text-sm font-bold text-text transition-all">
+            <Link
+              to="/explorer"
+              className="btn-secondary-outline py-3 px-6 rounded-2xl flex items-center gap-2 text-sm font-bold"
+            >
               <FiCompass size={18} /> Explore
             </Link>
           </motion.div>
+        </div>
+
+        {/* Decorative hero image (right side on desktop) */}
+        <div className="pointer-events-none absolute right-6 bottom-0 z-[2] hidden md:block">
+          <div className="relative w-[320px] lg:w-[380px] aspect-[4/3] rounded-3xl overflow-hidden border border-black/10 shadow-xl shadow-black/10 bg-white/70">
+            <img
+              src={heroIllustration}
+              alt="Cartoon illustration of collaborative study workspace"
+              className="absolute inset-0 w-full h-full object-cover"
+              loading="lazy"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/25 to-transparent" />
+          </div>
         </div>
       </motion.div>
 
       {/* ══════ STAT CARDS — floating ══════ */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((stat, i) => (
-          <TiltCard key={i} glowColor={stat.glow} floatDelay={i * 0.8}>
-            <div className="glass-panel p-6 rounded-2xl h-full relative overflow-hidden">
-              {/* Gradient orb */}
-              <div className={`absolute -top-8 -right-8 w-28 h-28 rounded-full bg-gradient-to-br ${stat.gradient} opacity-20 blur-2xl group-hover:opacity-40 transition-opacity duration-500`} />
-
-              <div className="flex items-center justify-between mb-4 relative z-10">
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.gradient} shadow-lg flex items-center justify-center`}>
-                  <stat.icon size={22} className="text-white" />
+          <TiltCard key={i} glowColor="rgba(15,23,42,0.06)" floatDelay={i * 0.8}>
+            <div className="glass-panel p-6 rounded-2xl h-full">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-xs font-bold text-text-muted uppercase tracking-widest">{stat.label}</p>
+                  <motion.div
+                    className="mt-2 text-3xl font-black text-text tracking-tight tabular-nums"
+                    initial={{ scale: 0.96, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ ...spring, delay: 0.15 + i * 0.06 }}
+                  >
+                    {stat.value}
+                  </motion.div>
                 </div>
-                <motion.span
-                  className="text-4xl font-black text-text tracking-tight tabular-nums"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  transition={{ ...spring, delay: 0.3 + i * 0.1 }}
-                >
-                  {stat.value}
-                </motion.span>
+                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${stat.chip}`}>
+                  <stat.icon size={20} />
+                </div>
               </div>
-              <p className="text-xs font-bold text-text-muted uppercase tracking-widest relative z-10">{stat.label}</p>
             </div>
           </TiltCard>
         ))}
@@ -248,24 +388,396 @@ const DashboardPage = () => {
 
       {/* ══════ QUICK ACTIONS GRID — floating ══════ */}
       <motion.div variants={itemVariants}>
-        <h2 className="text-lg font-bold text-text mb-4 flex items-center gap-2">
-          <FiGlobe className="text-primary" size={18} />
-          Quick Actions
-        </h2>
+        <div className="flex items-end justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-bold text-text flex items-center gap-2">
+              <FiGlobe className="text-primary" size={18} />
+              Quick Actions
+            </h2>
+            <p className="text-xs text-text-muted mt-1">Pin your most-used actions for faster access.</p>
+          </div>
+          {pinned.length > 0 && (
+            <div className="text-xs text-text-muted inline-flex items-center gap-2 bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
+              <Pin size={14} className="text-primary" />
+              {pinned.length} pinned
+            </div>
+          )}
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {quickActions.map((action, i) => (
+          {sortedActions.map((action, i) => (
             <TiltCard key={i} glowColor="rgba(255,255,255,0.05)" floatDelay={i * 0.4}>
-              <Link
-                to={action.to}
-                className={`block p-5 rounded-2xl bg-gradient-to-br ${action.gradient} border ${action.border} h-full
-                  hover:shadow-xl transition-all duration-300 group/action`}
-              >
-                <action.icon size={28} className={`${action.text} mb-3 group-hover/action:scale-110 transition-transform duration-300`} />
-                <p className={`text-sm font-bold ${action.text} tracking-wide`}>{action.label}</p>
-                <p className="text-[11px] text-text-muted mt-1">{action.desc}</p>
-              </Link>
+              <div className="relative h-full">
+                <Link
+                  to={action.to}
+                  className="block p-5 rounded-2xl bg-white/85 border border-black/10 h-full hover:shadow-lg hover:shadow-black/10 transition-all duration-300 group/action"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className={`inline-flex items-center justify-center w-11 h-11 rounded-2xl mb-3 ${action.chip}`}>
+                      <action.icon size={20} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        togglePin(action.to);
+                      }}
+                      className={`mt-1 inline-flex items-center justify-center w-9 h-9 rounded-xl border transition-colors ${pinned.includes(action.to)
+                          ? 'bg-primary/10 border-primary/25 text-primary'
+                          : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-black/5'
+                        }`}
+                      aria-label={pinned.includes(action.to) ? 'Unpin action' : 'Pin action'}
+                      title={pinned.includes(action.to) ? 'Pinned' : 'Pin'}
+                    >
+                      <Pin size={16} />
+                    </button>
+                  </div>
+                  <p className="text-sm font-bold text-text tracking-wide">{action.label}</p>
+                  <p className="text-[11px] text-text-muted mt-1">{action.desc}</p>
+                </Link>
+              </div>
             </TiltCard>
           ))}
+        </div>
+      </motion.div>
+
+      {/* ══════ WORKSPACE GRID (interactive widgets) ══════ */}
+      <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-7 space-y-6">
+          <TiltCard glowColor="rgba(249,115,22,0.10)" floatDelay={0.25}>
+            <div className="glass-panel p-6 rounded-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-text flex items-center gap-2">
+                    <Flame size={16} className="text-secondary" />
+                    Consistency
+                  </h3>
+                  <p className="text-xs text-text-muted mt-1">Keep the streak alive with small daily progress.</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-[10px] uppercase tracking-widest font-semibold text-text-muted">Streak</p>
+                  <p className="mt-1 text-3xl font-black text-text tabular-nums">
+                    {activity.streak}
+                    <span className="text-sm font-bold text-text-muted ml-1">days</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-7 gap-2">
+                {activity.last7.map((d) => (
+                  <div key={d.key || d.label} className="text-center">
+                    <div
+                      className={`h-10 rounded-2xl border flex items-center justify-center transition-colors ${d.active
+                          ? 'bg-success/12 border-success/25 text-success'
+                          : 'bg-white/70 border-black/10 text-text-muted'
+                        }`}
+                      title={d.key || d.label}
+                    >
+                      {d.active ? <CheckCircle2 size={18} /> : <span className="text-xs font-semibold">{d.label.slice(0, 1)}</span>}
+                    </div>
+                    <div className="mt-1 text-[10px] uppercase tracking-widest font-semibold text-text-muted">
+                      {d.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 flex items-center justify-between gap-3">
+                <p className="text-xs text-text-muted">
+                  Active days (7d): <span className="text-text font-semibold">{activity.activeDaysLast7}</span>
+                </p>
+                <Link to="/upload" className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1">
+                  Upload something today <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </TiltCard>
+
+          <TiltCard glowColor="rgba(239,68,68,0.08)" floatDelay={0.4}>
+            <div className="glass-panel p-6 rounded-2xl overflow-hidden">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-text flex items-center gap-2">
+                    <Wand2 size={16} className="text-primary" />
+                    AI Task Ideas
+                  </h3>
+                  <p className="text-xs text-text-muted mt-1">Type what you’re studying — get instant ideas.</p>
+                </div>
+                <div className="text-[10px] uppercase tracking-widest font-semibold text-text-muted bg-white/80 border border-black/10 rounded-full px-3 py-1">
+                  Local only
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <div className="hidden sm:block w-14 h-14 rounded-2xl overflow-hidden border border-black/10 bg-white/70 shrink-0">
+                  <img
+                    src={planningIllustration}
+                    alt="Cartoon illustration of planning notes"
+                    className="w-full h-full object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="text-xs text-text-muted leading-relaxed">
+                  Tip: keep prompts specific (topic + goal + deadline) for better suggestions.
+                </div>
+              </div>
+
+              <form onSubmit={handleGenerateTaskIdeas} className="mt-4 flex gap-2">
+                <input
+                  value={taskPrompt}
+                  onChange={(e) => setTaskPrompt(e.target.value)}
+                  placeholder="e.g. DSA arrays + time complexity"
+                  className="flex-1 input-premium py-2.5 px-4 rounded-xl text-sm"
+                />
+                <button type="submit" className="btn-gradient px-4 rounded-xl text-sm font-bold">
+                  Generate
+                </button>
+              </form>
+
+              <AnimatePresence initial={false}>
+                {taskIdeas.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3"
+                  >
+                    {taskIdeas.map((idea) => (
+                      <motion.div
+                        key={idea}
+                        whileHover={{ y: -2 }}
+                        className="p-4 rounded-2xl bg-white/80 border border-black/10 shadow-sm"
+                      >
+                        <p className="text-sm text-text leading-relaxed">{idea}</p>
+                        <div className="mt-3 flex items-center justify-between">
+                          <span className="text-[10px] uppercase tracking-widest font-semibold text-text-muted">Suggestion</span>
+                          <span className="text-xs text-primary font-semibold inline-flex items-center gap-1">
+                            Open <ArrowRight size={14} />
+                          </span>
+                        </div>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          </TiltCard>
+
+          <TiltCard glowColor="rgba(15,23,42,0.06)" floatDelay={1.0}>
+            <div className="glass-panel p-6 rounded-2xl">
+              <h3 className="text-base font-bold text-text mb-4 flex items-center gap-2">
+                <FiClock className="text-primary" size={16} />
+                Activity Timeline
+              </h3>
+              {timelineEvents.length === 0 && recentNotes.length === 0 ? (
+                <div className="text-center py-10 text-text-muted">
+                  <FiClock size={36} className="mx-auto mb-3 opacity-30" />
+                  <p className="font-medium text-sm">No activity yet — start by uploading notes!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {(timelineEvents.length > 0
+                    ? timelineEvents.slice(0, 8).map((ev) => ({
+                      kind: 'event',
+                      id: ev.id,
+                      title: ev.event_type?.replaceAll?.('_', ' ') || 'Event',
+                      time: ev.occurred_at,
+                      badge: 'bg-primary/10 text-primary border border-primary/25',
+                      detail: typeof ev.payload === 'object' ? ev.payload?.title || ev.payload?.url || '' : '',
+                    }))
+                    : recentNotes.map((tx, i) => ({
+                      kind: 'tx',
+                      id: `tx-${i}`,
+                      title: tx.reason,
+                      time: tx.created_at,
+                      badge: tx.credits_added > 0
+                        ? 'bg-success/12 text-success border border-success/25'
+                        : 'bg-danger/12 text-danger border border-danger/25',
+                      detail: tx.credits_added > 0 ? `+${tx.credits_added} credits` : `-${tx.credits_used} credits`,
+                    }))
+                  ).map((row, i) => (
+                    <motion.div
+                      key={row.id}
+                      initial={{ opacity: 0, x: -12 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.06 * i }}
+                      className="flex items-center gap-4 p-4 rounded-2xl bg-white/70 border border-black/10 hover:bg-white/90 hover:border-black/15 transition-all duration-300"
+                    >
+                      <div className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-widest border ${row.badge}`}>
+                        {row.kind === 'event' ? 'Event' : 'Credits'}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-text truncate">{row.title}</p>
+                        {row.detail ? (
+                          <p className="text-[11px] text-text-muted mt-1 truncate">{row.detail}</p>
+                        ) : null}
+                      </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-[10px] text-text-muted uppercase tracking-widest font-semibold">When</p>
+                        <p className="text-xs font-semibold text-text tabular-nums mt-1">
+                          {new Date(row.time).toLocaleString()}
+                        </p>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </TiltCard>
+        </div>
+
+        <div className="lg:col-span-5 space-y-6">
+          {upcomingSessions.length > 0 && (
+            <TiltCard glowColor="rgba(14,165,233,0.10)" floatDelay={0.55}>
+              <div className="glass-panel p-6 rounded-2xl overflow-hidden">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h3 className="text-base font-bold text-text flex items-center gap-2">
+                      <Calendar size={16} className="text-primary" />
+                      Upcoming Sessions
+                    </h3>
+                    <p className="text-xs text-text-muted mt-1">Auto-saved from your learning tools.</p>
+                  </div>
+                  <Link to="/profile" className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1">
+                    View all <ArrowRight size={14} />
+                  </Link>
+                </div>
+
+                <div className="mt-4 space-y-2">
+                  {upcomingSessions.slice(0, 5).map((s) => (
+                    <div
+                      key={s.id}
+                      className="p-4 rounded-2xl bg-white/80 border border-black/10 hover:bg-white/90 transition-colors"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-text truncate">{s.title}</p>
+                          {s.description && (
+                            <p className="text-[11px] text-text-muted mt-1 line-clamp-2">{s.description}</p>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-[10px] uppercase tracking-widest font-semibold text-text-muted">Starts</p>
+                          <p className="text-xs font-semibold text-text tabular-nums mt-1">
+                            {new Date(s.starts_at).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </TiltCard>
+          )}
+
+          <TiltCard glowColor="rgba(239,68,68,0.10)" floatDelay={0.65}>
+            <div className="glass-panel p-6 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-text">3D Knowledge Graph</h3>
+                  <p className="text-xs text-text-muted mt-1">A digital map of your learning connections.</p>
+                </div>
+                <div className="text-[10px] uppercase tracking-widest font-semibold text-text-muted bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
+                  Live
+                </div>
+              </div>
+
+              <div className="mt-4 h-[220px] rounded-2xl overflow-hidden border border-black/10 bg-white/70 relative">
+                <div className="absolute inset-0 opacity-[0.92]">
+                  <DigitalGraph3D
+                    graph={conceptGraph?.graph}
+                    nodeCount={78}
+                    linksPerNode={3}
+                    maxLinkDistance={0.75}
+                    spread={1.15}
+                    pointSize={30}
+                    wobble={0.24}
+                    speed={0.85}
+                    cameraDistance={4.25}
+                    palette={['#ef4444', '#f97316', '#0f172a']}
+                    pixelRatio={1}
+                  />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-white/70 via-transparent to-white/30 pointer-events-none" />
+              </div>
+
+              <div className="mt-3 flex items-center justify-between gap-3">
+                <p className="text-xs text-text-muted">
+                  Tip: Upload notes to grow your graph over time.
+                </p>
+                <Link to="/upload" className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1">
+                  Add nodes <ArrowRight size={14} />
+                </Link>
+              </div>
+            </div>
+          </TiltCard>
+
+          <TiltCard glowColor="rgba(15,23,42,0.06)" floatDelay={0.8}>
+            <div className="glass-panel p-6 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-text">Workspace Snapshot</h3>
+                  <p className="text-xs text-text-muted mt-1">A calm place to focus and ship.</p>
+                </div>
+                <div className="inline-flex items-center gap-2 text-xs text-text-muted bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
+                  <Calendar size={14} className="text-primary" />
+                  Today
+                </div>
+              </div>
+
+              <div className="mt-4 rounded-2xl overflow-hidden border border-black/10 bg-white/70">
+                <img
+                  src={workspaceSnapshotIllustration}
+                  alt="Cartoon illustration of study workspace"
+                  className="w-full h-[180px] object-cover"
+                  loading="lazy"
+                />
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="p-4 rounded-2xl bg-white/80 border border-black/10">
+                  <p className="text-xs text-text-muted font-semibold uppercase tracking-widest">Pinned</p>
+                  <p className="mt-2 text-2xl font-black text-text tabular-nums">{pinned.length}</p>
+                </div>
+                <div className="p-4 rounded-2xl bg-white/80 border border-black/10">
+                  <p className="text-xs text-text-muted font-semibold uppercase tracking-widest">Credits</p>
+                  <p className="mt-2 text-2xl font-black text-text tabular-nums">{user?.credits || 0}</p>
+                </div>
+              </div>
+            </div>
+          </TiltCard>
+
+          <TiltCard glowColor="rgba(15,23,42,0.06)" floatDelay={1.05}>
+            <div className="glass-panel p-6 rounded-2xl overflow-hidden">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <h3 className="text-base font-bold text-text">Collaboration</h3>
+                  <p className="text-xs text-text-muted mt-1">Jump into rooms and keep momentum.</p>
+                </div>
+                <Link to="/nexus-board" className="text-xs font-bold text-primary hover:underline inline-flex items-center gap-1">
+                  Open Nexus Board <ArrowRight size={14} />
+                </Link>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                <div className="rounded-2xl overflow-hidden border border-black/10 bg-white/70">
+                  <img
+                    src={collaborationWhiteboardIllustration}
+                    alt="Cartoon illustration of whiteboard collaboration"
+                    className="w-full h-[120px] object-cover"
+                    loading="lazy"
+                  />
+                </div>
+                <div className="rounded-2xl overflow-hidden border border-black/10 bg-white/70">
+                  <img
+                    src={collaborationChatIllustration}
+                    alt="Cartoon illustration of chat and tasks"
+                    className="w-full h-[120px] object-cover"
+                    loading="lazy"
+                  />
+                </div>
+              </div>
+            </div>
+          </TiltCard>
         </div>
       </motion.div>
 
@@ -275,7 +787,7 @@ const DashboardPage = () => {
           <TiltCard glowColor="rgba(139,92,246,0.12)" floatDelay={0.5}>
             <div className="glass-panel p-6 rounded-2xl flex flex-col h-80 relative overflow-hidden">
               <h2 className="text-base font-bold text-text mb-5 flex items-center gap-2 relative z-10">
-                <div className="w-2 h-2 rounded-full bg-accent animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
                 Upload Velocity (7 Days)
               </h2>
               <div className="flex-1 min-h-0 relative z-10">
@@ -283,15 +795,15 @@ const DashboardPage = () => {
                   <AreaChart data={chartData.uploadsData}>
                     <defs>
                       <linearGradient id="colorUploads" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.5} />
-                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
+                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="date" stroke="#525252" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#525252" fontSize={11} tickLine={false} axisLine={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
+                    <XAxis dataKey="date" stroke="rgba(15,23,42,0.45)" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(15,23,42,0.45)" fontSize={11} tickLine={false} axisLine={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Area type="monotone" dataKey="uploads" stroke="#8b5cf6" strokeWidth={3} fillOpacity={1} fill="url(#colorUploads)" />
+                    <Area type="monotone" dataKey="uploads" stroke="#ef4444" strokeWidth={3} fillOpacity={1} fill="url(#colorUploads)" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -301,17 +813,17 @@ const DashboardPage = () => {
           <TiltCard glowColor="rgba(236,72,153,0.12)" floatDelay={1}>
             <div className="glass-panel p-6 rounded-2xl flex flex-col h-80 relative overflow-hidden">
               <h2 className="text-base font-bold text-text mb-5 flex items-center gap-2 relative z-10">
-                <div className="w-2 h-2 rounded-full bg-pink-500 animate-pulse" />
+                <div className="w-2 h-2 rounded-full bg-secondary animate-pulse" />
                 User Registrations (7 Days)
               </h2>
               <div className="flex-1 min-h-0 relative z-10">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={chartData.usersData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.04)" vertical={false} />
-                    <XAxis dataKey="date" stroke="#525252" fontSize={11} tickLine={false} axisLine={false} />
-                    <YAxis stroke="#525252" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(15,23,42,0.06)" vertical={false} />
+                    <XAxis dataKey="date" stroke="rgba(15,23,42,0.45)" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(15,23,42,0.45)" fontSize={11} tickLine={false} axisLine={false} allowDecimals={false} />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="users" fill="#ec4899" radius={[8, 8, 0, 0]} barSize={30} />
+                    <Bar dataKey="users" fill="#f97316" radius={[8, 8, 0, 0]} barSize={30} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -320,49 +832,7 @@ const DashboardPage = () => {
         </motion.div>
       )}
 
-      {/* ══════ RECENT ACTIVITY — floating ══════ */}
-      <motion.div variants={itemVariants}>
-        <TiltCard glowColor="rgba(14,165,233,0.08)" floatDelay={1.5}>
-          <div className="glass-panel p-6 rounded-2xl">
-            <h2 className="text-base font-bold text-text mb-5 flex items-center gap-2">
-              <FiClock className="text-primary" size={16} />
-              Recent Activity
-            </h2>
-            {recentNotes.length === 0 ? (
-              <div className="text-center py-10 text-text-muted">
-                <FiClock size={36} className="mx-auto mb-3 opacity-30" />
-                <p className="font-medium text-sm">No activity yet — start by uploading notes!</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {recentNotes.map((tx, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -12 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.1 * i }}
-                    className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-white/5
-                      hover:bg-white/[0.05] hover:border-white/10 transition-all duration-300 group/tx"
-                  >
-                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-black shadow-lg shrink-0 ${tx.credits_added > 0
-                        ? 'bg-success/15 text-success border border-success/20'
-                        : 'bg-danger/15 text-danger border border-danger/20'
-                      }`}>
-                      {tx.credits_added > 0 ? `+${tx.credits_added}` : `-${tx.credits_used}`}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-text truncate">{tx.reason}</p>
-                      <p className="text-[10px] text-text-muted mt-1 uppercase tracking-widest font-medium">
-                        {new Date(tx.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            )}
-          </div>
-        </TiltCard>
-      </motion.div>
+      {/* Recent Activity moved into workspace grid */}
     </motion.div>
   );
 };

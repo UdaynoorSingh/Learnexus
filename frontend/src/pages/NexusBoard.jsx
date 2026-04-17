@@ -244,8 +244,8 @@ const NexusBoard = () => {
           className="flex flex-col gap-4 mb-6"
         >
           <div className="min-w-0 pr-2 sm:pr-4">
-            <h1 className="text-3xl sm:text-4xl font-bold text-zinc-900 tracking-tight">Nexus Board</h1>
-            <p className="text-zinc-500 text-sm mt-2 max-w-xl leading-relaxed">
+            <h1 className="text-3xl sm:text-4xl font-bold text-text tracking-tight">Nexus Board</h1>
+            <p className="text-text-muted text-sm mt-2 max-w-xl leading-relaxed">
               Global and college rooms — post where you belong; explore other campuses read-only.
             </p>
           </div>
@@ -257,9 +257,9 @@ const NexusBoard = () => {
                 setFeedTab('global');
                 setExploreCollegeId(null);
               }}
-              className={`px-4 py-2 rounded-none text-sm font-semibold border transition-colors ${feedTab === 'global'
-                  ? 'bg-blue-50 border-blue-200 text-blue-600'
-                  : 'bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-zinc-900'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${feedTab === 'global'
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90'
                 }`}
             >
               Global Nexus
@@ -270,9 +270,9 @@ const NexusBoard = () => {
                 setFeedTab('college');
                 setExploreCollegeId(null);
               }}
-              className={`px-4 py-2 rounded-none text-sm font-semibold border transition-colors max-w-[14rem] truncate ${feedTab === 'college'
-                  ? 'bg-blue-50 border-blue-200 text-blue-600'
-                  : 'bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-zinc-900'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${feedTab === 'college'
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90'
                 }`}
               title={collegeLabel}
             >
@@ -281,9 +281,9 @@ const NexusBoard = () => {
             <button
               type="button"
               onClick={() => setFeedTab('explore')}
-              className={`px-4 py-2 rounded-none text-sm font-semibold border transition-colors ${feedTab === 'explore'
-                  ? 'bg-blue-50 border-blue-200 text-blue-600'
-                  : 'bg-zinc-100 border-zinc-200 text-zinc-500 hover:text-zinc-900'
+              className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${feedTab === 'explore'
+                ? 'bg-primary/15 border-primary/30 text-primary'
+                : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90'
                 }`}
             >
               Explore other colleges
@@ -292,7 +292,7 @@ const NexusBoard = () => {
 
           {feedTab === 'explore' && (
             <div className="flex flex-wrap items-center gap-2">
-              <label className="text-xs font-semibold text-zinc-500 uppercase tracking-wide">
+              <label className="text-xs font-semibold text-text-muted uppercase tracking-wide">
                 College
               </label>
               <select
@@ -301,7 +301,7 @@ const NexusBoard = () => {
                   const v = e.target.value;
                   setExploreCollegeId(v === '' ? null : parseInt(v, 10));
                 }}
-                className="border border-zinc-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-zinc-900 py-2 px-3 rounded-none text-sm min-w-[12rem] bg-background border border-zinc-200"
+                className="border border-black/10 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/15 outline-none bg-white/80 text-text py-2 px-3 text-sm min-w-[12rem]"
               >
                 <option value="">Select a college…</option>
                 {allColleges.map((c) => (
@@ -331,10 +331,10 @@ const NexusBoard = () => {
               <motion.button
                 type="button"
                 onClick={toggleMascot}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
-                className="inline-flex items-center justify-center gap-2 rounded-none px-4 py-3 text-sm font-semibold border border-blue-200 bg-blue-50 text-blue-600 shadow-[0_0_24px_rgba(14,165,233,0.15)] hover:bg-blue-50"
+                className="inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold border border-primary/30 bg-primary/10 text-primary hover:bg-primary/20"
               >
                 <span aria-hidden>🤖</span>
                 Room Mascot
@@ -344,10 +344,10 @@ const NexusBoard = () => {
               <motion.button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                whileHover={{ scale: 1.03 }}
-                whileTap={{ scale: 0.97 }}
+                whileHover={{ scale: 1 }}
+                whileTap={{ scale: 1 }}
                 transition={spring}
-                className="inline-flex items-center justify-center gap-2 bg-blue-600 text-white hover:bg-blue-700 shadow-sm border border-transparent rounded-none px-6 py-3.5 text-sm font-semibold shadow-lg shadow-sm"
+                className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:opacity-90 border border-transparent rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg"
               >
                 <Plus size={18} strokeWidth={2.5} />
                 Create post
@@ -376,40 +376,40 @@ const NexusBoard = () => {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: 12, scale: 0.98 }}
                 transition={spring}
-                className="fixed z-50 bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[min(100vw-3rem,22rem)] bg-white border border-zinc-200 shadow-lg rounded-none border border-zinc-200 rounded-none shadow-2xl shadow-sm flex flex-col max-h-[min(70vh,28rem)] overflow-hidden"
+                className="fixed z-50 bottom-6 left-4 right-4 sm:left-auto sm:right-6 sm:w-[min(100vw-3rem,22rem)] glass-card border border-black/10 shadow-xl shadow-black/10 rounded-2xl flex flex-col max-h-[min(70vh,28rem)] overflow-hidden"
               >
-                <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-zinc-200 bg-zinc-50">
+                <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/10 bg-white/70">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-none bg-blue-50 text-blue-600 border border-blue-200 shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25 shrink-0">
                       <Bot size={18} strokeWidth={2} />
                     </div>
                     <div className="min-w-0">
-                      <h2 id="mascot-title" className="text-sm font-bold text-zinc-900 tracking-tight truncate">
+                      <h2 id="mascot-title" className="text-sm font-bold text-text tracking-tight truncate">
                         Room Mascot
                       </h2>
-                      <p className="text-[10px] text-zinc-500 truncate font-medium">{selectedTag}</p>
+                      <p className="text-[10px] text-text-muted truncate font-medium">{selectedTag}</p>
                     </div>
                   </div>
                   <motion.button
                     type="button"
                     onClick={() => setMascotOpen(false)}
-                    whileHover={{ scale: 1.06 }}
-                    whileTap={{ scale: 0.94 }}
-                    className="p-2 rounded-none text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 shrink-0"
+                    whileHover={{ scale: 1 }}
+                    whileTap={{ scale: 1 }}
+                    className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 shrink-0"
                   >
                     <X size={18} strokeWidth={2} />
                   </motion.button>
                 </div>
-                <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-3 min-h-[10rem] max-h-[40vh] bg-[#0a0a0a]/50">
+                <div className="flex-1 overflow-y-auto custom-scrollbar px-3 py-3 space-y-3 min-h-[10rem] max-h-[40vh] bg-white/50">
                   {mascotMessages.map((msg, i) => (
                     <div
                       key={`${i}-${msg.role}`}
                       className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`max-w-[90%] rounded-none px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
-                            ? 'bg-blue-600 text-white rounded-tr-md'
-                            : 'bg-zinc-100 text-zinc-800 rounded-tl-md text-zinc-900'
+                        className={`max-w-[90%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${msg.role === 'user'
+                          ? 'bg-primary text-white rounded-tr-md'
+                          : 'chat-bubble-ai rounded-tl-md text-text'
                           }`}
                       >
                         {msg.text}
@@ -418,10 +418,10 @@ const NexusBoard = () => {
                   ))}
                   {mascotLoading && (
                     <div className="flex justify-start">
-                      <div className="rounded-none px-3 py-2 bg-zinc-100 text-zinc-800 flex gap-1.5 items-center text-xs text-zinc-500">
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-50 animate-bounce [animation-delay:0ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-50 animate-bounce [animation-delay:150ms]" />
-                        <span className="w-1.5 h-1.5 rounded-full bg-blue-50 animate-bounce [animation-delay:300ms]" />
+                      <div className="rounded-2xl px-3 py-2 chat-bubble-ai flex gap-1.5 items-center text-xs text-text-muted">
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/70 animate-bounce [animation-delay:0ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/50 animate-bounce [animation-delay:150ms]" />
+                        <span className="w-1.5 h-1.5 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
                       </div>
                     </div>
                   )}
@@ -429,22 +429,22 @@ const NexusBoard = () => {
                 </div>
                 <form
                   onSubmit={sendMascotMessage}
-                  className="flex gap-2 p-3 border-t border-zinc-200 bg-zinc-50 "
+                  className="flex gap-2 p-3 border-t border-black/10 bg-white/70 backdrop-blur-md"
                 >
                   <input
                     type="text"
                     value={mascotInput}
                     onChange={(e) => setMascotInput(e.target.value)}
                     placeholder="Ask about this room…"
-                    className="flex-1 border border-zinc-200 rounded-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none bg-white text-zinc-900 py-2.5 px-3 rounded-none text-sm"
+                    className="flex-1 border border-black/10 rounded-lg focus:border-primary focus:ring-2 focus:ring-primary/15 outline-none bg-white/80 text-text py-2.5 px-3 text-sm"
                     disabled={mascotLoading}
                   />
                   <motion.button
                     type="submit"
                     disabled={mascotLoading || !mascotInput.trim()}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    className="w-10 h-10 rounded-none bg-blue-600 text-white hover:bg-blue-700 flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
+                    whileHover={{ scale: 1 }}
+                    whileTap={{ scale: 1 }}
+                    className="w-10 h-10 rounded-xl bg-primary text-white hover:opacity-90 flex items-center justify-center disabled:opacity-40 shrink-0 border-0 p-0"
                   >
                     <Send size={16} strokeWidth={2} />
                   </motion.button>
@@ -455,13 +455,13 @@ const NexusBoard = () => {
         </AnimatePresence>
 
         {error && (
-          <div className="mb-4 rounded-none bg-red-50 border border-red-200 text-red-600 text-sm px-4 py-3">
+          <div className="mb-4 rounded-xl bg-danger/10 border border-danger/30 text-danger text-sm px-4 py-3">
             {error}
           </div>
         )}
 
         {loading ? (
-          <div className="surface-card border border-zinc-200 rounded-none p-14 text-center text-zinc-500 tracking-tight">
+          <div className="surface-card border border-black/10 rounded-2xl p-14 text-center text-text-muted tracking-tight">
             Loading posts…
           </div>
         ) : feedTab === 'explore' && exploreCollegeId == null ? (
@@ -497,22 +497,22 @@ const NexusBoard = () => {
       <aside className="w-full lg:w-[17.5rem] xl:w-72 shrink-0">
         <div className="lg:sticky lg:top-4 max-h-none lg:max-h-[calc(100vh-5rem)] flex flex-col gap-3">
           <div className="rounded-none p-[1px] bg-gradient-to-b from-white/[0.14] via-white/[0.06] to-transparent shadow-[0_12px_48px_rgba(0,0,0,0.55)]">
-            <div className="rounded-none bg-[#0b0b0b]/95  border border-zinc-200/[0.07] overflow-hidden flex flex-col max-h-[min(55vh,22rem)] lg:max-h-[calc(100vh-5.5rem)]">
-              <div className="px-4 pt-4 pb-3 border-b border-zinc-200 bg-gradient-to-br from-primary/[0.12] via-transparent to-accent/[0.06] shrink-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-blue-600/90 mb-2">Nexus</p>
+            <div className="rounded-2xl bg-white/90 border border-black/10 overflow-hidden flex flex-col max-h-[min(55vh,22rem)] lg:max-h-[calc(100vh-5.5rem)]">
+              <div className="px-4 pt-4 pb-3 border-b border-black/10 bg-gradient-to-br from-primary/[0.08] via-transparent to-secondary/[0.06] shrink-0">
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-primary/90 mb-2">Nexus</p>
                 <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-none bg-zinc-50 border border-zinc-200 text-blue-600 shadow-inner shadow-sm">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/80 border border-black/10 text-primary shadow-inner">
                     <Hash size={18} strokeWidth={2.2} />
                   </div>
                   <div className="min-w-0">
-                    <h2 className="text-sm font-bold text-zinc-900 tracking-tight">Rooms</h2>
-                    <p className="text-[11px] text-zinc-500 leading-snug mt-0.5">
+                    <h2 className="text-sm font-bold text-text tracking-tight">Rooms</h2>
+                    <p className="text-[11px] text-text-muted leading-snug mt-0.5">
                       Jump to a tag. AI routes new posts here.
                     </p>
                   </div>
                 </div>
                 {tagsLoading && (
-                  <p className="text-[10px] text-zinc-500/80 mt-2 font-medium">Syncing tags…</p>
+                  <p className="text-[10px] text-text-muted mt-2 font-medium">Syncing tags…</p>
                 )}
               </div>
               <ul className="overflow-y-auto flex-1 min-h-0 py-2 px-2 custom-scrollbar space-y-0.5">
@@ -522,23 +522,23 @@ const NexusBoard = () => {
                     <li key={tag}>
                       <motion.button
                         type="button"
-                        whileHover={{ scale: 1.01 }}
-                        whileTap={{ scale: 0.99 }}
+                        whileHover={{ scale: 1 }}
+                        whileTap={{ scale: 1 }}
                         transition={spring}
                         onClick={() => {
                           setSelectedTag(tag);
                           if (tag === '#All') setSearchParams({});
                           else setSearchParams({ tag });
                         }}
-                        className={`group w-full text-left rounded-none pl-2 pr-3 py-2.5 flex items-center gap-2.5 transition-all border ${active
-                            ? 'bg-primary/[0.14] border-blue-200 text-blue-600 shadow-[0_0_28px_rgba(14,165,233,0.12)] nav-active-glow'
-                            : 'border-transparent text-zinc-500 hover:text-zinc-900 hover:bg-white/[0.04] hover:border-zinc-200'
+                        className={`group w-full text-left rounded-xl pl-2 pr-3 py-2.5 flex items-center gap-2.5 transition-all border ${active
+                          ? 'bg-primary/[0.14] border-primary/30 text-primary nav-active-glow'
+                          : 'border-transparent text-text-muted hover:text-text hover:bg-black/[0.03] hover:border-black/10'
                           }`}
                       >
                         <span
-                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-sm border transition-colors ${active
-                              ? 'border-blue-200 bg-blue-50 text-blue-600'
-                              : 'border-zinc-200 bg-white/[0.03] text-zinc-500 group-hover:border-zinc-200'
+                          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border transition-colors ${active
+                            ? 'border-primary/30 bg-primary/15 text-primary'
+                            : 'border-black/10 bg-white/70 text-text-muted group-hover:border-black/15'
                             }`}
                         >
                           {active ? (

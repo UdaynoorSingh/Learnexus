@@ -2,6 +2,7 @@ import os
 import json
 import re
 import base64
+import hashlib
 import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -16,7 +17,11 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
+# Never let .env override PORT from the host (Render, Fly, etc.)
+_platform_port = os.environ.get("PORT")
 load_dotenv()
+if _platform_port is not None:
+    os.environ["PORT"] = _platform_port
 
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
@@ -44,6 +49,17 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.get("/")
+async def root():
+    return {"service": "learnexus-ai-backend", "status": "ok"}
+
+
+@app.get("/api/health")
+async def health():
+    return {"status": "ok", "service": "learnexus-ai-backend"}
+
 
 class OCRRequest(BaseModel):
     fileUrl: str
@@ -79,6 +95,12 @@ class TopicRequest(BaseModel):
 class YouTubeRequest(BaseModel):
     url: str
     topicId: Any
+
+class ConceptGraphRequest(BaseModel):
+    topicId: Optional[Any] = None
+    contextMode: str = "both"
+    # Optional extra hint (e.g. user's goal / currently viewed topic name)
+    hint: Optional[str] = None
 
 
 class CommunityAutoAnswerRequest(BaseModel):
@@ -173,6 +195,108 @@ def retrieve_context(topic_id: Any, query: str, k: int = 15, context_mode: str =
             pass
             
     return "\n\n".join(docs)
+
+def _strip_code_fences(s: str) -> str:
+    t = (s or "").strip()
+    if t.startswith("```json"):
+        t = t.replace("```json", "", 1).strip()
+    if t.startswith("```"):
+        t = t.replace("```", "", 1).strip()
+    if t.endswith("```"):
+        t = t[:-3].strip()
+    return t
+
+def _fallback_graph_from_text(text: str) -> dict:
+    # Lightweight fallback: pull top-ish unique terms and connect sequentially.
+    raw = re.sub(r"[\[\]():,.;\"'`]+", " ", (text or "").lower())
+    tokens = [t for t in raw.split() if 4 <= len(t) <= 20 and t.isascii()]
+    stop = {
+        "that","this","with","from","then","than","they","them","into","over","under","also","when","where","what",
+        "your","have","will","could","should","would","about","between","there","their","which","because","using",
+        "notes","snippet","youtube","student","context","core","concepts","main","ideas","detailed","explanation"
+    }
+    uniq = []
+    seen = set()
+    for tok in tokens:
+        if tok in stop or tok.isdigit():
+            continue
+        if tok not in seen:
+            seen.add(tok)
+            uniq.append(tok)
+        if len(uniq) >= 14:
+            break
+
+    if not uniq:
+        uniq = ["learning", "concepts", "practice", "review"]
+
+    nodes = [{"id": str(i + 1), "label": w.replace("_", " ").title(), "group": "concept"} for i, w in enumerate(uniq)]
+    edges = []
+    for i in range(len(nodes) - 1):
+        edges.append({"source": nodes[i]["id"], "target": nodes[i + 1]["id"], "weight": 0.35})
+    return {"nodes": nodes, "edges": edges}
+
+@app.post("/api/ai/concept-graph")
+async def concept_graph(req: ConceptGraphRequest):
+    try:
+        topic_id = req.topicId
+        hint = (req.hint or "").strip()
+
+        # If no topicId provided, we can't retrieve FAISS context; still allow a generic graph.
+        context = ""
+        if topic_id is not None and str(topic_id).strip() != "":
+            context = retrieve_context(topic_id, "core concepts, relationships, prerequisites, and next steps", k=20, context_mode=req.contextMode)
+
+        base = (context or "").strip()
+        if hint:
+            base = (hint + "\n\n" + base).strip()
+
+        if not base:
+            g = _fallback_graph_from_text("study plan learning concepts practice review")
+            return {"sourceHash": hashlib.sha256(b"empty").hexdigest(), "graph": g, "cached": False}
+
+        source_hash = hashlib.sha256(base.encode("utf-8", errors="ignore")).hexdigest()
+
+        prompt = f"""You are a knowledge-graph builder for a study assistant.
+Given the notes/snippets below, extract a small concept graph that is useful for learning.
+
+Return ONLY valid JSON (no markdown, no code fences) in this exact shape:
+{{
+  "nodes": [{{"id":"1","label":"Concept name","group":"concept"}}],
+  "edges": [{{"source":"1","target":"2","weight":0.7}}]
+}}
+
+Rules:
+- 8 to 18 nodes.
+- node.id must be a short string (e.g. "1","2",...).
+- edge.weight must be a number between 0.1 and 1.0.
+- Prefer prerequisite/depends-on style links, but keep it general if unknown.
+- Labels must be 2-6 words, Title Case.
+
+Notes/snippets:
+{base}
+"""
+        text_resp = call_openrouter(prompt).strip()
+        text_resp = _strip_code_fences(text_resp)
+
+        try:
+            data = json.loads(text_resp)
+            if not isinstance(data, dict) or "nodes" not in data or "edges" not in data:
+                raise ValueError("missing keys")
+            # Light normalization
+            nodes = data.get("nodes") or []
+            edges = data.get("edges") or []
+            if not isinstance(nodes, list) or not isinstance(edges, list):
+                raise ValueError("invalid shape")
+            return {"sourceHash": source_hash, "graph": {"nodes": nodes, "edges": edges}, "cached": False}
+        except Exception:
+            g = _fallback_graph_from_text(base)
+            return {"sourceHash": source_hash, "graph": g, "cached": False}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/api/ai/ocr")
 async def extract_text(req: OCRRequest):
@@ -499,7 +623,8 @@ async def youtube_embed(req: YouTubeRequest):
             from youtube_transcript_api import YouTubeTranscriptApi
             ytt_api = YouTubeTranscriptApi()
             transcript_list = ytt_api.fetch(video_id)
-            full_text = " ".join([entry.text for entry in transcript_list])
+            segments = [{"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)} for entry in transcript_list]
+            full_text = " ".join([s["text"] for s in segments])
         except Exception as transcript_err:
             raise HTTPException(
                 status_code=400,
@@ -535,10 +660,28 @@ Transcript excerpt:
 {summary_text}"""
         summary = call_groq(summary_prompt).strip()
 
+        # Lightweight chapters: pick ~8 anchors evenly spaced
+        chapters = []
+        if segments:
+            target = 8
+            step = max(1, len(segments) // target)
+            for i in range(0, len(segments), step):
+                s = segments[i]
+                label = re.sub(r"\s+", " ", s.get("text", "").strip())
+                if len(label) > 48:
+                    label = label[:45].rstrip() + "…"
+                if not label:
+                    label = f"Chapter {len(chapters) + 1}"
+                chapters.append({"start": int(s.get("start", 0)), "label": label})
+                if len(chapters) >= target:
+                    break
+
         return {
             "status": "success",
             "chunks": len(chunks),
             "summary": summary,
+            "chapters": chapters,
+            "segments": segments[:1500],
             "message": f"Successfully embedded {len(chunks)} chunks from the YouTube video into your knowledge base."
         }
     except HTTPException:
@@ -837,5 +980,7 @@ STRICT RULES:
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5001))
-    uvicorn.run(app, host="0.0.0.0", port=port)
+    # Render injects PORT; local default 5001 (matches Node backend AI_BACKEND_URL default).
+    port = int(os.environ.get("PORT") or "5001")
+    reload = os.environ.get("PORT") is None
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload)

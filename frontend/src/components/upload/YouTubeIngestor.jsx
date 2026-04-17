@@ -47,7 +47,7 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
 
   return (
     <div className="glass-card border border-danger/20 overflow-hidden animate-fadeInUp">
-      <div className="p-4 border-b border-white/5 flex items-center justify-between bg-danger/5">
+      <div className="p-4 border-b border-black/10 flex items-center justify-between bg-danger/5">
         <h2 className="text-lg font-bold text-text flex items-center gap-2">
           <FiYoutube className="text-danger" /> YouTube to Knowledge Base
         </h2>
@@ -74,7 +74,7 @@ const YouTubeIngestor = ({ topicId, onClose, onSuccess, refreshUser }) => {
               value={url}
               onChange={(e) => { setUrl(e.target.value); setError(null); setCreditError(false); setResult(null); }}
               placeholder="https://www.youtube.com/watch?v=..."
-              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/5 border border-white/10 text-text text-sm placeholder:text-text-muted/50 focus:outline-none focus:border-danger/40 focus:ring-1 focus:ring-danger/20 transition-all"
+              className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white/80 border border-black/10 text-text text-sm placeholder:text-text-muted/50 focus:outline-none focus:border-danger/40 focus:ring-2 focus:ring-danger/15 transition-all"
               disabled={loading}
             />
           </div>

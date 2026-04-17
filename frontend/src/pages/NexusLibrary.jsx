@@ -90,8 +90,8 @@ const NexusLibrary = () => {
           <motion.button
             type="button"
             onClick={() => setModalOpen(true)}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1 }}
+            whileTap={{ scale: 1 }}
             transition={spring}
             className="hidden sm:inline-flex items-center gap-2 btn-gradient rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/25 shrink-0"
           >
@@ -114,10 +114,10 @@ const NexusLibrary = () => {
             type="button"
             onClick={loadPosts}
             disabled={loading}
-            whileHover={{ scale: 1.04 }}
-            whileTap={{ scale: 0.96 }}
+            whileHover={{ scale: 1 }}
+            whileTap={{ scale: 1 }}
             transition={spring}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 border border-white/10 text-sm font-medium text-text-muted hover:text-text hover:border-white/20 disabled:opacity-50"
+            className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-white/70 border border-black/10 text-sm font-medium text-text-muted hover:text-text hover:bg-white/90 disabled:opacity-50"
             title="Refresh library"
           >
             <RefreshCw size={14} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
@@ -127,8 +127,8 @@ const NexusLibrary = () => {
           <motion.button
             type="button"
             onClick={() => setModalOpen(true)}
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
+            whileHover={{ scale: 1 }}
+            whileTap={{ scale: 1 }}
             transition={spring}
             className="sm:hidden inline-flex items-center gap-2 btn-gradient rounded-xl px-4 py-2 text-sm font-semibold shadow-lg shadow-primary/25 ml-auto"
           >
@@ -143,8 +143,8 @@ const NexusLibrary = () => {
             type="button"
             onClick={() => setScope('college')}
             className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors max-w-[14rem] truncate ${scope === 'college'
-                ? 'bg-primary/20 border-primary/45 text-primary'
-                : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
+              ? 'bg-primary/20 border-primary/45 text-primary'
+              : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90'
               }`}
             title={collegeLabel}
           >
@@ -154,8 +154,8 @@ const NexusLibrary = () => {
             type="button"
             onClick={() => setScope('global')}
             className={`px-4 py-2 rounded-xl text-sm font-semibold border transition-colors ${scope === 'global'
-                ? 'bg-primary/20 border-primary/45 text-primary'
-                : 'bg-white/5 border-white/10 text-text-muted hover:text-text'
+              ? 'bg-primary/20 border-primary/45 text-primary'
+              : 'bg-white/70 border-black/10 text-text-muted hover:text-text hover:bg-white/90'
               }`}
           >
             Global
@@ -172,7 +172,7 @@ const NexusLibrary = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="surface-card border border-white/10 rounded-2xl p-14 text-center text-text-muted tracking-tight">
+        <div className="surface-card border border-black/10 rounded-2xl p-14 text-center text-text-muted tracking-tight">
           <div className="flex flex-col items-center gap-3">
             <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
             Loading the library…

@@ -184,13 +184,13 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
                   } else if (isWrong) {
                     optionClasses += 'border-danger bg-danger/15 text-danger';
                   } else {
-                    optionClasses += 'border-white/5 bg-white/5 text-text-muted opacity-50';
+                    optionClasses += 'border-black/10 bg-white/60 text-text-muted opacity-50';
                   }
                 } else {
                   if (isSelected) {
                     optionClasses += 'border-primary bg-primary/15 text-text ring-1 ring-primary/30';
                   } else {
-                    optionClasses += 'border-white/10 bg-white/5 text-text hover:border-primary/40 hover:bg-primary/10 cursor-pointer';
+                    optionClasses += 'border-black/10 bg-white/70 text-text hover:border-primary/40 hover:bg-primary/10 cursor-pointer';
                   }
                 }
 
