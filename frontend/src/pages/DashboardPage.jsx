@@ -346,9 +346,24 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Decorative geometric shapes (right side on desktop) */}
-        <div className="pointer-events-none absolute right-6 bottom-2 z-[2] hidden md:block">
-          <GeometricShapes size="sm" className="opacity-50" />
+        {/* Study-themed feature blocks & Mascot (right side on desktop) */}
+        <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 z-[2] hidden lg:flex items-center gap-8" style={{ perspective: '1000px' }}>
+          {/* Mascot */}
+          <motion.img
+            src="/joyfull.png"
+            alt="LearnNexus Mascot"
+            className="w-[150px] xl:w-[180px] drop-shadow-2xl"
+            initial={{ opacity: 0, y: 20, rotate: -5 }}
+            animate={{ opacity: 1, y: [0, -8, 0], rotate: 0 }}
+            transition={{
+              opacity: { duration: 0.5, delay: 0.2 },
+              rotate: { duration: 0.5, delay: 0.2 },
+              y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }
+            }}
+          />
+
+          {/* Feature Blocks (Abstract Shapes) */}
+          <GeometricShapes size="sm" className="opacity-90" />
         </div>
       </motion.div>
 

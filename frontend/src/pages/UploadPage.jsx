@@ -1,3 +1,4 @@
+import { motion } from 'framer-motion';
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api';
@@ -175,9 +176,23 @@ const UploadPage = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 animate-fadeInUp">
-      <div>
-        <h1 className="text-2xl font-bold text-text">Upload Notes</h1>
-        <p className="text-text-muted mt-1">Upload handwritten notes or PDFs to earn credits</p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-text">Upload Notes</h1>
+          <p className="text-text-muted mt-1">Upload handwritten notes or PDFs to earn credits</p>
+        </div>
+        <motion.img 
+          src="/encouraging-making-progress.png" 
+          alt="Upload Mascot" 
+          className="w-20 md:w-28 drop-shadow-lg md:mr-8"
+          initial={{ opacity: 0, y: 10, rotate: 5 }}
+          animate={{ opacity: 1, y: [0, -6, 0], rotate: 0 }}
+          transition={{
+              opacity: { duration: 0.5, delay: 0.2 },
+              rotate: { duration: 0.5, delay: 0.2 },
+              y: { duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }
+          }}
+        />
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

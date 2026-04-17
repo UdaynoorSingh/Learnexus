@@ -132,18 +132,33 @@ const ChallengesPage = () => {
         transition={{ duration: 0.5 }}
         className="mb-10"
       >
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
-            <Trophy size={24} className="text-white" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-3">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/25">
+              <Trophy size={28} className="text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight">
+                Company Challenges
+              </h1>
+              <p className="text-sm text-text-muted mt-0.5">
+                Solve real engineering problems from top companies & earn credits
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight">
-              Company Challenges
-            </h1>
-            <p className="text-sm text-text-muted mt-0.5">
-              Solve real engineering problems from top companies &amp; earn credits
-            </p>
-          </div>
+          
+          <motion.img 
+            src="/achievement-proud.png" 
+            alt="Achievement Mascot"
+            className="w-24 md:w-32 drop-shadow-xl hidden md:block"
+            initial={{ opacity: 0, y: 15, scale: 0.9 }}
+            animate={{ opacity: 1, y: [0, -8, 0], scale: 1 }}
+            transition={{
+                opacity: { duration: 0.5, delay: 0.1 },
+                scale: { duration: 0.5, delay: 0.1 },
+                y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }
+            }}
+          />
         </div>
 
         {/* Stats bar */}
