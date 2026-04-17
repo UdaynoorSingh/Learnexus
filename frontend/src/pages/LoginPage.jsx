@@ -66,8 +66,8 @@ const LoginPage = () => {
       >
         <div className="flex items-center justify-between px-5 py-2.5 rounded-full bg-white/75 backdrop-blur-2xl border border-black/8 shadow-lg shadow-black/[0.04]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#f59e0b] to-[#f97316] flex items-center justify-center shadow-md shadow-amber-500/25">
-              <span className="text-lg font-bold text-white font-['Outfit']">L</span>
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md shadow-purple-500/15 bg-white">
+              <img src="/logo.png" alt="LearnNexus" className="w-full h-full object-contain p-0.5" />
             </div>
             <span className="text-lg font-bold text-[#0f172a] tracking-tight font-['Outfit']">
               LearnNexus
@@ -185,8 +185,8 @@ const LoginPage = () => {
               >
                 {/* Card header */}
                 <div className="text-center mb-7">
-                  <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center mb-4 shadow-lg shadow-purple-500/20">
-                    <span className="text-xl font-bold text-white font-['Outfit']">L</span>
+                  <div className="w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 shadow-lg shadow-purple-500/15 bg-white border border-black/5">
+                    <img src="/logo.png" alt="LearnNexus" className="w-full h-full object-contain p-1" />
                   </div>
                   <h2 className="text-xl font-bold text-[#0f172a] font-['Outfit'] tracking-tight">
                     {step === 1 ? 'Sign in to LearnNexus' : 'Verify your email'}

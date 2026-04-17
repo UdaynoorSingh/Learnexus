@@ -172,12 +172,12 @@ const Sidebar = () => {
       >
         <div className="flex items-center gap-3 px-4 py-4 border-b border-black/10 shrink-0">
           <motion.div
-            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#f97316] flex items-center justify-center font-bold text-white text-xl shrink-0 shadow-lg shadow-amber-500/25"
+            className="w-11 h-11 rounded-xl overflow-hidden shrink-0 shadow-lg shadow-purple-500/20 bg-white"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={springNav}
           >
-            L
+            <img src="/logo.png" alt="LearnNexus" className="w-full h-full object-contain p-0.5" />
           </motion.div>
           {!collapsed && (
             <div className="min-w-0">
