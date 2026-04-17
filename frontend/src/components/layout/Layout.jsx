@@ -97,7 +97,7 @@ const Layout = () => {
               className="w-full sm:w-[min(640px,100%)] mx-auto flex items-center gap-3 px-4 py-3 rounded-full glass-panel hover:bg-white/90 transition-all hover:-translate-y-0.5 hover:shadow-lg"
               aria-label="Open command palette"
             >
-              <span className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+              <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7c3aed]/15 to-[#3b82f6]/10 border border-[#7c3aed]/20 flex items-center justify-center text-[#7c3aed] shrink-0">
                 <Search size={18} />
               </span>
               <span className="flex-1 text-left min-w-0">

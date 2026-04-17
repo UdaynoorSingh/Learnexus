@@ -172,7 +172,7 @@ const Sidebar = () => {
       >
         <div className="flex items-center gap-3 px-4 py-4 border-b border-black/10 shrink-0">
           <motion.div
-            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center font-bold text-white text-xl shrink-0 shadow-lg shadow-primary/20"
+            className="w-11 h-11 rounded-2xl bg-gradient-to-br from-[#f59e0b] to-[#f97316] flex items-center justify-center font-bold text-white text-xl shrink-0 shadow-lg shadow-amber-500/25"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={springNav}
@@ -181,7 +181,7 @@ const Sidebar = () => {
           </motion.div>
           {!collapsed && (
             <div className="min-w-0">
-              <h1 className="text-lg font-bold text-gradient-ai tracking-tight truncate">Learnexus</h1>
+              <h1 className="text-lg font-bold tracking-tight truncate font-['Outfit']" style={{ background: 'linear-gradient(135deg, #7c3aed, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Learnexus</h1>
               <p className="text-[10px] text-text-muted uppercase tracking-widest font-medium">Knowledge OS</p>
             </div>
           )}
@@ -331,7 +331,7 @@ const Sidebar = () => {
         <div className="border-t border-black/10 p-3 shrink-0">
           {!collapsed && user && (
             <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-white font-semibold text-sm shadow-sm">
+              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center text-white font-semibold text-sm shadow-sm shadow-purple-500/20">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
               <div className="flex-1 min-w-0">

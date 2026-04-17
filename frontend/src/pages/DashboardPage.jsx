@@ -13,6 +13,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import GradientText from '../components/reactbits/GradientText';
 import Particles from '../components/reactbits/Particles';
 import SplitText from '../components/reactbits/SplitText';
+import WavyUnderline from '../components/ui/WavyUnderline';
+import GeometricShapes from '../components/ui/GeometricShapes';
 import DigitalGraph3D from '../components/reactbits/DigitalGraph3D';
 import heroIllustration from '../assets/illustrations/dashboard-hero.svg';
 import planningIllustration from '../assets/illustrations/planning-notes.svg';
@@ -275,7 +277,7 @@ const DashboardPage = () => {
             particleCount={90}
             particleSpread={10}
             speed={0.06}
-            particleColors={['#ef4444', '#f97316', '#111827']}
+            particleColors={['#7c3aed', '#f59e0b', '#3b82f6']}
             moveParticlesOnHover={true}
             particleHoverFactor={1.25}
             alphaParticles={true}
@@ -305,8 +307,8 @@ const DashboardPage = () => {
             </div>
 
             <SplitText
-              text={`Welcome back, ${user?.name || 'Student'}`}
-              className="text-3xl md:text-4xl font-black text-text tracking-tight leading-tight mt-3"
+              text={`Welcome back,`}
+              className="text-3xl md:text-4xl font-black text-text tracking-tight leading-tight mt-3 font-['Outfit']"
               delay={25}
               duration={0.45}
               splitType="words"
@@ -314,6 +316,11 @@ const DashboardPage = () => {
               to={{ opacity: 1, y: 0, rotateX: 0 }}
               tag="h1"
             />
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight font-['Outfit']">
+              <WavyUnderline color="#f59e0b" strokeWidth={3.5} animationDelay={0.6}>
+                <span className="text-[#f59e0b]">{user?.name || 'Student'}</span>
+              </WavyUnderline>
+            </h1>
 
             <motion.p
               className="text-text-muted text-sm md:text-base mt-2 max-w-xl"
@@ -333,30 +340,22 @@ const DashboardPage = () => {
           >
             <Link
               to="/upload"
-              className="btn-gradient py-3 px-6 rounded-2xl flex items-center gap-2 text-sm font-bold shadow-sm"
+              className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-bold text-white rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 hover:-translate-y-0.5"
             >
               <FiUpload size={18} /> Upload Notes
             </Link>
             <Link
               to="/explorer"
-              className="btn-secondary-outline py-3 px-6 rounded-2xl flex items-center gap-2 text-sm font-bold"
+              className="btn-secondary-outline py-3.5 px-7 rounded-full flex items-center gap-2 text-sm font-bold"
             >
               <FiCompass size={18} /> Explore
             </Link>
           </motion.div>
         </div>
 
-        {/* Decorative hero image (right side on desktop) */}
-        <div className="pointer-events-none absolute right-6 bottom-0 z-[2] hidden md:block">
-          <div className="relative w-[320px] lg:w-[380px] aspect-[4/3] rounded-3xl overflow-hidden border border-black/10 shadow-xl shadow-black/10 bg-white/70">
-            <img
-              src={heroIllustration}
-              alt="Cartoon illustration of collaborative study workspace"
-              className="absolute inset-0 w-full h-full object-cover"
-              loading="lazy"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-white/25 to-transparent" />
-          </div>
+        {/* Decorative geometric shapes (right side on desktop) */}
+        <div className="pointer-events-none absolute right-6 bottom-2 z-[2] hidden md:block">
+          <GeometricShapes size="sm" className="opacity-50" />
         </div>
       </motion.div>
 
@@ -693,7 +692,7 @@ const DashboardPage = () => {
                     wobble={0.24}
                     speed={0.85}
                     cameraDistance={4.25}
-                    palette={['#ef4444', '#f97316', '#0f172a']}
+                    palette={['#7c3aed', '#f59e0b', '#3b82f6']}
                     pixelRatio={1}
                   />
                 </div>

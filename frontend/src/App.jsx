@@ -17,6 +17,7 @@ import NexusBoard from './pages/NexusBoard';
 import NexusLibrary from './pages/NexusLibrary';
 import ChallengesPage from './pages/ChallengesPage';
 import AiTutorPage from './pages/AiTutorPage';
+import FloatingBubbles from './components/ui/FloatingBubbles';
 
 function App() {
   return (
@@ -30,7 +31,7 @@ function App() {
             element={
               <>
                 <div className="noise-overlay" />
-                <div className="mesh-bg" />
+                <FloatingBubbles opacity={0.7} />
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
