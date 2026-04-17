@@ -299,58 +299,51 @@ const DashboardPage = () => {
           }}
         />
 
-        <div className="relative z-[2] p-7 md:p-9 flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+        <div className="relative z-[2] p-7 md:p-9">
           <div className="max-w-2xl">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-black/10 px-3 py-1 text-xs font-semibold text-text shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-white/80 border border-black/10 px-3 py-1.5 text-xs font-semibold text-text shadow-sm">
               <Sparkles size={14} className="text-primary" />
               Your workspace
             </div>
 
-            <SplitText
-              text={`Welcome back,`}
-              className="text-3xl md:text-4xl font-black text-text tracking-tight leading-tight mt-3 font-['Outfit']"
-              delay={25}
-              duration={0.45}
-              splitType="words"
-              from={{ opacity: 0, y: 18, rotateX: -20 }}
-              to={{ opacity: 1, y: 0, rotateX: 0 }}
-              tag="h1"
-            />
-            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight font-['Outfit']">
+            <h1 className="text-3xl md:text-4xl font-black text-text tracking-tight leading-tight mt-4 font-['Outfit']">
+              Welcome back,
+            </h1>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tight leading-tight font-['Outfit'] mt-0.5">
               <WavyUnderline color="#f59e0b" strokeWidth={3.5} animationDelay={0.6}>
                 <span className="text-[#f59e0b]">{user?.name || 'Student'}</span>
               </WavyUnderline>
             </h1>
 
             <motion.p
-              className="text-text-muted text-sm md:text-base mt-2 max-w-xl"
+              className="text-text-muted text-sm md:text-base mt-3 max-w-xl"
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45, duration: 0.45 }}
             >
               All your study tools in one place — notes, AI help, and progress.
             </motion.p>
-          </div>
 
-          <motion.div
-            className="flex flex-wrap gap-3"
-            initial={{ opacity: 0, x: 14 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.55 }}
-          >
-            <Link
-              to="/upload"
-              className="inline-flex items-center gap-2 px-7 py-3.5 text-sm font-bold text-white rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 hover:-translate-y-0.5"
+            <motion.div
+              className="flex flex-wrap gap-3 mt-5"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.55 }}
             >
-              <FiUpload size={18} /> Upload Notes
-            </Link>
-            <Link
-              to="/explorer"
-              className="btn-secondary-outline py-3.5 px-7 rounded-full flex items-center gap-2 text-sm font-bold"
-            >
-              <FiCompass size={18} /> Explore
-            </Link>
-          </motion.div>
+              <Link
+                to="/upload"
+                className="inline-flex items-center gap-2 px-7 py-3 text-sm font-bold text-white rounded-full bg-[#7c3aed] hover:bg-[#6d28d9] transition-all shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 hover:-translate-y-0.5"
+              >
+                <FiUpload size={18} /> Upload Notes
+              </Link>
+              <Link
+                to="/explorer"
+                className="btn-secondary-outline py-3 px-7 rounded-full flex items-center gap-2 text-sm font-bold"
+              >
+                <FiCompass size={18} /> Explore
+              </Link>
+            </motion.div>
+          </div>
         </div>
 
         {/* Decorative geometric shapes (right side on desktop) */}
