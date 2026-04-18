@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { showRateLimitToast } from './toast';
+import { asRateLimitRejection, showApiErrorToast } from './toast';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -27,27 +27,10 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const rl = asRateLimitRejection(error);
+    if (rl) return Promise.reject(rl);
+
     const status = error.response?.status;
-    const errorMsg = JSON.stringify(error.response?.data || '').toLowerCase();
-
-
-    if (
-      status === 429 ||
-      (status === 500 && (
-        errorMsg.includes('rate') ||
-        errorMsg.includes('quota') ||
-        errorMsg.includes('resource_exhausted') ||
-        errorMsg.includes('retry in')
-      ))
-    ) {
-      showRateLimitToast();
-
-      const rateLimitError = new Error('RATE_LIMIT');
-      rateLimitError.isRateLimit = true;
-      rateLimitError.response = error.response;
-      return Promise.reject(rateLimitError);
-    }
-
 
     if (status === 401) {
       const reqUrl = error.config?.url || '';
@@ -63,6 +46,7 @@ api.interceptors.response.use(
       }
     }
 
+    showApiErrorToast(error);
     return Promise.reject(error);
   }
 );

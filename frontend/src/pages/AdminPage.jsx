@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
@@ -60,12 +60,28 @@ const AdminPage = () => {
   const [challengesList, setChallengesList] = useState([]);
   const [editingChallengeId, setEditingChallengeId] = useState(null);
 
-  const catalogParams =
-    user?.role === 'superadmin' && adminCollegeId
-      ? { collegeId: adminCollegeId }
-      : {};
+  /** API query/body scope: superadmin picks any registered college; college admin is fixed to their institution. */
+  const catalogParams = useMemo(() => {
+    if (user?.role === 'superadmin' && adminCollegeId) {
+      return { collegeId: String(adminCollegeId) };
+    }
+    if (user?.role === 'admin' && user.college_id != null && user.college_id !== '') {
+      return { collegeId: String(user.college_id) };
+    }
+    return {};
+  }, [user?.role, user?.college_id, adminCollegeId]);
 
-  const getCatalogParams = () => catalogParams;
+  const selectedCatalogCollege = useMemo(() => {
+    const id =
+      user?.role === 'superadmin' ? Number(adminCollegeId) : Number(user?.college_id);
+    if (!id || Number.isNaN(id)) return null;
+    return adminColleges.find((c) => Number(c.id) === id) || null;
+  }, [user?.role, user?.college_id, adminCollegeId, adminColleges]);
+
+  const catalogReady =
+    user?.role === 'superadmin'
+      ? Boolean(adminCollegeId)
+      : Boolean(user?.college_id != null && user?.college_id !== '');
 
   const reloadAdminColleges = async () => {
     const r = await api.get('/admin/colleges');
@@ -86,6 +102,9 @@ const AdminPage = () => {
           });
         })
         .catch((e) => console.error(e));
+    } else if (user.role === 'admin') {
+      reloadAdminColleges().catch((e) => console.error(e));
+      setAdminCollegeId(String(user.college_id ?? ''));
     } else {
       setAdminCollegeId(String(user.college_id ?? ''));
     }
@@ -94,11 +113,6 @@ const AdminPage = () => {
   useEffect(() => {
     fetchData();
   }, []);
-
-  useEffect(() => {
-    if (!adminCollegeId) return;
-    fetchDegrees();
-  }, [adminCollegeId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -120,52 +134,57 @@ const AdminPage = () => {
     }
   };
 
-  const fetchDegrees = async () => {
+  const fetchDegrees = useCallback(async () => {
     try {
-      const res = await api.get('/degrees', { params: getCatalogParams() });
+      const res = await api.get('/degrees', { params: catalogParams });
       setDegrees(res.data);
     } catch (err) {
       console.error(err);
     }
-  };
+  }, [catalogParams]);
+
+  useEffect(() => {
+    if (!catalogReady) return;
+    fetchDegrees();
+  }, [catalogReady, fetchDegrees]);
 
   useEffect(() => {
     if (selectedDegree) {
       api
-        .get(`/degrees/${selectedDegree}/branches`, { params: getCatalogParams() })
+        .get(`/degrees/${selectedDegree}/branches`, { params: catalogParams })
         .then((res) => setBranches(res.data));
       setSelectedBranch('');
       setSelectedSemester('');
       setSelectedSubject('');
     } else setBranches([]);
-  }, [selectedDegree, adminCollegeId, user?.role]);
+  }, [selectedDegree, catalogParams]);
 
   useEffect(() => {
     if (selectedBranch) {
       api
-        .get(`/branches/${selectedBranch}/semesters`, { params: getCatalogParams() })
+        .get(`/branches/${selectedBranch}/semesters`, { params: catalogParams })
         .then((res) => setSemesters(res.data));
       setSelectedSemester('');
       setSelectedSubject('');
     } else setSemesters([]);
-  }, [selectedBranch, adminCollegeId, user?.role]);
+  }, [selectedBranch, catalogParams]);
 
   useEffect(() => {
     if (selectedSemester) {
       api
-        .get(`/semesters/${selectedSemester}/subjects`, { params: getCatalogParams() })
+        .get(`/semesters/${selectedSemester}/subjects`, { params: catalogParams })
         .then((res) => setSubjects(res.data));
       setSelectedSubject('');
     } else setSubjects([]);
-  }, [selectedSemester, adminCollegeId, user?.role]);
+  }, [selectedSemester, catalogParams]);
 
   useEffect(() => {
     if (selectedSubject) {
       api
-        .get(`/subjects/${selectedSubject}/topics`, { params: getCatalogParams() })
+        .get(`/subjects/${selectedSubject}/topics`, { params: catalogParams })
         .then((res) => setTopics(res.data));
     } else setTopics([]);
-  }, [selectedSubject, adminCollegeId, user?.role]);
+  }, [selectedSubject, catalogParams]);
 
   const handleVerify = async (noteId, verified) => {
     try {
@@ -182,8 +201,15 @@ const AdminPage = () => {
     } catch (err) { console.error(err); }
   };
 
-  const superCollegeBody = () =>
-    user?.role === 'superadmin' && adminCollegeId ? { collegeId: Number(adminCollegeId) } : {};
+  const superCollegeBody = () => {
+    if (user?.role === 'superadmin' && adminCollegeId) {
+      return { collegeId: Number(adminCollegeId) };
+    }
+    if (user?.role === 'admin' && user?.college_id != null && user?.college_id !== '') {
+      return { collegeId: Number(user.college_id) };
+    }
+    return {};
+  };
 
   const handleCreateDegree = async (e) => {
     e.preventDefault();
@@ -208,7 +234,7 @@ const AdminPage = () => {
       });
       setNewBranch('');
       api
-        .get(`/degrees/${selectedDegree}/branches`, { params: getCatalogParams() })
+        .get(`/degrees/${selectedDegree}/branches`, { params: catalogParams })
         .then((res) => setBranches(res.data));
     } catch (err) {
       console.error(err);
@@ -226,7 +252,7 @@ const AdminPage = () => {
       });
       setNewSemester('');
       api
-        .get(`/branches/${selectedBranch}/semesters`, { params: getCatalogParams() })
+        .get(`/branches/${selectedBranch}/semesters`, { params: catalogParams })
         .then((res) => setSemesters(res.data));
     } catch (err) {
       console.error(err);
@@ -244,7 +270,7 @@ const AdminPage = () => {
       });
       setNewSubject('');
       api
-        .get(`/semesters/${selectedSemester}/subjects`, { params: getCatalogParams() })
+        .get(`/semesters/${selectedSemester}/subjects`, { params: catalogParams })
         .then((res) => setSubjects(res.data));
     } catch (err) {
       console.error(err);
@@ -262,7 +288,7 @@ const AdminPage = () => {
       });
       setNewTopic('');
       api
-        .get(`/subjects/${selectedSubject}/topics`, { params: getCatalogParams() })
+        .get(`/subjects/${selectedSubject}/topics`, { params: catalogParams })
         .then((res) => setTopics(res.data));
     } catch (err) {
       console.error(err);
@@ -731,31 +757,72 @@ const AdminPage = () => {
       {activeTab === 'manage' && (
         <div className="space-y-6">
           {user?.role === 'superadmin' && (
-            <div className="glass-card p-4 flex flex-wrap items-center gap-3">
-              <label className="text-sm font-medium text-text-muted">Catalog college</label>
-              <select
-                value={adminCollegeId}
-                onChange={(e) => {
-                  setAdminCollegeId(e.target.value);
-                  setSelectedDegree('');
-                  setSelectedBranch('');
-                  setSelectedSemester('');
-                  setSelectedSubject('');
-                }}
-                className="px-4 py-2 bg-white/80 border border-black/10 rounded-xl text-sm text-text min-w-[12rem] focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
-              >
-                {adminColleges.map((c) => (
-                  <option key={c.id} value={String(c.id)}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-text-muted">
-                Superadmin: choose which tenant&apos;s degrees and branches you are editing.
-              </p>
+            <div className="glass-card p-5 space-y-3">
+              <div>
+                <h3 className="text-base font-bold text-text">Institution for this catalog</h3>
+                <p className="text-sm text-text-muted mt-1 max-w-3xl leading-relaxed">
+                  Choose one of the colleges you registered under <strong>Colleges &amp; domains</strong>. All
+                  degrees, branches, semesters, subjects, and topics you add here are stored for that institution
+                  only. Students see this tree in <strong>Explorer</strong> when their account is tied to the same
+                  college (matched by email domain at sign-in).
+                </p>
+              </div>
+              {adminColleges.length === 0 ? (
+                <p className="text-sm text-warning font-medium">
+                  No colleges yet — add one under the &quot;Colleges &amp; domains&quot; tab first, then return here
+                  to build the catalog.
+                </p>
+              ) : (
+                <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3">
+                  <label htmlFor="admin-catalog-college" className="text-sm font-medium text-text-muted shrink-0">
+                    College
+                  </label>
+                  <select
+                    id="admin-catalog-college"
+                    value={adminCollegeId}
+                    onChange={(e) => {
+                      setAdminCollegeId(e.target.value);
+                      setSelectedDegree('');
+                      setSelectedBranch('');
+                      setSelectedSemester('');
+                      setSelectedSubject('');
+                    }}
+                    className="sm:min-w-[18rem] flex-1 max-w-xl px-4 py-2.5 bg-white/80 border border-black/10 rounded-xl text-sm text-text focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15"
+                  >
+                    {adminColleges.map((c) => (
+                      <option key={c.id} value={String(c.id)}>
+                        {c.name} ({c.domain_suffix})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
           )}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {user?.role === 'admin' && (
+            <div className="glass-card p-5">
+              <h3 className="text-base font-bold text-text">Your institution</h3>
+              <p className="text-sm text-text-muted mt-1 max-w-3xl leading-relaxed">
+                Catalog changes apply to <strong>{selectedCatalogCollege?.name || user?.college_name || 'your college'}</strong>
+                {selectedCatalogCollege?.domain_suffix ? (
+                  <>
+                    {' '}
+                    (<span className="font-mono text-xs">{selectedCatalogCollege.domain_suffix}</span>). Students at
+                    that domain see this structure in Explorer.
+                  </>
+                ) : (
+                  <> — students with accounts for your college see this catalog in Explorer.</>
+                )}
+              </p>
+              {!catalogReady && (
+                <p className="mt-3 text-sm text-danger font-medium">
+                  Your admin account is not linked to a college. Ask a superadmin to assign your user to an
+                  institution.
+                </p>
+              )}
+            </div>
+          )}
+          <div className={`grid grid-cols-1 md:grid-cols-2 gap-6 ${!catalogReady ? 'pointer-events-none opacity-45' : ''}`}>
             <div className="glass-card p-6">
               <h3 className="text-lg font-bold text-text mb-4">Degree</h3>
               <SelectField label="Select Degree to manage" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />

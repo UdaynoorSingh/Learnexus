@@ -38,13 +38,20 @@ async function assertNoteAdminAccess(req, noteId) {
 
 exports.getCollegesAdmin = async (req, res) => {
   try {
-    if (!isSuperAdmin(req.user)) {
-      return res.status(403).json({ error: 'Only a superadmin can list all colleges.' });
+    if (isSuperAdmin(req.user)) {
+      const result = await pool.query(
+        'SELECT id, name, domain_suffix, created_at FROM colleges ORDER BY name'
+      );
+      return res.json(result.rows);
     }
-    const result = await pool.query(
-      'SELECT id, name, domain_suffix, created_at FROM colleges ORDER BY name'
-    );
-    res.json(result.rows);
+    if (req.user.role === 'admin' && req.user.college_id != null) {
+      const result = await pool.query(
+        'SELECT id, name, domain_suffix, created_at FROM colleges WHERE id = $1',
+        [req.user.college_id]
+      );
+      return res.json(result.rows);
+    }
+    return res.status(403).json({ error: 'Forbidden.' });
   } catch (error) {
     console.error('getCollegesAdmin error:', error);
     res.status(500).json({ error: 'Server error.' });

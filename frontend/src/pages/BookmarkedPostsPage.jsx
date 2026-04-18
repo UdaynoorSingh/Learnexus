@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom';
 import { fetchBookmarkedPosts } from '../services/communityService';
 import PostCard from '../components/community/PostCard';
 import { FiBookmark, FiArrowLeft } from 'react-icons/fi';
+import PageMascot from '../components/ui/PageMascot';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import EmptyState from '../components/ui/EmptyState';
 
 const BookmarkedPostsPage = () => {
   const [posts, setPosts] = useState([]);
@@ -42,8 +45,8 @@ const BookmarkedPostsPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fadeInUp">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+        <div className="min-w-0 flex-1">
           <Link
             to="/profile"
             className="inline-flex items-center gap-1.5 text-sm font-medium text-text-muted hover:text-primary transition-colors mb-2"
@@ -63,27 +66,27 @@ const BookmarkedPostsPage = () => {
             .
           </p>
         </div>
+        <PageMascot role="bookmarks" size="md" className="shrink-0 self-center lg:self-start" hideOnMobile />
       </div>
 
       {error && (
-        <div className="rounded-xl bg-danger/15 border border-danger/30 text-danger text-sm px-4 py-3">{error}</div>
+        <div className="rounded-xl bg-danger/15 border border-danger/30 text-danger text-sm px-4 py-3" role="alert">
+          {error}
+        </div>
       )}
 
       {loading ? (
-        <div className="glass-card border border-black/10 rounded-2xl p-12 text-center text-text-muted">
-          Loading bookmarks…
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm">
+          <LoadingSpinner size="lg" text="Loading your bookmarks…" />
         </div>
       ) : posts.length === 0 ? (
-        <div className="glass-card border border-black/10 rounded-2xl p-12 text-center">
-          <FiBookmark size={40} className="mx-auto mb-3 text-text-muted opacity-40" />
-          <p className="text-text-muted">No bookmarked posts yet.</p>
-          <Link
-            to="/nexus-board"
-            className="inline-block mt-4 text-sm font-semibold text-primary hover:underline"
-          >
-            Go to Nexus Board
-          </Link>
-        </div>
+        <EmptyState
+          illustration="feed"
+          title="No bookmarked posts yet"
+          description="When you save a thread on Nexus Board, it shows up here for quick reading later."
+          ctaLabel="Browse Nexus Board"
+          to="/nexus-board"
+        />
       ) : (
         <div className="space-y-5">
           {posts.map((post) => (

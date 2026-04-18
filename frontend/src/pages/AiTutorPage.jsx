@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   GraduationCap, Sparkles, BookOpen, Play, Send, Bot,
@@ -12,6 +13,47 @@ import {
   reportAbsence, getPerformanceReport,
 } from '../services/tutorService';
 import api from '../services/api';
+import PageMascot from '../components/ui/PageMascot';
+import AiLoadingState from '../components/common/AiLoadingState';
+
+const TUTOR_ROADMAP_MESSAGES = [
+  'Analyzing syllabus...',
+  'Vectorizing knowledge graph...',
+  'Consulting community RAG...',
+  'Composing multi-week plan with LangGraph...',
+  'Finalizing roadmap...',
+];
+
+const TUTOR_LECTURE_MESSAGES = [
+  'Fetching best resources...',
+  'Drafting lecture script...',
+  'Aligning to your learning style...',
+  'Consulting community RAG...',
+  'Packaging audio and study aids...',
+];
+
+const TUTOR_DOUBT_MESSAGES = [
+  'Retrieving lecture context...',
+  'Reasoning over your question...',
+  'Consulting community RAG...',
+  'Checking for contradictions...',
+  'Formulating a clear answer...',
+];
+
+const TUTOR_QUIZ_MESSAGES = [
+  'Reading your submissions...',
+  'Cross-checking against model answers...',
+  'Scoring with the rubric...',
+  'Summarizing strengths and gaps...',
+  'Almost done...',
+];
+
+const TUTOR_PERF_MESSAGES = [
+  'Aggregating your progress...',
+  'Identifying weak topics...',
+  'Consulting performance signals...',
+  'Drafting recommendations...',
+];
 
 /* ── animation presets ── */
 const spring = { type: 'spring', stiffness: 420, damping: 32 };
@@ -22,6 +64,9 @@ const fadeIn = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, 
    ══════════════════════════════════════════════════════════════════ */
 
 const AiTutorPage = () => {
+  const location = useLocation();
+  const initialTopic = location.state?.topic || '';
+
   /* ── session state ── */
   const [studentId, setStudentId] = useState(() => sessionStorage.getItem('tutor_student_id') || '');
   const [roadmap, setRoadmap] = useState(() => {
@@ -35,7 +80,7 @@ const AiTutorPage = () => {
 
   /* ── setup form ── */
   const [formData, setFormData] = useState({
-    topic: '',
+    topic: initialTopic,
     depth_level: 'intermediate',
     duration_input: '4 weeks',
     pace_speed: 'normal',
@@ -124,7 +169,7 @@ const AiTutorPage = () => {
     (async () => {
       if (roadmap || studentId) return;
       try {
-        const { data } = await api.get('/dashboard/tutor-state');
+        const { data } = await api.get('/dashboard/tutor-state', { skipErrorToast: true });
         const s = data?.state;
         if (!s || cancelled) return;
         if (s.studentId) setStudentId(String(s.studentId));
@@ -175,14 +220,18 @@ const AiTutorPage = () => {
 
       // Persist roadmap (best-effort) so it survives reloads/server restarts
       try {
-        await api.put('/dashboard/tutor-state', {
-          state: {
-            studentId: result.student_id,
-            roadmap: result.roadmap,
-            calendarEvents: result.calendar_events || [],
-            createdAt: new Date().toISOString(),
-          }
-        });
+        await api.put(
+          '/dashboard/tutor-state',
+          {
+            state: {
+              studentId: result.student_id,
+              roadmap: result.roadmap,
+              calendarEvents: result.calendar_events || [],
+              createdAt: new Date().toISOString(),
+            },
+          },
+          { skipErrorToast: true }
+        );
       } catch {
         // ignore persistence errors
       }
@@ -311,6 +360,17 @@ const AiTutorPage = () => {
   if (view === 'setup') {
     return (
       <div className="max-w-4xl mx-auto space-y-8 animate-fadeInUp">
+        {initLoading && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4 backdrop-blur-sm">
+            <div className="w-full max-w-md rounded-2xl border border-violet-200/70 bg-white/95 p-8 shadow-2xl shadow-violet-500/15 ring-1 ring-white/80">
+              <AiLoadingState
+                isLoading={initLoading}
+                messages={TUTOR_ROADMAP_MESSAGES}
+                label="Generating course roadmap"
+              />
+            </div>
+          </div>
+        )}
         {/* Hero */}
         <div className="glass-card p-8 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-80 h-80 bg-accent/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none" />
@@ -334,18 +394,7 @@ const AiTutorPage = () => {
               </p>
             </div>
             
-            <motion.img 
-              src="/getting-a-hint.png" 
-              alt="AI Tutor Mascot"
-              className="w-32 md:w-48 drop-shadow-2xl"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, y: [0, -10, 0], scale: 1 }}
-              transition={{
-                  opacity: { duration: 0.5 },
-                  scale: { duration: 0.5 },
-                  y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }
-              }}
-            />
+            <PageMascot role="aiTutor" size="xl" className="drop-shadow-2xl shrink-0" />
           </div>
         </div>
 
@@ -464,8 +513,8 @@ const AiTutorPage = () => {
           >
             {initLoading ? (
               <>
-                <Loader2 className="animate-spin" size={20} />
-                Generating Roadmap — this may take 30-60 seconds...
+                <Sparkles size={20} className="opacity-90" />
+                Hang tight — this can take 30–60 seconds
               </>
             ) : (
               <>
@@ -601,8 +650,12 @@ const AiTutorPage = () => {
                   <BarChart3 size={20} className="text-primary" /> Performance Report
                 </h3>
                 {perfLoading ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="animate-spin text-primary" size={32} />
+                  <div className="flex min-h-[12rem] items-center justify-center py-8">
+                    <AiLoadingState
+                      isLoading
+                      messages={TUTOR_PERF_MESSAGES}
+                      label="Loading performance report"
+                    />
                   </div>
                 ) : perfReport?.error ? (
                   <p className="text-sm text-danger">{perfReport.error}</p>
@@ -795,12 +848,13 @@ const AiTutorPage = () => {
               )}
 
               {lectureLoading && (
-                <div className="glass-card p-10 flex flex-col items-center space-y-4">
-                  <Loader2 className="animate-spin text-primary" size={40} />
-                  <p className="text-sm text-text-muted animate-pulse">
-                    AI agents are preparing your lecture... fetching resources, writing script, generating audio.
-                  </p>
-                  <p className="text-xs text-text-muted">This may take 30-60 seconds.</p>
+                <div className="glass-card flex flex-col items-center p-10">
+                  <AiLoadingState
+                    isLoading={lectureLoading}
+                    messages={TUTOR_LECTURE_MESSAGES}
+                    label="Preparing lecture"
+                  />
+                  <p className="mt-2 text-center text-xs text-text-muted">This may take 30–60 seconds.</p>
                 </div>
               )}
 
@@ -985,10 +1039,13 @@ const AiTutorPage = () => {
                   </AnimatePresence>
                   {doubtLoading && (
                     <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-2xl px-4 py-3 chat-bubble-ai flex gap-1.5 items-center">
-                        <span className="w-2 h-2 rounded-full bg-primary/80 animate-bounce [animation-delay:0ms]" />
-                        <span className="w-2 h-2 rounded-full bg-primary/60 animate-bounce [animation-delay:150ms]" />
-                        <span className="w-2 h-2 rounded-full bg-primary/40 animate-bounce [animation-delay:300ms]" />
+                      <div className="chat-bubble-ai max-w-[90%] rounded-2xl rounded-tl-md px-3 py-2.5">
+                        <AiLoadingState
+                          isLoading={doubtLoading}
+                          size="sm"
+                          messages={TUTOR_DOUBT_MESSAGES}
+                          label="Doubt assistant is thinking"
+                        />
                       </div>
                     </div>
                   )}
@@ -1025,7 +1082,17 @@ const AiTutorPage = () => {
           <div className="max-w-2xl mx-auto space-y-6">
             {!quizResult ? (
               <>
-                <div className="glass-card p-6 space-y-5">
+                <div className="glass-card relative space-y-5 p-6">
+                  {quizLoading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-white/80 backdrop-blur-sm ring-1 ring-violet-200/50">
+                      <AiLoadingState
+                        isLoading={quizLoading}
+                        messages={TUTOR_QUIZ_MESSAGES}
+                        label="Grading quiz"
+                      />
+                    </div>
+                  )}
+                  <div className={quizLoading ? 'pointer-events-none select-none opacity-25' : ''}>
                   <h3 className="text-lg font-bold text-text flex items-center gap-2">
                     <Brain size={20} className="text-accent" /> Quiz Submission
                   </h3>
@@ -1067,9 +1134,10 @@ const AiTutorPage = () => {
                     disabled={quizLoading || Object.keys(quizAnswers).length === 0}
                     className="w-full btn-gradient py-3 rounded-xl text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
                   >
-                    {quizLoading ? <Loader2 className="animate-spin" size={18} /> : <CheckCircle2 size={18} />}
-                    {quizLoading ? 'Grading...' : 'Submit Quiz'}
+                    <CheckCircle2 size={18} />
+                    {quizLoading ? 'Grading…' : 'Submit Quiz'}
                   </motion.button>
+                  </div>
                 </div>
               </>
             ) : quizResult.error ? (

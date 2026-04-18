@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageMascot from '../components/ui/PageMascot';
+import PageHeader from '../components/layout/PageHeader';
 import {
   FiMail,
   FiShield,
@@ -43,7 +45,13 @@ const ProfilePage = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fadeInUp">
-      <h1 className="text-2xl font-bold text-text">My Profile</h1>
+      <PageHeader
+        eyebrow="Account"
+        title="My Profile"
+        description="Credits balance, role, and recent credit activity."
+      >
+        <PageMascot role="profile" size="sm" hideOnMobile />
+      </PageHeader>
 
       <div className="glass-card p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
@@ -93,11 +101,13 @@ const ProfilePage = () => {
       </div>
 
       <div className="glass-card p-6">
-        <h3 className="text-lg font-semibold text-text mb-4">Transaction History</h3>
+        <h3 className="text-lg font-semibold text-slate-900 font-['Outfit'] tracking-tight mb-1">Transaction history</h3>
+        <p className="text-xs text-slate-500 mb-5">Uploads, AI tools, and challenges that moved your balance.</p>
         {transactions.length === 0 ? (
-          <div className="text-center py-8 text-text-muted">
-            <FiClock size={32} className="mx-auto mb-2 opacity-40" />
-            <p>No transactions yet.</p>
+          <div className="rounded-xl border border-dashed border-slate-200/90 bg-slate-50/60 py-10 text-center text-slate-600">
+            <FiClock size={32} className="mx-auto mb-2 text-slate-400" aria-hidden />
+            <p className="text-sm font-medium">No transactions yet</p>
+            <p className="mt-1 text-xs text-slate-500">Earn credits by uploading notes or complete challenges.</p>
           </div>
         ) : (
           <div className="space-y-2">

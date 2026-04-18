@@ -145,7 +145,7 @@ const Sidebar = () => {
       <button
         type="button"
         onClick={() => setMobileOpen(!mobileOpen)}
-        className="fixed top-4 left-4 z-50 p-2.5 rounded-xl glass-float text-text md:hidden border border-black/10 shadow-sm"
+        className="fixed top-4 left-4 z-50 rounded-xl border border-white/60 bg-white/75 p-2.5 text-slate-800 shadow-lg shadow-slate-900/10 backdrop-blur-xl transition hover:bg-white/95 md:hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/40"
         aria-label="Toggle menu"
       >
         {mobileOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
@@ -163,32 +163,38 @@ const Sidebar = () => {
       <aside
         className={`fixed z-40 flex flex-col transition-all duration-300 ease-out
           md:left-5 md:top-5 md:bottom-auto md:max-h-[calc(100vh-2.5rem)] md:h-[calc(100vh-2.5rem)]
-          md:rounded-3xl md:glass-panel
+          md:rounded-2xl md:border md:border-white/50 md:bg-white/55 md:shadow-[0_24px_80px_-20px_rgba(15,23,42,0.18),0_0_0_1px_rgba(255,255,255,0.6)_inset] md:backdrop-blur-2xl md:backdrop-saturate-150
           left-0 top-0 bottom-0 h-full
           ${collapsed ? 'md:w-24' : 'md:w-72'}
           w-[min(20rem,100vw)]
           ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}
-          bg-white/95 backdrop-blur-3xl md:bg-transparent border-r border-black/5 md:border-r-0 shadow-2xl shadow-primary/5`}
+          border-r border-white/40 bg-white/90 shadow-xl shadow-slate-900/12 backdrop-blur-2xl backdrop-saturate-150 md:border-r md:bg-white/55`}
       >
-        <div className="flex items-center gap-3 px-4 py-4 border-b border-black/10 shrink-0">
+        <div className="flex shrink-0 items-center gap-3 border-b border-white/40 px-4 py-4">
           <motion.div
-            className="w-11 h-11 rounded-xl overflow-hidden shrink-0 shadow-lg shadow-purple-500/20 bg-white"
+            className="h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-white/60 bg-gradient-to-br from-violet-500/10 to-cyan-500/10 shadow-inner ring-1 ring-white/80"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             transition={springNav}
           >
-            <img src="/logo.png" alt="LearnNexus" className="w-full h-full object-contain p-0.5" />
+            <img src="/logo.png" alt="LearnNexus" className="h-full w-full object-contain p-0.5" />
           </motion.div>
           {!collapsed && (
             <div className="min-w-0">
-              <h1 className="text-lg font-bold tracking-tight truncate font-['Outfit']" style={{ background: 'linear-gradient(135deg, #7c3aed, #3b82f6)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>Learnexus</h1>
-              <p className="text-[10px] text-text-muted uppercase tracking-widest font-medium">Knowledge OS</p>
+              <h1
+                className="truncate bg-gradient-to-r from-violet-700 to-cyan-600 bg-clip-text text-lg font-bold tracking-tight text-transparent font-['Outfit']"
+              >
+                LearnNexus
+              </h1>
+              <p className="mt-0.5 inline-block rounded-full border border-violet-200/50 bg-violet-500/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-violet-700">
+                Knowledge OS
+              </p>
             </div>
           )}
           <button
             type="button"
             onClick={() => setCollapsed(!collapsed)}
-            className="ml-auto hidden md:flex p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 transition-colors"
+            className="ml-auto hidden rounded-lg p-2 text-slate-500 transition-colors hover:bg-white/60 hover:text-slate-900 md:flex focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400/50"
             aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
             <ChevronRight
@@ -208,21 +214,21 @@ const Sidebar = () => {
                   {active && (
                     <motion.div
                       layoutId="active-nav"
-                      className="absolute inset-0 bg-white/80 shadow-sm border border-white rounded-xl"
+                      className="absolute inset-0 rounded-xl bg-gradient-to-r from-violet-500/18 via-fuchsia-500/12 to-cyan-500/15 shadow-[0_0_28px_rgba(139,92,246,0.35),0_0_0_1px_rgba(167,139,250,0.45)] ring-2 ring-violet-400/50"
                       initial={false}
-                      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                     />
                   )}
                   <MotionLink
                     to={item.path}
                     onClick={() => setMobileOpen(false)}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
                     transition={springNav}
-                    className={`relative z-10 flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium transition-all duration-200
+                    className={`relative z-10 flex items-center gap-3 rounded-xl px-3 py-3 text-sm font-medium transition-all duration-200
                       ${active
-                        ? 'text-primary font-bold shadow-sm'
-                        : 'text-text-muted hover:text-text hover:bg-black/5 hover:-translate-y-0.5 border border-transparent'
+                        ? 'font-semibold text-violet-950'
+                        : 'border border-transparent text-slate-600 hover:border-white/50 hover:bg-white/40 hover:text-slate-900'
                       }`}
                   >
                     <item.icon size={18} strokeWidth={2} className="shrink-0" />
@@ -247,7 +253,7 @@ const Sidebar = () => {
                     whileHover={{ scale: 1 }}
                     whileTap={{ scale: 1 }}
                     transition={springNav}
-                    className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-sm font-medium text-text-muted hover:text-text hover:bg-black/5 border border-transparent hover:border-black/10"
+                    className="flex items-center justify-between gap-2 rounded-xl border border-transparent px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:border-white/40 hover:bg-white/35 hover:text-slate-900"
                   >
                     <span className="truncate min-w-0">{room.name}</span>
                     <span className="text-[10px] font-bold text-text/80 shrink-0 tabular-nums">
@@ -328,15 +334,15 @@ const Sidebar = () => {
           )}
         </nav>
 
-        <div className="border-t border-black/10 p-3 shrink-0">
+        <div className="shrink-0 border-t border-white/40 p-3">
           {!collapsed && user && (
-            <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7c3aed] to-[#a855f7] flex items-center justify-center text-white font-semibold text-sm shadow-sm shadow-purple-500/20">
+            <div className="mb-2 flex items-center gap-3 rounded-xl border border-white/50 bg-white/30 px-2 py-2">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-violet-600 to-fuchsia-600 text-sm font-bold text-white shadow-md shadow-violet-500/30 ring-2 ring-white/80">
                 {user.name?.charAt(0).toUpperCase()}
               </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-text truncate tracking-tight">{user.name}</p>
-                <p className="text-[10px] text-text-muted tabular-nums">⚡ {user.credits} credits</p>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium tracking-tight text-slate-900">{user.name}</p>
+                <p className="text-[10px] font-medium tabular-nums text-slate-500">⚡ {user.credits} credits</p>
               </div>
             </div>
           )}
@@ -349,7 +355,7 @@ const Sidebar = () => {
             whileHover={{ scale: 1 }}
             whileTap={{ scale: 1 }}
             transition={springNav}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-danger hover:bg-danger/10 transition-colors border border-transparent hover:border-danger/25"
+            className="flex w-full items-center gap-3 rounded-xl border border-transparent px-3 py-2.5 text-sm font-semibold text-red-600 transition-colors hover:border-red-200/60 hover:bg-red-50/80"
           >
             <LogOut size={16} strokeWidth={2} className="shrink-0" />
             {!collapsed && <span>Logout</span>}

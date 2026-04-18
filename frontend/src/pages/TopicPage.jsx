@@ -8,6 +8,7 @@ import { useAuth } from '../context/AuthContext';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { academicCatalogParams } from '../utils/academicCatalog';
 import EmptyState from '../components/ui/EmptyState';
+import PageMascot from '../components/ui/PageMascot';
 import Flashcards from '../components/study/Flashcards';
 import ExamSimulator from '../components/study/ExamSimulator';
 import MindMapViewer from '../components/study/MindMapViewer';
@@ -213,19 +214,26 @@ const TopicPage = () => {
   return (
     <div className="space-y-8 animate-fadeInUp max-w-full min-w-0">
       <div className="min-w-0">
-        <Link to="/explorer" className="inline-flex items-center gap-2 text-text-muted hover:text-text text-sm mb-4 transition-colors">
-          <FiArrowLeft size={14} /> Back to Explorer
+        <Link
+          to="/explorer"
+          className="inline-flex items-center gap-2 text-sm text-slate-600 transition-colors hover:text-slate-900 mb-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 rounded-lg"
+          aria-label="Back to academic explorer"
+        >
+          <FiArrowLeft size={14} aria-hidden /> Back to Explorer
         </Link>
         <div className="glass-card relative z-20 p-5 sm:p-6 min-w-0 border border-black/10">
           <div className="flex flex-col gap-5 min-w-0">
-            <div className="min-w-0 pr-1">
-              <p className="text-xs text-primary font-medium uppercase tracking-wider mb-1">{topic.subject_name}</p>
-              <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight break-words">{topic.name}</h1>
-              {topic.teacher_name && (
-                <p className="text-sm text-text-muted mt-1 flex items-center gap-1 flex-wrap">
-                  <FiUser size={12} /> Taught by {topic.teacher_name}
-                </p>
-              )}
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 min-w-0">
+              <div className="min-w-0 pr-1 flex-1">
+                <p className="text-xs text-primary font-medium uppercase tracking-wider mb-1">{topic.subject_name}</p>
+                <h1 className="text-2xl sm:text-3xl font-bold text-text tracking-tight break-words">{topic.name}</h1>
+                {topic.teacher_name && (
+                  <p className="text-sm text-text-muted mt-1 flex items-center gap-1 flex-wrap">
+                    <FiUser size={12} /> Taught by {topic.teacher_name}
+                  </p>
+                )}
+              </div>
+              <PageMascot role="topic" size="md" className="shrink-0 mx-auto md:mx-0 md:-mt-1" />
             </div>
             <div className="flex flex-wrap gap-2 sm:gap-2.5 items-stretch sm:items-center content-start min-w-0 w-full">
               <div ref={teachMenuRef} className="relative z-[60] shrink-0">

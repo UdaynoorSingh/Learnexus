@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { generateExam } from '../../services/aiService';
 import LoadingSpinner from '../common/LoadingSpinner';
 import { FiAward, FiX, FiCheck, FiXCircle, FiArrowRight, FiRotateCw, FiAlertCircle } from 'react-icons/fi';
+import { MOOD_MASCOTS } from '../../constants/mascots';
 
 const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
   const [questions, setQuestions] = useState([]);
@@ -128,8 +129,17 @@ const ExamSimulator = ({ topicId, onClose, refreshUser }) => {
           <div className="flex-1 flex flex-col items-center justify-center text-center animate-fadeInUp">
             {(() => {
               const info = getGradeInfo(score, questions.length);
+              const pct = questions.length ? Math.round((score / questions.length) * 100) : 0;
+              const mood =
+                pct >= 75 ? MOOD_MASCOTS.proud : pct < 45 ? MOOD_MASCOTS.wrongAnswer : MOOD_MASCOTS.encouraging;
               return (
                 <>
+                  <img
+                    src={mood.src}
+                    alt={mood.alt}
+                    className="w-28 h-auto sm:w-32 object-contain drop-shadow-lg mb-4"
+                    draggable={false}
+                  />
                   <div className={`w-32 h-32 rounded-full ${info.bg} border-4 ${info.ring} flex items-center justify-center mb-6 shadow-lg`}>
                     <span className={`text-5xl font-black ${info.color}`}>{info.grade}</span>
                   </div>

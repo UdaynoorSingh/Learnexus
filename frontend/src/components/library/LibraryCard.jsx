@@ -89,7 +89,6 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
       onRemoved?.(post.id);
     } catch (e) {
       console.error(e);
-      showToast('error', e.response?.data?.error || 'Could not delete post.', 'Error');
     } finally {
       setDeleteBusy(false);
     }

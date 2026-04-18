@@ -5,6 +5,17 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { academicCatalogParams } from '../utils/academicCatalog';
 import { FiUpload, FiFile, FiX, FiCheck, FiChevronDown } from 'react-icons/fi';
+import PageMascot from '../components/ui/PageMascot';
+import AiLoadingState from '../components/common/AiLoadingState';
+import { MOOD_MASCOTS } from '../constants/mascots';
+
+const UPLOAD_AI_MESSAGES = [
+  'Uploading and securing your file...',
+  'Analyzing syllabus structure...',
+  'Vectorizing knowledge graph...',
+  'Consulting community RAG...',
+  'Indexing for search and tutor tools...',
+];
 
 const UploadPage = () => {
   const { refreshUser, user } = useAuth();
@@ -163,8 +174,14 @@ const UploadPage = () => {
     return (
       <div className="flex items-center justify-center min-h-[60vh] animate-fadeInUp">
         <div className="glass-card p-12 text-center">
-          <div className="w-20 h-20 mx-auto rounded-full bg-success/20 flex items-center justify-center mb-4">
-            <FiCheck size={40} className="text-success" />
+          <img
+            src={MOOD_MASCOTS.proud.src}
+            alt={MOOD_MASCOTS.proud.alt}
+            className="w-28 h-auto mx-auto mb-4 object-contain drop-shadow-lg"
+            draggable={false}
+          />
+          <div className="w-16 h-16 mx-auto rounded-full bg-success/20 flex items-center justify-center mb-3">
+            <FiCheck size={32} className="text-success" />
           </div>
           <h2 className="text-2xl font-bold text-text mb-2">Upload Successful!</h2>
           <p className="text-text-muted">Your note is being processed by AI. You earned +5 credits! ⚡</p>
@@ -181,30 +198,37 @@ const UploadPage = () => {
           <h1 className="text-2xl font-bold text-text">Upload Notes</h1>
           <p className="text-text-muted mt-1">Upload handwritten notes or PDFs to earn credits</p>
         </div>
-        <motion.img 
-          src="/encouraging-making-progress.png" 
-          alt="Upload Mascot" 
-          className="w-20 md:w-28 drop-shadow-lg md:mr-8"
-          initial={{ opacity: 0, y: 10, rotate: 5 }}
-          animate={{ opacity: 1, y: [0, -6, 0], rotate: 0 }}
-          transition={{
-              opacity: { duration: 0.5, delay: 0.2 },
-              rotate: { duration: 0.5, delay: 0.2 },
-              y: { duration: 3.5, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }
-          }}
-        />
+        <PageMascot role="upload" size="md" className="md:mr-4 shrink-0" />
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="glass-card p-6">
+      <form onSubmit={handleSubmit} className="relative space-y-6">
+        {loading && (
+          <div className="absolute inset-0 z-20 flex min-h-[24rem] items-center justify-center rounded-2xl bg-white/75 backdrop-blur-md ring-1 ring-violet-200/60">
+            <AiLoadingState
+              isLoading={loading}
+              messages={UPLOAD_AI_MESSAGES}
+              label="Upload and AI processing"
+            />
+          </div>
+        )}
+        <div className={`glass-card p-6 ${loading ? 'pointer-events-none opacity-40' : ''}`}>
           <h3 className="text-sm font-semibold text-text mb-4">Select File</h3>
           <div
+            role="button"
+            tabIndex={0}
+            aria-label="Upload file: drag and drop here or press Enter to browse"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                document.getElementById('file-input')?.click();
+              }
+            }}
             onDragEnter={handleDrag}
             onDragLeave={handleDrag}
             onDragOver={handleDrag}
             onDrop={handleDrop}
-            className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer
-              ${dragActive ? 'border-primary bg-primary/10' : 'border-black/10 hover:border-black/20 bg-white/50'}`}
+            className={`border-2 border-dashed rounded-2xl p-8 text-center transition-all cursor-pointer outline-none focus-visible:ring-4 focus-visible:ring-violet-500/20
+              ${dragActive ? 'border-primary bg-primary/10' : 'border-slate-200/90 hover:border-violet-300/60 bg-white/60'}`}
             onClick={() => document.getElementById('file-input').click()}
           >
             {file ? (
@@ -241,7 +265,7 @@ const UploadPage = () => {
           </div>
         </div>
 
-        <div className="glass-card p-6">
+        <div className={`glass-card p-6 ${loading ? 'pointer-events-none opacity-40' : ''}`}>
           <h3 className="text-sm font-semibold text-text mb-4">Select Topic</h3>
           <div className="space-y-4">
             <SelectField label="Degree" value={selectedDegree} onChange={setSelectedDegree} options={degrees} placeholder="Select degree..." />
@@ -273,16 +297,7 @@ const UploadPage = () => {
           disabled={loading || !file || !selectedTopic}
           className="w-full btn-gradient py-3 text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2"
         >
-          {loading ? (
-            <>
-              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              Uploading & Processing...
-            </>
-          ) : (
-            <>
-              <FiUpload size={16} /> Upload Note (+5 ⚡)
-            </>
-          )}
+          <FiUpload size={16} /> {loading ? 'Processing…' : 'Upload Note (+5 ⚡)'}
         </button>
       </form>
     </div>

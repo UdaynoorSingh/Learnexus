@@ -121,10 +121,8 @@ const PodcastPlayer = ({ topicId, onClose, refreshUser }) => {
       const msg = err.response?.data?.error || err.response?.data?.detail || '';
 
       if (status === 403) {
-        showToast('error', 'Not enough credits. Upload more notes to earn credits.', '⚡ Credits');
         setError('Not enough credits to generate an audio overview. Upload more notes to earn credits.');
       } else if (status === 429 || status === 500) {
-        showToast('error', 'AI is cooling down. Please wait 30 seconds.', '⏳ Rate Limit');
         setError('AI is cooling down. Please wait 30 seconds and try again.');
       } else if (status === 404) {
         setError(msg || 'No notes found for this topic. Upload notes first.');

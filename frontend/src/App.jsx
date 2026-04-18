@@ -17,7 +17,7 @@ import NexusBoard from './pages/NexusBoard';
 import NexusLibrary from './pages/NexusLibrary';
 import ChallengesPage from './pages/ChallengesPage';
 import AiTutorPage from './pages/AiTutorPage';
-import FloatingBubbles from './components/ui/FloatingBubbles';
+import BrutalistBackdrop from './components/ui/BrutalistBackdrop';
 
 function App() {
   return (
@@ -31,7 +31,7 @@ function App() {
             element={
               <>
                 <div className="noise-overlay" />
-                <FloatingBubbles opacity={0.7} />
+                <BrutalistBackdrop bubbleOpacity={0.75} />
                 <ProtectedRoute>
                   <Layout />
                 </ProtectedRoute>
@@ -54,9 +54,13 @@ function App() {
           <Route path="/admin" element={<AdminAuthGate />}>
             <Route
               element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
+                <>
+                  <div className="noise-overlay" />
+                  <BrutalistBackdrop bubbleOpacity={0.72} />
+                  <ProtectedRoute>
+                    <Layout />
+                  </ProtectedRoute>
+                </>
               }
             >
               <Route index element={<AdminPage />} />

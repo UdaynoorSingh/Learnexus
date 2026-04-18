@@ -8,7 +8,7 @@ export async function fetchChallenges() {
 export async function submitChallengeSolution(challengeId, githubUrl) {
   const res = await api.post('/challenges/submit', {
     challenge_id: challengeId,
-    github_url: githubUrl
+    github_url: githubUrl,
   });
   return res.data;
 }

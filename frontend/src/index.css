@@ -6,6 +6,13 @@
   --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
   --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
 
+  /* Neo-brutalist ink + accents (HireLoop-inspired) */
+  --color-ink: #1e2029;
+  --color-mint-pill: #d1fae5;
+  --color-mint-pill-text: #047857;
+  --color-brutal-yellow: #facc15;
+  --color-brutal-pink: #fbcfe8;
+
   /* HireLoop-inspired Palette — Purple + Amber */
   --color-primary: #7c3aed;
   /* Vibrant Purple */
@@ -29,6 +36,10 @@
 
 :root {
   --sidebar-offset: 21rem;
+  --ln-ink: #1e2029;
+  --ln-neo-shadow: 4px 4px 0 0 var(--ln-ink);
+  --ln-neo-shadow-lg: 6px 6px 0 0 var(--ln-ink);
+  --ln-neo-shadow-sm: 3px 3px 0 0 var(--ln-ink);
 }
 
 body {
@@ -38,6 +49,89 @@ body {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Dot grid canvas behind app chrome */
+.ln-dot-grid {
+  background-color: #fafafa;
+  background-image: radial-gradient(rgba(30, 32, 41, 0.09) 1px, transparent 1px);
+  background-size: 14px 14px;
+}
+
+.ln-backdrop-root {
+  z-index: 0;
+}
+
+/* Offset “stamp” shadow + press on hover */
+.ln-neo-surface {
+  border: 2px solid var(--ln-ink);
+  box-shadow: var(--ln-neo-shadow);
+  background: #fff;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.ln-neo-surface:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 0 var(--ln-ink);
+}
+
+.ln-neo-surface:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 var(--ln-ink);
+}
+
+.ln-neo-primary {
+  border: 2px solid var(--ln-ink);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: var(--ln-neo-shadow);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    filter 0.18s ease;
+}
+
+.ln-neo-primary:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 5px 5px 0 0 var(--ln-ink);
+  filter: brightness(1.04);
+}
+
+.ln-neo-primary:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 0 var(--ln-ink);
+}
+
+.ln-neo-outline {
+  border: 2px solid var(--ln-ink);
+  background: #fff;
+  color: var(--ln-ink);
+  box-shadow: var(--ln-neo-shadow-sm);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.ln-neo-outline:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 0 var(--ln-ink);
+  background: #fafafa;
+}
+
+.ln-neo-outline:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0 0 var(--ln-ink);
+}
+
+/* Pill shell (nav) — offset shadow without hover “lift” */
+.ln-neo-pill {
+  border: 2px solid var(--ln-ink);
+  background: #fff;
+  box-shadow: var(--ln-neo-shadow);
+  border-radius: 9999px;
 }
 
 .noise-overlay {
@@ -195,6 +289,12 @@ h4 {
     inset 0 1px 1px rgba(255, 255, 255, 0.4),
     0 12px 24px rgba(124, 58, 237, 0.35);
   filter: brightness(1.05);
+}
+
+.btn-gradient.btn-gradient--xl {
+  border-radius: 0.875rem;
+  padding-top: 0.875rem;
+  padding-bottom: 0.875rem;
 }
 
 .btn-ai-primary {

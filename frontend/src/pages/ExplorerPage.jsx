@@ -4,6 +4,8 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { academicCatalogParams } from '../utils/academicCatalog';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageMascot from '../components/ui/PageMascot';
+import EmptyState from '../components/ui/EmptyState';
 import { FiBook, FiLayers, FiGrid, FiBookOpen, FiFileText, FiChevronRight, FiArrowLeft } from 'react-icons/fi';
 
 const ExplorerPage = () => {
@@ -148,6 +150,23 @@ const ExplorerPage = () => {
     }
   };
 
+  const getSubtitle = () => {
+    switch (level) {
+      case 'degrees':
+        return 'Choose your program to browse branches, semesters, and subjects.';
+      case 'branches':
+        return 'Pick the branch that matches your curriculum.';
+      case 'semesters':
+        return 'Open a semester to see subjects and topics.';
+      case 'subjects':
+        return 'Select a subject, then jump into a topic to study.';
+      case 'topics':
+        return 'Open a topic for notes, AI tutor tools, and more.';
+      default:
+        return '';
+    }
+  };
+
   const getGradient = (index) => {
     const gradients = [
       'from-blue-500/20 to-blue-600/5 border-blue-500/20 hover:border-blue-500/40',
@@ -164,14 +183,21 @@ const ExplorerPage = () => {
 
   return (
     <div className="space-y-6 animate-fadeInUp">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex items-center gap-4 min-w-0">
         {level !== 'degrees' && (
-          <button onClick={goBack} className="p-2 rounded-xl bg-surface hover:bg-surface-light border border-white/5 text-text-muted hover:text-text transition-all">
+          <button
+            type="button"
+            onClick={goBack}
+            aria-label="Go back one level"
+            className="p-2 rounded-xl border border-slate-200/80 bg-white/80 text-slate-600 shadow-sm transition-all hover:border-slate-300 hover:bg-white hover:text-slate-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/30 shrink-0"
+          >
             <FiArrowLeft size={18} />
           </button>
         )}
-        <div>
-          <h1 className="text-2xl font-bold text-text">{getTitle()}</h1>
+        <div className="min-w-0">
+          <h1 className="text-2xl font-bold text-slate-900 tracking-tight font-['Outfit']">{getTitle()}</h1>
+          <p className="mt-1.5 text-sm text-slate-600 max-w-xl leading-relaxed">{getSubtitle()}</p>
           {breadcrumb.length > 0 && (
             <div className="flex items-center gap-1 mt-1 text-xs text-text-muted">
               <span className="cursor-pointer hover:text-primary" onClick={loadDegrees}>Home</span>
@@ -184,15 +210,22 @@ const ExplorerPage = () => {
             </div>
           )}
         </div>
+        </div>
+        <PageMascot role="explorer" size="md" className="shrink-0 self-end sm:self-center" hideOnMobile />
       </div>
 
       {loading ? (
-        <LoadingSpinner text="Loading..." />
-      ) : data.length === 0 ? (
-        <div className="glass-card p-12 text-center">
-          <Icon size={48} className="mx-auto text-text-muted mb-4 opacity-40" />
-          <p className="text-text-muted">No items found at this level.</p>
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm">
+          <LoadingSpinner size="lg" text="Loading catalog…" />
         </div>
+      ) : data.length === 0 ? (
+        <EmptyState
+          illustration="notes"
+          title="Nothing to show here yet"
+          description="Your school may still be setting up this part of the catalog, or nothing has been published for this level. Try another path or ask your admin."
+          ctaLabel="Back to dashboard"
+          to="/dashboard"
+        />
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {data.map((item, index) => (

@@ -6,6 +6,7 @@ import { processYouTubeVideo, generateLecture, sendChatMessage } from '../servic
 import { showToast } from '../services/toast';
 import api from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageMascot from '../components/ui/PageMascot';
 import { FiYoutube, FiArrowRight } from 'react-icons/fi';
 
 const VideoLearnPage = () => {
@@ -99,8 +100,6 @@ const VideoLearnPage = () => {
       handleGenerateLecture(tempTopicId);
     } catch (err) {
       console.error(err);
-      const msg = err.response?.data?.error || err.message || 'Failed to process video.';
-      showToast('error', msg, 'Processing Failed');
     } finally {
       setProcessing(false);
     }
@@ -164,7 +163,8 @@ const VideoLearnPage = () => {
       <div className="glass-card p-8 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-danger/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-        <div className="relative z-10 max-w-3xl">
+        <div className="relative z-10 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
+          <div className="max-w-3xl min-w-0 flex-1">
           <h1 className="text-3xl font-bold text-text mb-2 flex items-center gap-3">
             <FiYoutube className="text-danger" /> YouTube Fast-Learn
           </h1>
@@ -172,7 +172,7 @@ const VideoLearnPage = () => {
             Paste any educational YouTube link below to instantly generate a comprehensive lecture and chat environment. No pre-uploaded notes required. (Costs 5 ⚡)
           </p>
 
-          <form onSubmit={handleStartLearning} className="flex flex-col sm:flex-row gap-3">
+          <form onSubmit={handleStartLearning} className="flex flex-col sm:flex-row gap-3" aria-label="Start from a YouTube URL">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                 <FiYoutube className="text-text-muted" size={18} />
@@ -200,6 +200,8 @@ const VideoLearnPage = () => {
               )}
             </button>
           </form>
+          </div>
+          <PageMascot role="videoLearn" size="lg" className="shrink-0 self-center lg:self-start lg:pt-2" />
         </div>
       </div>
 

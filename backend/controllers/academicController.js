@@ -1,31 +1,72 @@
 const pool = require('../config/db');
 
+/** Seeded academic tree lives on demo.edu in seed.sql; used when user has no college or empty catalog. */
+async function pickDefaultCatalogCollegeId() {
+  const demo = await pool.query(
+    `SELECT id FROM colleges WHERE LOWER(domain_suffix) = 'demo.edu' LIMIT 1`
+  );
+  if (demo.rows.length > 0) return demo.rows[0].id;
+  const first = await pool.query(`SELECT id FROM colleges ORDER BY id ASC LIMIT 1`);
+  if (first.rows.length > 0) return first.rows[0].id;
+  return null;
+}
+
 /**
  * Which college's catalog to show. Superadmin may pass ?collegeId=; otherwise we default to
  * demo.edu (seed) or the first college so Explorer matches the admin "catalog" dropdown.
  * Non-superadmin may only use their own collegeId (ignores foreign ids).
+ *
+ * Students (and other roles) whose college_id is null, or whose college has no degrees yet,
+ * fall back to the same demo catalog superadmin sees — fixes sidebar/Explorer empty for users
+ * tied to learnexus.com/system while seed data only populates demo.edu.
+ *
+ * Important: the frontend always sends ?collegeId= for scoped users. We must not return that
+ * id before the empty-catalog check, or users whose college matches but has zero degrees
+ * (e.g. learnexus.com) never reach the demo.edu fallback.
  */
 async function resolveViewerCollegeId(req) {
   const myCollegeId = req.user.college_id;
+  let cid = null;
 
   if (req.query.collegeId != null && req.query.collegeId !== '') {
     const n = parseInt(String(req.query.collegeId), 10);
     if (!Number.isNaN(n)) {
-      if (req.user.role === 'superadmin') return n;
-      if (myCollegeId != null && n === myCollegeId) return n;
+      if (req.user.role === 'superadmin') {
+        return n;
+      }
+      if (myCollegeId != null && Number(myCollegeId) === n) {
+        cid = n;
+      }
     }
   }
 
-  if (req.user.role === 'superadmin') {
-    const demo = await pool.query(
-      `SELECT id FROM colleges WHERE LOWER(domain_suffix) = 'demo.edu' LIMIT 1`
-    );
-    if (demo.rows.length > 0) return demo.rows[0].id;
-    const first = await pool.query(`SELECT id FROM colleges ORDER BY id ASC LIMIT 1`);
-    if (first.rows.length > 0) return first.rows[0].id;
+  if (cid == null) {
+    if (req.user.role === 'superadmin') {
+      return await pickDefaultCatalogCollegeId();
+    }
+    const fromUser =
+      myCollegeId != null && myCollegeId !== '' ? Number(myCollegeId) : null;
+    if (fromUser != null && !Number.isNaN(fromUser)) {
+      cid = fromUser;
+    } else {
+      cid = await pickDefaultCatalogCollegeId();
+    }
   }
 
-  return myCollegeId;
+  if (cid == null || Number.isNaN(cid)) {
+    return await pickDefaultCatalogCollegeId();
+  }
+
+  const degreeCount = await pool.query(
+    'SELECT COUNT(*)::int AS n FROM degrees WHERE college_id = $1',
+    [cid]
+  );
+  if ((degreeCount.rows[0]?.n ?? 0) === 0) {
+    const fallback = await pickDefaultCatalogCollegeId();
+    if (fallback != null) return fallback;
+  }
+
+  return cid;
 }
 
 exports.getDegrees = async (req, res) => {

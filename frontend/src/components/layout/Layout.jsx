@@ -6,6 +6,7 @@ import Sidebar from './Sidebar';
 import { useAuth } from '../../context/AuthContext';
 import { Loader2, CheckCircle2, XCircle, X, Search } from 'lucide-react';
 import CommandPalette from '../ui/CommandPalette';
+import AiTutorFab from '../ui/AiTutorFab';
 
 const socketUrl = import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000';
 const socket = io(socketUrl, { autoConnect: false });
@@ -86,7 +87,7 @@ const Layout = () => {
   ];
 
   return (
-    <div className="flex min-h-screen bg-background relative overflow-x-hidden">
+    <div className="relative z-10 flex min-h-screen overflow-x-hidden bg-transparent">
       <Sidebar />
       <main className="flex-1 min-h-screen min-w-0 w-0 md:pl-[var(--sidebar-offset,21rem)] transition-[padding] duration-300 ease-out">
         <div className="p-4 md:p-8 max-w-7xl mx-auto min-w-0">
@@ -94,17 +95,17 @@ const Layout = () => {
             <button
               type="button"
               onClick={() => setPaletteOpen(true)}
-              className="w-full sm:w-[min(640px,100%)] mx-auto flex items-center gap-3 px-4 py-3 rounded-full glass-panel hover:bg-white/90 transition-all hover:-translate-y-0.5 hover:shadow-lg"
+              className="ln-neo-pill w-full sm:w-[min(640px,100%)] mx-auto flex items-center gap-3 px-4 py-3 transition-transform duration-150 hover:-translate-y-0.5 active:translate-y-px active:shadow-[3px_3px_0_0_#1e2029]"
               aria-label="Open command palette"
             >
-              <span className="w-10 h-10 rounded-full bg-gradient-to-br from-[#7c3aed]/15 to-[#3b82f6]/10 border border-[#7c3aed]/20 flex items-center justify-center text-[#7c3aed] shrink-0">
-                <Search size={18} />
+              <span className="w-10 h-10 rounded-full border-2 border-[#1e2029] bg-[#fef9c3] flex items-center justify-center text-[#1e2029] shrink-0 shadow-[2px_2px_0_0_#1e2029]">
+                <Search size={18} strokeWidth={2.25} />
               </span>
               <span className="flex-1 text-left min-w-0">
-                <span className="block text-sm font-semibold text-text truncate">Search pages & actions…</span>
-                <span className="block text-[11px] text-text-muted mt-0.5 truncate">Press Ctrl+K anytime</span>
+                <span className="block text-sm font-bold text-[#1e2029] truncate font-['Outfit']">Search pages & actions…</span>
+                <span className="block text-[11px] text-text-muted mt-0.5 truncate font-medium">Press Ctrl+K anytime</span>
               </span>
-              <span className="hidden sm:inline-flex items-center gap-1 rounded-xl bg-white/70 border border-black/10 px-3 py-2 text-[11px] font-bold text-text-muted">
+              <span className="hidden sm:inline-flex items-center gap-1 rounded-full border-2 border-[#1e2029] bg-[#ede9fe] px-3 py-2 text-[11px] font-extrabold text-[#1e2029] shadow-[2px_2px_0_0_#1e2029]">
                 Ctrl
                 <span className="opacity-60">+</span>
                 K
@@ -128,41 +129,76 @@ const Layout = () => {
       <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} commands={commands} />
 
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 animate-fadeInUp max-w-sm w-full">
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm w-full">
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-            className="glass-float rounded-2xl p-4 flex items-start gap-4 shadow-2xl border-l-4"
-            style={{
-              borderLeftColor:
-                toast.type === 'success' ? '#22c55e' : toast.type === 'error' ? '#f87171' : '#818cf8'
-            }}
+            initial={
+              toast.type === 'error'
+                ? { opacity: 0, x: 56, y: 0 }
+                : { opacity: 0, y: 16, scale: 0.96 }
+            }
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 380, damping: 32 }}
+            className={
+              toast.type === 'error'
+                ? 'flex items-stretch overflow-hidden rounded-2xl border border-violet-500/20 bg-gradient-to-br from-slate-900 via-slate-900 to-slate-950 text-slate-100 shadow-2xl shadow-violet-950/40 ring-1 ring-white/10'
+                : 'rounded-2xl border-2 border-[#1e2029] bg-white flex items-stretch overflow-hidden shadow-[5px_5px_0_0_#1e2029]'
+            }
           >
-            <div className="mt-0.5 shrink-0">
-              {toast.type === 'progress' && (
-                <Loader2 className="text-primary animate-spin" size={20} strokeWidth={2} />
-              )}
-              {toast.type === 'success' && (
-                <CheckCircle2 className="text-success" size={20} strokeWidth={2} />
-              )}
-              {toast.type === 'error' && <XCircle className="text-danger" size={20} strokeWidth={2} />}
+            <div
+              className="w-1.5 shrink-0"
+              style={{
+                backgroundColor:
+                  toast.type === 'success' ? '#22c55e' : toast.type === 'error' ? '#a78bfa' : '#818cf8'
+              }}
+              aria-hidden
+            />
+            <div className="flex min-w-0 flex-1 items-start gap-4 p-4">
+              <div className="mt-0.5 shrink-0">
+                {toast.type === 'progress' && (
+                  <Loader2 className="text-primary animate-spin" size={20} strokeWidth={2} />
+                )}
+                {toast.type === 'success' && (
+                  <CheckCircle2 className="text-success" size={20} strokeWidth={2} />
+                )}
+                {toast.type === 'error' && (
+                  <XCircle className="text-fuchsia-400" size={20} strokeWidth={2} />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                {toast.step && (
+                  <h4
+                    className={`mb-1 text-sm font-bold tracking-tight ${
+                      toast.type === 'error' ? 'text-violet-200' : 'text-text'
+                    }`}
+                  >
+                    {toast.step}
+                  </h4>
+                )}
+                <p
+                  className={`text-sm leading-snug ${
+                    toast.type === 'error' ? 'text-slate-300' : 'text-text-muted'
+                  }`}
+                >
+                  {toast.message}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setToast(null)}
+                className={
+                  toast.type === 'error'
+                    ? 'rounded-lg p-1 text-slate-400 transition-colors hover:bg-white/10 hover:text-white'
+                    : 'rounded-lg p-1 text-text-muted transition-colors hover:bg-black/5 hover:text-text'
+                }
+                aria-label="Dismiss"
+              >
+                <X size={16} />
+              </button>
             </div>
-            <div className="flex-1 min-w-0">
-              {toast.step && <h4 className="text-sm font-bold text-text mb-1 tracking-tight">{toast.step}</h4>}
-              <p className="text-sm text-text-muted leading-snug">{toast.message}</p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setToast(null)}
-              className="text-text-muted hover:text-text transition-colors p-1 rounded-lg hover:bg-white/5"
-              aria-label="Dismiss"
-            >
-              <X size={16} />
-            </button>
           </motion.div>
         </div>
       )}
+      <AiTutorFab />
     </div>
   );
 };

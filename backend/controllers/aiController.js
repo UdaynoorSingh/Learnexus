@@ -24,6 +24,28 @@ exports.teach = async (req, res) => {
   }
 };
 
+exports.taskIdeas = async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    const response = await fetch(`${AI_BACKEND_URL}/api/ai/task-ideas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AI Backend Error: ${errorText}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('AI Proxy TaskIdeas error:', error);
+    res.status(500).json({ error: 'Failed to generate task ideas.' });
+  }
+};
+
 exports.chat = async (req, res) => {
   try {
     const { topicId, contextMode, history, message, lectureContext } = req.body;

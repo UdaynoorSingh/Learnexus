@@ -6,9 +6,21 @@ const LoadingSpinner = ({ size = 'md', text = '' }) => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center gap-3 py-8">
-      <div className={`${sizes[size]} border-primary border-t-transparent rounded-full animate-spin`}></div>
-      {text && <p className="text-text-muted text-sm">{text}</p>}
+    <div
+      className="flex min-h-[12rem] flex-col items-center justify-center gap-3 py-10"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+    >
+      <div
+        className={`${sizes[size]} border-primary border-t-transparent rounded-full animate-spin`}
+        aria-hidden
+      />
+      {text ? (
+        <p className="text-sm font-medium text-slate-600">{text}</p>
+      ) : (
+        <span className="sr-only">Loading</span>
+      )}
     </div>
   );
 };

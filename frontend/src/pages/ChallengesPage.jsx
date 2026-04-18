@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { fetchChallenges, submitChallengeSolution } from '../services/challengeService';
 import { showToast } from '../services/toast';
+import PageMascot from '../components/ui/PageMascot';
+import EmptyState from '../components/ui/EmptyState';
 
 const difficultyConfig = {
   Easy: {
@@ -79,9 +81,6 @@ const ChallengesPage = () => {
       setChallenges(data);
     } catch (err) {
       console.error('Failed to load challenges:', err);
-      if (!err.isRateLimit) {
-        showToast('error', 'Failed to load challenges. Please try again.');
-      }
     } finally {
       setLoading(false);
     }
@@ -101,10 +100,7 @@ const ChallengesPage = () => {
       setGithubUrl('');
       loadChallenges();
     } catch (err) {
-      const msg = err.response?.data?.error || 'Failed to submit solution.';
-      if (!err.isRateLimit) {
-        showToast('error', msg);
-      }
+      console.error(err);
     } finally {
       setSubmitting(false);
     }
@@ -147,18 +143,9 @@ const ChallengesPage = () => {
             </div>
           </div>
           
-          <motion.img 
-            src="/achievement-proud.png" 
-            alt="Achievement Mascot"
-            className="w-24 md:w-32 drop-shadow-xl hidden md:block"
-            initial={{ opacity: 0, y: 15, scale: 0.9 }}
-            animate={{ opacity: 1, y: [0, -8, 0], scale: 1 }}
-            transition={{
-                opacity: { duration: 0.5, delay: 0.1 },
-                scale: { duration: 0.5, delay: 0.1 },
-                y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }
-            }}
-          />
+          <div className="hidden md:block shrink-0">
+            <PageMascot role="challenges" size="lg" className="drop-shadow-xl" />
+          </div>
         </div>
 
         {/* Stats bar */}
@@ -279,21 +266,14 @@ const ChallengesPage = () => {
         })}
       </div>
 
-      {/* Empty state */}
       {challenges.length === 0 && !loading && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          className="text-center py-20"
-        >
-          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-white/70 border border-black/10 flex items-center justify-center">
-            <Trophy size={36} className="text-text-muted" />
-          </div>
-          <h3 className="text-xl font-bold text-text mb-2">No Challenges Yet</h3>
-          <p className="text-sm text-text-muted">
-            Company challenges will appear here soon. Check back later!
-          </p>
-        </motion.div>
+        <EmptyState
+          illustration="feed"
+          title="No challenges yet"
+          description="When partners publish bounties, they will appear here. You can still earn credits from uploads and the AI Tutor in the meantime."
+          ctaLabel="Back to dashboard"
+          to="/dashboard"
+        />
       )}
 
       {/* Submission Modal */}

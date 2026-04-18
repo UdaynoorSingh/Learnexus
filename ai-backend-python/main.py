@@ -127,6 +127,10 @@ class CommunityMascotChatRequest(BaseModel):
     query: str
 
 
+class TaskIdeasRequest(BaseModel):
+    prompt: str
+
+
 def call_groq(prompt: str, fallback: bool = True) -> str:
     try:
         response = groq_client.chat.completions.create(
@@ -474,6 +478,43 @@ async def extract_keypoints(req: TextRequest):
 
         return {"keyPoints": keypoints_list}
     except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/task-ideas")
+async def generate_task_ideas(req: TaskIdeasRequest):
+    try:
+        if not req.prompt or not req.prompt.strip():
+            raise HTTPException(status_code=400, detail="Prompt is required.")
+        
+        prompt = f"""
+        You are an expert academic study planner. Based on the user's input, generate exactly 4 concrete, actionable, and specific study task ideas.
+        
+        CRITICAL RULES:
+        1. If the user's input is a specific topic (e.g., "DSA arrays"), your tasks MUST explicitly mention that topic so the user knows you understood them (e.g., "Make a 20-minute plan for reviewing DSA arrays").
+        2. If the user's input is too vague, generic, or just a greeting (like "hi" or "hello"), generate tasks that playfully guide them to provide a specific topic (e.g., "Tell me what subject you want to tackle today", "List the key concepts of a specific subject you are studying").
+        
+        User input: "{req.prompt.strip()}"
+        
+        Return ONLY a valid JSON array of strings representing the 4 task ideas. Each string should be concise and start with an action verb (e.g., "Make a 20-minute plan...", "List key concepts..."). Do not include markdown blocks like ```json.
+        """
+        text_resp = call_groq(prompt).strip()
+        
+        if text_resp.startswith("```json"):
+            text_resp = text_resp.replace("```json", "").replace("```", "").strip()
+        elif text_resp.startswith("```"):
+            text_resp = text_resp.replace("```", "").strip()
+            
+        try:
+            ideas_list = json.loads(text_resp)
+        except json.JSONDecodeError:
+            ideas_list = [line.strip("- *") for line in text_resp.split("\n") if line.strip()]
+            
+        # Ensure we return a list of exactly what was asked, up to 4 items.
+        return {"ideas": ideas_list[:4]}
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=str(e))
 
 

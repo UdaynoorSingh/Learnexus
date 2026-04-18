@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Hash, Bot, Send, X, Radio } from 'lucide-react';
+import { Plus, Hash, Send, X, Radio } from 'lucide-react';
 import {
   fetchPosts,
   fetchForumTags,
@@ -12,7 +12,10 @@ import { FALLBACK_FORUM_TAGS } from '../constants/nexusTags';
 import CreatePostModal from '../components/community/CreatePostModal';
 import PostCard from '../components/community/PostCard';
 import EmptyState from '../components/ui/EmptyState';
+import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
+import PageMascot from '../components/ui/PageMascot';
+import { getPageMascot } from '../constants/mascots';
 
 const spring = { type: 'spring', stiffness: 380, damping: 30 };
 
@@ -243,11 +246,14 @@ const NexusBoard = () => {
           transition={spring}
           className="flex flex-col gap-4 mb-6"
         >
-          <div className="min-w-0 pr-2 sm:pr-4">
-            <h1 className="text-3xl sm:text-4xl font-bold text-text tracking-tight">Nexus Board</h1>
-            <p className="text-text-muted text-sm mt-2 max-w-xl leading-relaxed">
-              Global and college rooms — post where you belong; explore other campuses read-only.
-            </p>
+          <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 min-w-0 pr-2 sm:pr-4">
+            <div className="min-w-0">
+              <h1 className="text-3xl sm:text-4xl font-bold text-text tracking-tight">Nexus Board</h1>
+              <p className="text-text-muted text-sm mt-2 max-w-xl leading-relaxed">
+                Global and college rooms — post where you belong; explore other campuses read-only.
+              </p>
+            </div>
+            <PageMascot role="nexusBoard" size="md" className="shrink-0 self-start sm:self-center" hideOnMobile />
           </div>
 
           <div className="flex flex-wrap gap-2">
@@ -380,8 +386,13 @@ const NexusBoard = () => {
               >
                 <div className="flex items-center justify-between gap-2 px-4 py-3 border-b border-black/10 bg-white/70">
                   <div className="flex items-center gap-2 min-w-0">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25 shrink-0">
-                      <Bot size={18} strokeWidth={2} />
+                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-white border border-primary/20 shrink-0 overflow-hidden">
+                      <img
+                        src={getPageMascot('nexusBoard').src}
+                        alt=""
+                        className="w-full h-full object-cover object-top scale-110"
+                        draggable={false}
+                      />
                     </div>
                     <div className="min-w-0">
                       <h2 id="mascot-title" className="text-sm font-bold text-text tracking-tight truncate">
@@ -461,8 +472,8 @@ const NexusBoard = () => {
         )}
 
         {loading ? (
-          <div className="surface-card border border-black/10 rounded-2xl p-14 text-center text-text-muted tracking-tight">
-            Loading posts…
+          <div className="rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm">
+            <LoadingSpinner size="lg" text="Loading posts…" />
           </div>
         ) : feedTab === 'explore' && exploreCollegeId == null ? (
           <EmptyState

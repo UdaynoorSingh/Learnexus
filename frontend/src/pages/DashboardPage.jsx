@@ -15,6 +15,8 @@ import Particles from '../components/reactbits/Particles';
 import SplitText from '../components/reactbits/SplitText';
 import WavyUnderline from '../components/ui/WavyUnderline';
 import GeometricShapes from '../components/ui/GeometricShapes';
+import PageMascot from '../components/ui/PageMascot';
+import EmptyState from '../components/ui/EmptyState';
 import DigitalGraph3D from '../components/reactbits/DigitalGraph3D';
 import heroIllustration from '../assets/illustrations/dashboard-hero.svg';
 import planningIllustration from '../assets/illustrations/planning-notes.svg';
@@ -31,6 +33,25 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 24, scale: 0.97 },
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 350, damping: 25 } }
+};
+
+/** Stat row: section eases in, then each KPI card staggers (nested staggerChildren) */
+const statRowVariants = {
+  hidden: { opacity: 0, y: 18 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { staggerChildren: 0.11, delayChildren: 0.06 },
+  },
+};
+const statCardVariants = {
+  hidden: { opacity: 0, y: 32, scale: 0.94 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { type: 'spring', stiffness: 380, damping: 28 },
+  },
 };
 
 const toDayKey = (d) => {
@@ -51,13 +72,13 @@ const addDays = (d, delta) => {
 /* ═══════════════════════════════════════════════════════════
    TiltCard — Physics-based 3D hover tilt via mouse position
    ═══════════════════════════════════════════════════════════ */
-const TiltCard = ({ children, className = '', glowColor = 'rgba(14,165,233,0.15)', floatDelay = 0 }) => {
+const TiltCard = ({ children, className = '', glowColor = 'rgba(14,165,233,0.15)', floatDelay = 0, variants: cardVariants = itemVariants }) => {
   const ref = useRef(null);
 
   return (
     <motion.div
       ref={ref}
-      variants={itemVariants}
+      variants={cardVariants}
       className={`relative group cursor-default ${className}`}
     >
       <div className="relative z-10 h-full">{children}</div>
@@ -81,6 +102,7 @@ const DashboardPage = () => {
   const [timelineEvents, setTimelineEvents] = useState([]);
   const [taskPrompt, setTaskPrompt] = useState('');
   const [taskIdeas, setTaskIdeas] = useState([]);
+  const [isGeneratingTasks, setIsGeneratingTasks] = useState(false);
 
   useEffect(() => { fetchDashboardData(); }, []);
   useEffect(() => {
@@ -185,6 +207,16 @@ const DashboardPage = () => {
     { label: 'Pending Review', value: stats?.pendingNotes || 0, icon: FiTrendingUp, chip: 'bg-success/10 text-success border border-success/25' },
   ];
 
+  const totalTopics = stats?.totalTopics ?? 0;
+  const totalNotes = stats?.totalNotes ?? 0;
+  const showLibraryEmpty = totalTopics === 0 || totalNotes === 0;
+  const emptyDescription =
+    totalTopics === 0 && totalNotes === 0
+      ? 'Your workspace is ready — add topics and notes, or jump into the community and AI tutor to seed your first learning path.'
+      : totalTopics === 0
+        ? 'No topics yet — generate a structured course or explore the Nexus Board to discover what others are building.'
+        : 'No notes yet — upload materials or open the Nexus Board to capture ideas and discussion.';
+
   const quickActions = [
     { to: '/upload', icon: FiUpload, label: 'Upload Notes', desc: 'Earn credits', chip: 'bg-primary/10 text-primary border border-primary/25' },
     { to: '/explorer', icon: FiCompass, label: 'Browse Topics', desc: 'Explore resources', chip: 'bg-secondary/10 text-secondary border border-secondary/25' },
@@ -231,17 +263,27 @@ const DashboardPage = () => {
     ...quickActions.filter((a) => !pinned.includes(a.to)),
   ];
 
-  const handleGenerateTaskIdeas = (e) => {
+  const handleGenerateTaskIdeas = async (e) => {
     e.preventDefault();
     const t = taskPrompt.trim();
     if (!t) return;
-    const base = [
-      `Make a 20‑minute plan for: ${t}`,
-      `List key concepts + 5 practice questions on: ${t}`,
-      `Summarize your notes for: ${t} (3 bullet takeaways)`,
-      `Create a study checklist for: ${t} (Today / This week)`,
-    ];
-    setTaskIdeas(base);
+    
+    setIsGeneratingTasks(true);
+    try {
+      const res = await api.post('/ai/task-ideas', { prompt: t });
+      if (res.data?.ideas) {
+        setTaskIdeas(res.data.ideas);
+      }
+    } catch (err) {
+      console.error('Failed to generate task ideas:', err);
+      // Fallback
+      setTaskIdeas([
+        `Make a 20‑minute plan for: ${t}`,
+        `List key concepts + 5 practice questions on: ${t}`,
+      ]);
+    } finally {
+      setIsGeneratingTasks(false);
+    }
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -348,29 +390,17 @@ const DashboardPage = () => {
 
         {/* Study-themed feature blocks & Mascot (right side on desktop) */}
         <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 z-[2] hidden lg:flex items-center gap-8" style={{ perspective: '1000px' }}>
-          {/* Mascot */}
-          <motion.img
-            src="/joyfull.png"
-            alt="LearnNexus Mascot"
-            className="w-[150px] xl:w-[180px] drop-shadow-2xl"
-            initial={{ opacity: 0, y: 20, rotate: -5 }}
-            animate={{ opacity: 1, y: [0, -8, 0], rotate: 0 }}
-            transition={{
-              opacity: { duration: 0.5, delay: 0.2 },
-              rotate: { duration: 0.5, delay: 0.2 },
-              y: { duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }
-            }}
-          />
+          <PageMascot role="dashboard" size="hero" className="drop-shadow-2xl" />
 
           {/* Feature Blocks (Abstract Shapes) */}
           <GeometricShapes size="sm" className="opacity-90" />
         </div>
       </motion.div>
 
-      {/* ══════ STAT CARDS — floating ══════ */}
-      <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+      {/* ══════ STAT CARDS — Framer Motion staggerChildren per card ══════ */}
+      <motion.div variants={statRowVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((stat, i) => (
-          <TiltCard key={i} glowColor="rgba(15,23,42,0.06)" floatDelay={i * 0.8}>
+          <TiltCard key={i} variants={statCardVariants} glowColor="rgba(15,23,42,0.06)" floatDelay={i * 0.8}>
             <div className="glass-panel p-6 rounded-2xl h-full">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -392,6 +422,21 @@ const DashboardPage = () => {
           </TiltCard>
         ))}
       </motion.div>
+
+      {showLibraryEmpty && (
+        <motion.div variants={itemVariants} className="max-w-lg mx-auto">
+          <EmptyState
+            title="Bring your workspace to life"
+            description={emptyDescription}
+            ctaLabel="Explore Nexus Board"
+            to="/nexus-board"
+            secondaryCtaLabel="Generate a Course"
+            secondaryTo="/ai-tutor"
+            vibrantCta
+            illustration="feed"
+          />
+        </motion.div>
+      )}
 
       {/* ══════ QUICK ACTIONS GRID — floating ══════ */}
       <motion.div variants={itemVariants}>
@@ -509,9 +554,6 @@ const DashboardPage = () => {
                   </h3>
                   <p className="text-xs text-text-muted mt-1">Type what you’re studying — get instant ideas.</p>
                 </div>
-                <div className="text-[10px] uppercase tracking-widest font-semibold text-text-muted bg-white/80 border border-black/10 rounded-full px-3 py-1">
-                  Local only
-                </div>
               </div>
 
               <div className="mt-4 flex items-center gap-3">
@@ -533,10 +575,15 @@ const DashboardPage = () => {
                   value={taskPrompt}
                   onChange={(e) => setTaskPrompt(e.target.value)}
                   placeholder="e.g. DSA arrays + time complexity"
-                  className="flex-1 input-premium py-2.5 px-4 rounded-xl text-sm"
+                  disabled={isGeneratingTasks}
+                  className="flex-1 input-premium py-2.5 px-4 rounded-xl text-sm disabled:opacity-50"
                 />
-                <button type="submit" className="btn-gradient px-4 rounded-xl text-sm font-bold">
-                  Generate
+                <button 
+                  type="submit" 
+                  disabled={isGeneratingTasks}
+                  className="btn-gradient px-4 rounded-xl text-sm font-bold disabled:opacity-75 disabled:cursor-not-allowed"
+                >
+                  {isGeneratingTasks ? 'Generating...' : 'Generate'}
                 </button>
               </form>
 
@@ -552,15 +599,21 @@ const DashboardPage = () => {
                       <motion.div
                         key={idea}
                         whileHover={{ y: -2 }}
-                        className="p-4 rounded-2xl bg-white/80 border border-black/10 shadow-sm"
+                        className="rounded-2xl bg-white/80 border border-black/10 shadow-sm"
                       >
-                        <p className="text-sm text-text leading-relaxed">{idea}</p>
-                        <div className="mt-3 flex items-center justify-between">
-                          <span className="text-[10px] uppercase tracking-widest font-semibold text-text-muted">Suggestion</span>
-                          <span className="text-xs text-primary font-semibold inline-flex items-center gap-1">
-                            Open <ArrowRight size={14} />
-                          </span>
-                        </div>
+                        <Link 
+                          to="/ai-tutor" 
+                          state={{ topic: idea }}
+                          className="block p-4 h-full rounded-2xl hover:bg-white/90 transition-colors"
+                        >
+                          <p className="text-sm text-text leading-relaxed">{idea}</p>
+                          <div className="mt-3 flex items-center justify-between">
+                            <span className="text-[10px] uppercase tracking-widest font-semibold text-text-muted">Suggestion</span>
+                            <span className="text-xs text-primary font-semibold inline-flex items-center gap-1">
+                              Open <ArrowRight size={14} />
+                            </span>
+                          </div>
+                        </Link>
                       </motion.div>
                     ))}
                   </motion.div>

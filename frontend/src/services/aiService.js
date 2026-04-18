@@ -20,17 +20,18 @@ export const generateExam = async (topicId) => {
   return res.data.exam;
 };
 
-export const processYouTubeVideo = async (topicId, url) => {
-  const res = await api.post('/ai/youtube/embed', { topicId, url });
+/** Optional axios request config (e.g. `{ skipErrorToast: true }` when the caller shows its own error UI). */
+export const processYouTubeVideo = async (topicId, url, requestConfig = {}) => {
+  const res = await api.post('/ai/youtube/embed', { topicId, url }, requestConfig);
   return res.data;
 };
 
-export const generateMindMap = async (topicId) => {
-  const res = await api.post('/ai/mindmap', { topicId });
+export const generateMindMap = async (topicId, requestConfig = {}) => {
+  const res = await api.post('/ai/mindmap', { topicId }, requestConfig);
   return res.data;
 };
 
-export const generatePodcast = async (topicId) => {
-  const res = await api.post('/ai/podcast', { topicId });
+export const generatePodcast = async (topicId, requestConfig = {}) => {
+  const res = await api.post('/ai/podcast', { topicId }, requestConfig);
   return res.data.script;
 };

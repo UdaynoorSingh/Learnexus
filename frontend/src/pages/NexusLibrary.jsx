@@ -5,6 +5,8 @@ import { fetchLibraryPosts } from '../services/libraryService';
 import LibraryCard from '../components/library/LibraryCard';
 import CreateLibraryModal from '../components/library/CreateLibraryModal';
 import EmptyState from '../components/ui/EmptyState';
+import LoadingSpinner from '../components/common/LoadingSpinner';
+import PageMascot from '../components/ui/PageMascot';
 import { useAuth } from '../context/AuthContext';
 
 const spring = { type: 'spring', stiffness: 380, damping: 30 };
@@ -72,12 +74,12 @@ const NexusLibrary = () => {
         transition={spring}
         className="mb-8"
       >
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div className="flex items-start gap-4">
+        <div className="flex flex-wrap items-start justify-between gap-4 mb-6">
+          <div className="flex items-start gap-4 min-w-0 flex-1">
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary via-accent to-secondary flex items-center justify-center shadow-lg shadow-primary/30 shrink-0">
               <Library size={28} strokeWidth={1.8} className="text-white" />
             </div>
-            <div>
+            <div className="min-w-0 flex-1">
               <h1 className="text-3xl sm:text-4xl font-bold text-text tracking-tight">
                 Nexus Library
               </h1>
@@ -87,17 +89,22 @@ const NexusLibrary = () => {
             </div>
           </div>
 
-          <motion.button
-            type="button"
-            onClick={() => setModalOpen(true)}
-            whileHover={{ scale: 1 }}
-            whileTap={{ scale: 1 }}
-            transition={spring}
-            className="hidden sm:inline-flex items-center gap-2 btn-gradient rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/25 shrink-0"
-          >
-            <Plus size={18} strokeWidth={2.5} />
-            New Post
-          </motion.button>
+          <div className="flex items-center gap-3 shrink-0 w-full sm:w-auto justify-end">
+            <div className="hidden sm:block">
+              <PageMascot role="nexusLibrary" size="md" />
+            </div>
+            <motion.button
+              type="button"
+              onClick={() => setModalOpen(true)}
+              whileHover={{ scale: 1 }}
+              whileTap={{ scale: 1 }}
+              transition={spring}
+              className="inline-flex items-center gap-2 btn-gradient rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/25"
+            >
+              <Plus size={18} strokeWidth={2.5} />
+              New Post
+            </motion.button>
+          </div>
         </div>
 
         {/* Stats + controls */}
@@ -172,11 +179,8 @@ const NexusLibrary = () => {
 
       {/* Content */}
       {loading ? (
-        <div className="surface-card border border-black/10 rounded-2xl p-14 text-center text-text-muted tracking-tight">
-          <div className="flex flex-col items-center gap-3">
-            <div className="w-10 h-10 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-            Loading the library…
-          </div>
+        <div className="rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm">
+          <LoadingSpinner size="lg" text="Loading the library…" />
         </div>
       ) : posts.length === 0 ? (
         <EmptyState

@@ -10,8 +10,7 @@ import {
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { generateMindMap } from '../../services/aiService';
-import { showToast } from '../../services/toast';
-import LoadingSpinner from '../common/LoadingSpinner';
+import AiLoadingState from '../common/AiLoadingState';
 import { FiX, FiRotateCw, FiShare2 } from 'react-icons/fi';
 
 const LEVEL_COLORS = [
@@ -67,6 +66,14 @@ const MindMapNode = ({ data, id }) => {
 };
 
 const nodeTypes = { mindmapNode: MindMapNode };
+
+const MINDMAP_AI_MESSAGES = [
+  'Mapping concepts from your notes...',
+  'Building graph edges with LangGraph...',
+  'Vectorizing knowledge graph...',
+  'Consulting community RAG...',
+  'Laying out nodes for clarity...',
+];
 
 function computeDepths(nodes, edges) {
   const childMap = {};
@@ -143,10 +150,8 @@ const MindMapViewer = ({ topicId, onClose, refreshUser }) => {
       const msg = err.response?.data?.error || err.response?.data?.detail || '';
 
       if (status === 403) {
-        showToast('error', 'Not enough credits. Upload more notes to earn credits.', '⚡ Credits');
         setError('Not enough credits to generate a mind map. Upload more notes to earn credits.');
       } else if (status === 429 || status === 500) {
-        showToast('error', 'AI is cooling down. Please wait 30 seconds.', '⏳ Rate Limit');
         setError('AI is cooling down. Please wait 30 seconds and try again.');
       } else if (status === 404) {
         setError(msg || 'No notes found for this topic. Upload notes first to generate a mind map.');
@@ -217,8 +222,12 @@ const MindMapViewer = ({ topicId, onClose, refreshUser }) => {
         }}
       >
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <LoadingSpinner text="AI is mapping your knowledge..." />
+          <div className="flex h-full items-center justify-center px-6">
+            <AiLoadingState
+              isLoading={loading}
+              messages={MINDMAP_AI_MESSAGES}
+              label="Generating mind map"
+            />
           </div>
         ) : error ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 px-6">

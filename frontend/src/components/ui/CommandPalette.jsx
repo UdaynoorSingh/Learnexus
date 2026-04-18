@@ -82,12 +82,12 @@ export default function CommandPalette({ open, onOpenChange, commands = [] }) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 10, scale: 0.98 }}
             transition={spring}
-            className="relative w-full max-w-2xl glass-float border border-black/10 rounded-3xl shadow-xl shadow-black/15 overflow-hidden"
+            className="relative w-full max-w-2xl rounded-3xl border-[3px] border-[#1e2029] bg-white shadow-[8px_8px_0_0_#1e2029] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="px-5 sm:px-6 py-4 border-b border-black/10 bg-white/70 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-primary/12 border border-primary/20 text-primary flex items-center justify-center shrink-0">
-                <Search size={18} />
+            <div className="px-5 sm:px-6 py-4 border-b-2 border-[#1e2029]/12 bg-[#fafafa] flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-[#fef9c3] border-2 border-[#1e2029] text-[#1e2029] flex items-center justify-center shrink-0 shadow-[2px_2px_0_0_#1e2029]">
+                <Search size={18} strokeWidth={2.25} />
               </div>
               <div className="flex-1 min-w-0">
                 <input
@@ -107,7 +107,7 @@ export default function CommandPalette({ open, onOpenChange, commands = [] }) {
               </div>
             </div>
 
-            <div className="max-h-[62vh] overflow-y-auto custom-scrollbar bg-white/45">
+            <div className="max-h-[62vh] overflow-y-auto custom-scrollbar bg-white">
               {normalized.length === 0 ? (
                 <div className="p-10 text-center text-text-muted">
                   No matches.
@@ -127,10 +127,10 @@ export default function CommandPalette({ open, onOpenChange, commands = [] }) {
                           onOpenChange(false);
                         }}
                         className={cn(
-                          'w-full text-left px-4 py-3 rounded-2xl border transition-colors flex items-center justify-between gap-4',
+                          'w-full text-left px-4 py-3 rounded-2xl border-2 transition-all flex items-center justify-between gap-4 font-["Outfit"]',
                           active
-                            ? 'bg-primary/10 border-primary/25 text-primary'
-                            : 'bg-white/70 border-black/10 text-text hover:bg-white/90'
+                            ? 'bg-[#ede9fe] border-[#1e2029] text-[#5b21b6] shadow-[3px_3px_0_0_#1e2029]'
+                            : 'bg-white border-[#1e2029]/15 text-text hover:border-[#1e2029]/35 hover:bg-[#fafafa]'
                         )}
                       >
                         <div className="min-w-0">
