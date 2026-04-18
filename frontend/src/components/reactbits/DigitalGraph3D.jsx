@@ -93,29 +93,34 @@ const DigitalGraph3D = forwardRef(({
   // Set physics and rotation
   useEffect(() => {
     if (fgRef.current) {
-      // Adjust the d3Force charge to -200 so the nodes cluster closer together
-      fgRef.current.d3Force('charge').strength(-200);
+      // Adjust charge to keep nodes separated but allow the "string" to hold them together
+      fgRef.current.d3Force('charge').strength(-120);
+      
+      // Set link distance to give a consistent "string length"
+      fgRef.current.d3Force('link').distance(45);
 
       // We scale camera distance based on the old cameraDistance prop
       const dist = cameraDistance * 100;
 
-      let angle = 0;
       let animationFrame;
-      const animate = () => {
-        angle += 0.002 * speed;
-        if (fgRef.current) {
-          fgRef.current.cameraPosition({
-            x: dist * Math.sin(angle),
-            z: dist * Math.cos(angle)
-          });
-        }
-        animationFrame = requestAnimationFrame(animate);
-      };
       
-      animate();
+      if (speed > 0) {
+        let angle = 0;
+        const animate = () => {
+          angle += 0.002 * speed;
+          if (fgRef.current) {
+            fgRef.current.cameraPosition({
+              x: dist * Math.sin(angle),
+              z: dist * Math.cos(angle)
+            });
+          }
+          animationFrame = requestAnimationFrame(animate);
+        };
+        animate();
+      }
 
       return () => {
-        cancelAnimationFrame(animationFrame);
+        if (animationFrame) cancelAnimationFrame(animationFrame);
       };
     }
   }, [processedGraph, cameraDistance, speed]);
@@ -123,13 +128,14 @@ const DigitalGraph3D = forwardRef(({
   const renderNode = (node) => {
     // Implement nodeCanvasObject style text rendering directly on a 2d canvas
     const canvas = document.createElement('canvas');
-    canvas.width = 256;
-    canvas.height = 256;
+    const size = 512; // Higher resolution for crisp text
+    canvas.width = size;
+    canvas.height = size;
     const ctx = canvas.getContext('2d');
 
-    const cx = 128;
-    const cy = 128;
-    const r = pointSize * 1.5; // Scale according to pointSize
+    const cx = size / 2;
+    const cy = size / 2;
+    const r = pointSize * 3; // Scale according to pointSize
 
     // Custom Three.js Sprite that uses a circular gradient (glowing neon pulse)
     const gradient = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
@@ -143,20 +149,42 @@ const DigitalGraph3D = forwardRef(({
     ctx.arc(cx, cy, r, 0, 2 * Math.PI);
     ctx.fill();
 
-    // Render the name of the 'Degree' or 'Course' in a clean JetBrains Mono font just above the node
+    // Render the name in a clean JetBrains Mono font
     const label = node.name || node.title || node.id || 'Node';
-    ctx.font = 'bold 24px "JetBrains Mono", monospace';
+    
+    // Scale font size slightly if node.val is provided
+    const baseFontSize = node.val ? Math.max(36, 24 * node.val) : 48;
+    ctx.font = `bold ${baseFontSize}px "JetBrains Mono", monospace`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'bottom';
     
     // Add text shadow for clarity
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-    ctx.shadowBlur = 6;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+    ctx.shadowBlur = 8;
     ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = 2;
+    ctx.shadowOffsetY = 3;
     
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(label, cx, cy - r + 10); 
+    // Multi-line support for long labels
+    const words = label.split(' ');
+    let line = '';
+    let lines = [];
+    for(let n = 0; n < words.length; n++) {
+      let testLine = line + words[n] + ' ';
+      let metrics = ctx.measureText(testLine);
+      if (metrics.width > size - 40 && n > 0) {
+        lines.push(line);
+        line = words[n] + ' ';
+      }
+      else {
+        line = testLine;
+      }
+    }
+    lines.push(line);
+    
+    lines.forEach((l, i) => {
+       ctx.fillText(l.trim(), cx, cy - r - 10 - ((lines.length - 1 - i) * (baseFontSize + 4)));
+    });
 
     const texture = new THREE.CanvasTexture(canvas);
     texture.colorSpace = THREE.SRGBColorSpace;
@@ -168,8 +196,9 @@ const DigitalGraph3D = forwardRef(({
     });
     
     const sprite = new THREE.Sprite(material);
-    // Base sprite scale on spread/distance
-    sprite.scale.set(60, 60, 1);
+    // Base sprite scale on node val or static size, but make it significantly larger
+    const scale = node.val ? node.val * 60 : 120;
+    sprite.scale.set(scale, scale, 1);
     
     return sprite;
   };
@@ -183,12 +212,12 @@ const DigitalGraph3D = forwardRef(({
           height={dimensions.height}
           graphData={processedGraph}
           nodeThreeObject={renderNode}
-          // Increase the linkWidth to 1.5
-          linkWidth={1.5}
-          linkColor={() => 'rgba(200, 200, 255, 0.25)'}
-          // Add linkDirectionalParticles(2) so small light pulses constantly travel along the lines
+          // Make the link look like a thick string
+          linkWidth={2.5}
+          linkColor={() => 'rgba(255, 255, 255, 0.4)'}
+          // Add linkDirectionalParticles so small light pulses constantly travel along the lines
           linkDirectionalParticles={2}
-          linkDirectionalParticleWidth={2}
+          linkDirectionalParticleWidth={3}
           linkDirectionalParticleSpeed={0.015}
           linkDirectionalParticleColor={() => '#ffffff'}
           backgroundColor="rgba(0,0,0,0)" // Transparent background since it's an overlay

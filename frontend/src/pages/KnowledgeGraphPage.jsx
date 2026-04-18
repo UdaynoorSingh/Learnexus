@@ -23,7 +23,8 @@ const KnowledgeGraphPage = () => {
   const fgRef = useRef();
 
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-  const [expandedNodes, setExpandedNodes] = useState(new Set(['root']));
+  // Track the drill-down path: array of nodes from root to current selected
+  const [activePath, setActivePath] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -49,6 +50,8 @@ const KnowledgeGraphPage = () => {
       });
 
       setGraphData({ nodes, links });
+      setActivePath([rootNode]); // Start with root in path
+
       if (degrees.length === 1) {
         // Auto-expand if only one degree
         handleNodeClick(nodes[1]);
@@ -61,14 +64,16 @@ const KnowledgeGraphPage = () => {
   };
 
   const expandNode = async (node) => {
-    if (expandedNodes.has(node.id)) return;
     setIsLoading(true);
 
     try {
       let endpoint = '';
       let childrenType = '';
       
-      if (node.type === 'degree') {
+      if (node.type === 'root') {
+        endpoint = `/degrees`;
+        childrenType = 'degree';
+      } else if (node.type === 'degree') {
         endpoint = `/degrees/${node.rawId}/branches`;
         childrenType = 'branch';
       } else if (node.type === 'branch') {
@@ -82,50 +87,54 @@ const KnowledgeGraphPage = () => {
         childrenType = 'topic';
       } else {
         setIsLoading(false);
-        return; // Leaf node (topic)
+        return; // Leaf node
       }
 
       const res = await api.get(endpoint, { params: catalogParams });
       const children = res.data;
 
-      if (children.length === 0) {
-        setIsLoading(false);
-        setExpandedNodes(prev => new Set(prev).add(node.id));
-        return;
+      // Rebuild path up to this node
+      const pathIndex = activePath.findIndex(p => p.id === node.id);
+      let newPath = [];
+      if (pathIndex >= 0) {
+        newPath = activePath.slice(0, pathIndex + 1);
+      } else {
+        newPath = [...activePath, node];
+      }
+      setActivePath(newPath);
+
+      // Rebuild the graph: only nodes in path + new children
+      const newNodes = [...newPath];
+      const newLinks = [];
+
+      // Link path nodes together
+      for (let i = 0; i < newPath.length - 1; i++) {
+        newLinks.push({ source: newPath[i].id, target: newPath[i+1].id, weight: 0.8 });
       }
 
-      setGraphData(prev => {
-        const newNodes = [...prev.nodes];
-        const newLinks = [...prev.links];
-
-        children.forEach(child => {
-          const childId = `${childrenType}-${child.id}`;
-          // Ensure we don't add duplicates
-          if (!newNodes.find(n => n.id === childId)) {
-            newNodes.push({
-              id: childId,
-              name: childrenType === 'semester' ? `Sem ${child.number}` : child.name,
-              type: childrenType,
-              rawId: child.id,
-              color: NODE_COLORS[childrenType] || '#ffffff',
-              val: childrenType === 'topic' ? 0.8 : 1.2
-            });
-            newLinks.push({ source: node.id, target: childId, weight: 0.3 });
-          }
+      // Add children and link them to the current node
+      children.forEach(child => {
+        const childId = `${childrenType}-${child.id}`;
+        newNodes.push({
+          id: childId,
+          name: childrenType === 'semester' ? `Sem ${child.number}` : child.name,
+          type: childrenType,
+          rawId: child.id,
+          color: NODE_COLORS[childrenType] || '#ffffff',
+          val: childrenType === 'topic' ? 0.8 : 1.2
         });
-
-        return { nodes: newNodes, links: newLinks };
+        newLinks.push({ source: node.id, target: childId, weight: 0.3 });
       });
 
-      setExpandedNodes(prev => new Set(prev).add(node.id));
+      setGraphData({ nodes: newNodes, links: newLinks });
 
       // Zoom to the newly expanded node after a short delay
       setTimeout(() => {
         if (fgRef.current) {
           const distance = 80;
-          const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+          const distRatio = 1 + distance / Math.hypot(node.x || 1, node.y || 1, node.z || 1);
           fgRef.current.cameraPosition(
-            { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio },
+            { x: (node.x||0) * distRatio, y: (node.y||0) * distRatio, z: (node.z||0) * distRatio },
             node,
             1500
           );
@@ -145,18 +154,18 @@ const KnowledgeGraphPage = () => {
     // Auto-focus camera on click
     if (fgRef.current) {
       const distance = 120;
-      const distRatio = 1 + distance / Math.hypot(node.x, node.y, node.z);
+      const distRatio = 1 + distance / Math.hypot(node.x || 1, node.y || 1, node.z || 1);
       fgRef.current.cameraPosition(
-        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
-        node, // lookAt
-        1000  // ms transition
+        { x: (node.x||0) * distRatio, y: (node.y||0) * distRatio, z: (node.z||0) * distRatio }, 
+        node, 
+        1000  
       );
     }
 
     if (node.type !== 'topic') {
       expandNode(node);
     }
-  }, [expandedNodes, catalogParams]);
+  }, [activePath, catalogParams]);
 
   const getIconForType = (type) => {
     switch (type) {
@@ -201,7 +210,7 @@ const KnowledgeGraphPage = () => {
             // Stop auto-rotation so the user can freely explore and click
             speed={0} 
             cameraDistance={6.0}
-            pointSize={20}
+            pointSize={30}
           />
         )}
       </div>
@@ -255,10 +264,10 @@ const KnowledgeGraphPage = () => {
             ) : selectedNode.type !== 'root' ? (
               <button 
                 onClick={() => expandNode(selectedNode)}
-                disabled={expandedNodes.has(selectedNode.id) || isLoading}
+                disabled={isLoading}
                 className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {expandedNodes.has(selectedNode.id) ? 'Already Expanded' : 'Expand Nodes'}
+                Focus on this Node
               </button>
             ) : null}
           </motion.div>
