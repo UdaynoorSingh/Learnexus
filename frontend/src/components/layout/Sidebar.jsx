@@ -19,7 +19,8 @@ import {
   MessageSquare,
   Library,
   Trophy,
-  GraduationCap
+  GraduationCap,
+  Share2
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -125,7 +126,8 @@ const Sidebar = () => {
   const navItems = [
     { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/explorer', icon: Compass, label: 'Explorer' },
-    { path: '/upload', icon: Upload, label: 'Upload' },
+    { path: '/knowledge-graph', icon: Share2, label: 'Knowledge Graph' },
+    { path: '/upload', icon: Upload, label: 'Upload Notes' },
     { path: '/video-learn', icon: PlaySquare, label: 'YouTube Learn' },
     { path: '/ai-tutor', icon: GraduationCap, label: 'AI Tutor' },
     { path: '/nexus-board', icon: MessageSquare, label: 'Nexus Board' },

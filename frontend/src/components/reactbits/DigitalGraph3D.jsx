@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, forwardRef } from 'react';
 import ForceGraph3D from 'react-force-graph-3d';
 import * as THREE from 'three';
 
@@ -30,7 +30,7 @@ const generateRandomGraph = (nodeCount = 72, linksPerNode = 3) => {
   return { nodes, edges: links };
 };
 
-const DigitalGraph3D = ({
+const DigitalGraph3D = forwardRef(({
   graph = null,
   nodeCount = 72,
   spread = 1.0,
@@ -43,9 +43,11 @@ const DigitalGraph3D = ({
   palette = ['#ef4444', '#f97316', '#0f172a'],
   pixelRatio = 1,
   className = '',
-}) => {
+  onNodeClick = null,
+}, ref) => {
   const containerRef = useRef(null);
-  const fgRef = useRef();
+  const localFgRef = useRef();
+  const fgRef = ref || localFgRef;
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Generate fallback graph if none provided
@@ -191,10 +193,11 @@ const DigitalGraph3D = ({
           linkDirectionalParticleColor={() => '#ffffff'}
           backgroundColor="rgba(0,0,0,0)" // Transparent background since it's an overlay
           showNavInfo={false}
+          onNodeClick={onNodeClick}
         />
       )}
     </div>
   );
-};
+});
 
 export default DigitalGraph3D;

@@ -6,6 +6,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import DashboardPage from './pages/DashboardPage';
 import ExplorerPage from './pages/ExplorerPage';
+import KnowledgeGraphPage from './pages/KnowledgeGraphPage';
 import TopicPage from './pages/TopicPage';
 import UploadPage from './pages/UploadPage';
 import AdminPage from './pages/AdminPage';
@@ -40,6 +41,7 @@ function App() {
           >
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/explorer" element={<ExplorerPage />} />
+            <Route path="/knowledge-graph" element={<KnowledgeGraphPage />} />
             <Route path="/topic/:topicId" element={<TopicPage />} />
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/video-learn" element={<VideoLearnPage />} />

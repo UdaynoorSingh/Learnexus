@@ -736,9 +736,9 @@ const DashboardPage = () => {
                   <h3 className="text-base font-bold text-text">3D Knowledge Graph</h3>
                   <p className="text-xs text-text-muted mt-1">A digital map of your learning connections.</p>
                 </div>
-                <div className="text-[10px] uppercase tracking-widest font-semibold text-text-muted bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
-                  Live
-                </div>
+                <Link to="/knowledge-graph" className="text-[10px] uppercase tracking-widest font-semibold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors rounded-full px-3 py-1 shadow-sm flex items-center gap-1">
+                  Expand Graph ↗
+                </Link>
               </div>
 
               <div className="mt-4 h-[220px] rounded-2xl overflow-hidden border border-black/10 bg-white/70 relative">
