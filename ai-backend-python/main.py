@@ -131,6 +131,11 @@ class TaskIdeasRequest(BaseModel):
     prompt: str
 
 
+class NexGuideRequest(BaseModel):
+    query: str
+    currentPath: Optional[str] = None
+
+
 def call_groq(prompt: str, fallback: bool = True) -> str:
     try:
         response = groq_client.chat.completions.create(
@@ -1012,6 +1017,83 @@ STRICT RULES:
         if not reply:
             raise HTTPException(status_code=500, detail="Model returned an empty reply.")
         return {"reply": reply, "indexed": True}
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/api/ai/nex-guide")
+async def nex_guide(req: NexGuideRequest):
+    """Nex mascot website guide — maps user queries to the best LearNexus feature."""
+    try:
+        query = (req.query or "").strip()
+        if not query:
+            raise HTTPException(status_code=400, detail="query is required")
+
+        current_path = (req.currentPath or "").strip()
+        current_ctx = f"\nThe user is currently on the page: {current_path}" if current_path else ""
+
+        prompt = f"""You are "Nex", a friendly, enthusiastic mascot guide for the LearNexus student learning platform.
+A user is asking you a question about what the platform can do or where to go. Your job is to understand their intent and suggest the BEST matching feature from the platform.
+
+Here is the complete list of LearNexus features/pages:
+
+1. Dashboard (path: "/dashboard") — Overview of study progress, XP tracker, streaks, daily AI task suggestions, and quick-access widgets for all tools.
+2. Explorer (path: "/explorer") — Browse all degrees, branches, semesters, and topics in the user's college. Find and open any study topic.
+3. Upload Notes (path: "/upload") — Upload PDFs or images of handwritten/typed notes. Earns credits and builds a personal knowledge base that powers AI tools.
+4. YouTube Learn (path: "/video-learn") — Paste any YouTube lecture link to get AI-generated summaries, chapter markers, and embed the transcript into study topics for AI tutoring.
+5. AI Tutor (path: "/ai-tutor") — Full AI-powered learning suite: generates roadmaps, lectures, interactive chat, flashcards, exams, mind maps, and audio podcast overviews for any topic.
+6. Nexus Board (path: "/nexus-board") — Community Q&A forum with topic rooms, bounty system, upvotes, and AI auto-answers. Ask or answer academic questions.
+7. Nexus Library (path: "/nexus-library") — Browse and read community-shared blog posts, articles, and study materials.
+8. Challenges (path: "/challenges") — Solve coding and academic challenges posted by companies. Earn credits and build your portfolio.
+9. Profile (path: "/profile") — View your credits, upload history, XP, and account settings.
+{current_ctx}
+
+RULES:
+1. Suggest exactly ONE primary feature that best matches the user's query. If a secondary feature is also relevant, mention it briefly.
+2. Your "message" should be a warm, concise 1-3 sentence response as Nex the mascot. Be helpful and enthusiastic but not over-the-top. Use casual language.
+3. If the user's query is a greeting or very vague, give a friendly welcome and highlight 2-3 key features they can explore.
+4. If the query does not match any feature at all, still be helpful and suggest the Dashboard as a starting point.
+
+You MUST respond with ONLY valid JSON (no markdown, no code fences) in exactly this shape:
+{{
+  "message": "Your friendly response as Nex",
+  "suggestions": [
+    {{
+      "name": "Feature Name",
+      "path": "/feature-path",
+      "description": "One-line description of why this feature helps"
+    }}
+  ]
+}}
+
+The "suggestions" array should contain 1-3 items (the primary recommendation first, then optional secondary ones).
+
+User query: "{query}"
+"""
+        text_resp = call_groq(prompt).strip()
+        text_resp = _strip_code_fences(text_resp)
+
+        try:
+            data = json.loads(text_resp)
+            if not isinstance(data, dict) or "message" not in data:
+                raise ValueError("missing keys")
+            # Ensure suggestions is a list
+            if "suggestions" not in data or not isinstance(data.get("suggestions"), list):
+                data["suggestions"] = [{"name": "Dashboard", "path": "/dashboard", "description": "Start here to see your overview"}]
+            return data
+        except (json.JSONDecodeError, ValueError):
+            # Fallback: return a generic helpful response
+            return {
+                "message": text_resp[:300] if text_resp else "Hey! I'm Nex, your guide. Try asking me what you'd like to learn or do!",
+                "suggestions": [
+                    {"name": "Dashboard", "path": "/dashboard", "description": "Your home base — see progress, tasks, and quick links"},
+                    {"name": "AI Tutor", "path": "/ai-tutor", "description": "AI-powered lectures, quizzes, and study tools"},
+                ]
+            }
     except HTTPException:
         raise
     except Exception as e:

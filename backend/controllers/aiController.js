@@ -46,6 +46,28 @@ exports.taskIdeas = async (req, res) => {
   }
 };
 
+exports.nexGuide = async (req, res) => {
+  try {
+    const { query, currentPath } = req.body;
+    const response = await fetch(`${AI_BACKEND_URL}/api/ai/nex-guide`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, currentPath })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AI Backend Error: ${errorText}`);
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('AI Proxy NexGuide error:', error);
+    res.status(500).json({ error: 'Failed to get Nex guide response.' });
+  }
+};
+
 exports.chat = async (req, res) => {
   try {
     const { topicId, contextMode, history, message, lectureContext } = req.body;

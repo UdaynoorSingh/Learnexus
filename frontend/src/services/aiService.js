@@ -35,3 +35,8 @@ export const generatePodcast = async (topicId, requestConfig = {}) => {
   const res = await api.post('/ai/podcast', { topicId }, requestConfig);
   return res.data.script;
 };
+
+export const sendNexGuideQuery = async (query, currentPath = '') => {
+  const res = await api.post('/ai/nex-guide', { query, currentPath });
+  return res.data;
+};
