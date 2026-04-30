@@ -110,60 +110,60 @@ const LoginPage = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-8 lg:gap-10 items-start">
               <div className="min-w-0">
-            {/* Badge chip */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3 }}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#d1fae5] border-2 border-[#1e2029] text-sm font-extrabold text-[#047857] mb-7 shadow-[3px_3px_0_0_#1e2029]"
-            >
-              <Sparkles size={15} strokeWidth={2.5} />
-              AI-powered learning protocol
-            </motion.div>
+                {/* Badge chip */}
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3 }}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#d1fae5] border-2 border-[#1e2029] text-sm font-extrabold text-[#047857] mb-7 shadow-[3px_3px_0_0_#1e2029]"
+                >
+                  <Sparkles size={15} strokeWidth={2.5} />
+                  AI-powered learning protocol
+                </motion.div>
 
-            {/* Bold hero heading */}
-            <h1 className="text-[2.75rem] sm:text-[3.25rem] md:text-[4rem] lg:text-[4.5rem] font-black text-[#1e2029] leading-[1.06] tracking-tight font-['Outfit']">
-              Learn{' '}
-              <br className="hidden sm:block" />
-              smarter.
-              <br />
-              <span className="text-[#1e2029]">Let AI do the</span>
-              <br />
-              <WavyUnderline color="#facc15" strokeWidth={4} animationDelay={0.8}>
-                <span className="text-[#7c3aed]">Lifting.</span>
-              </WavyUnderline>
-            </h1>
+                {/* Bold hero heading */}
+                <h1 className="text-[2.75rem] sm:text-[3.25rem] md:text-[4rem] lg:text-[4.5rem] font-black text-[#1e2029] leading-[1.06] tracking-tight font-['Outfit']">
+                  Learn{' '}
+                  <br className="hidden sm:block" />
+                  smarter.
+                  <br />
+                  <span className="text-[#1e2029]">Let AI do the</span>
+                  <br />
+                  <WavyUnderline color="#facc15" strokeWidth={4} animationDelay={0.8}>
+                    <span className="text-[#7c3aed]">Lifting.</span>
+                  </WavyUnderline>
+                </h1>
 
-            <motion.p
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.55, duration: 0.5 }}
-              className="text-lg text-[#475569] mt-6 leading-relaxed max-w-md font-medium"
-            >
-              From notes to mastery—build your knowledge
-              autonomously. It's like magic, but for learning!
-            </motion.p>
+                <motion.p
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55, duration: 0.5 }}
+                  className="text-lg text-[#475569] mt-6 leading-relaxed max-w-md font-medium"
+                >
+                  From notes to mastery—build your knowledge
+                  autonomously. It's like magic, but for learning!
+                </motion.p>
 
-            {/* CTA buttons (desktop only — mobile scrolls to form) */}
-            <motion.div
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.7 }}
-              className="hidden lg:flex items-center gap-3 mt-8"
-            >
-              <a
-                href="#login-form"
-                className="ln-neo-primary inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-extrabold font-['Outfit'] no-underline"
-              >
-                Start learning <FiArrowRight size={16} aria-hidden />
-              </a>
-              <button
-                type="button"
-                className="ln-neo-outline inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-extrabold font-['Outfit']"
-              >
-                Explore features
-              </button>
-            </motion.div>
+                {/* CTA buttons (desktop only — mobile scrolls to form) */}
+                <motion.div
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.7 }}
+                  className="hidden lg:flex items-center gap-3 mt-8"
+                >
+                  <a
+                    href="#login-form"
+                    className="ln-neo-primary inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-extrabold font-['Outfit'] no-underline"
+                  >
+                    Start learning <FiArrowRight size={16} aria-hidden />
+                  </a>
+                  <button
+                    type="button"
+                    className="ln-neo-outline inline-flex items-center gap-2 rounded-full px-7 py-3.5 text-sm font-extrabold font-['Outfit']"
+                  >
+                    Explore features
+                  </button>
+                </motion.div>
               </div>
               <div className="flex justify-center lg:justify-end lg:pt-2 pointer-events-none">
                 <PageMascot role="login" size="lg" className="max-h-48 w-auto lg:max-h-none" />
