@@ -72,6 +72,11 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(uploadsDir));
 
+// Must be declared before mounting auth-protected "/api" routers.
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', service: 'learnexus-backend' });
+});
+
 
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/colleges', require('./routes/collegeRoutes'));
@@ -85,11 +90,6 @@ app.use('/api/library', require('./routes/libraryRoutes'));
 app.use('/api/challenges', require('./routes/challengeRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/sessions', require('./routes/sessionsRoutes'));
-
-
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', service: 'learnexus-backend' });
-});
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {

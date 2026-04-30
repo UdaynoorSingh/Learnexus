@@ -47,6 +47,7 @@ ALTER TABLE degrees ADD COLUMN IF NOT EXISTS college_id INTEGER REFERENCES colle
 UPDATE degrees SET college_id = (SELECT id FROM colleges WHERE LOWER(domain_suffix) = 'demo.edu' LIMIT 1) WHERE college_id IS NULL;
 ALTER TABLE degrees ALTER COLUMN college_id SET NOT NULL;
 ALTER TABLE degrees DROP CONSTRAINT IF EXISTS degrees_name_key;
+ALTER TABLE degrees DROP CONSTRAINT IF EXISTS degrees_college_name_unique;
 ALTER TABLE degrees ADD CONSTRAINT degrees_college_name_unique UNIQUE (college_id, name);
 
 -- 4) Branches
@@ -54,6 +55,7 @@ ALTER TABLE branches ADD COLUMN IF NOT EXISTS college_id INTEGER REFERENCES coll
 UPDATE branches b SET college_id = d.college_id FROM degrees d WHERE d.id = b.degree_id AND b.college_id IS NULL;
 ALTER TABLE branches ALTER COLUMN college_id SET NOT NULL;
 ALTER TABLE branches DROP CONSTRAINT IF EXISTS branches_degree_id_name_key;
+ALTER TABLE branches DROP CONSTRAINT IF EXISTS branches_degree_name_unique;
 ALTER TABLE branches ADD CONSTRAINT branches_degree_name_unique UNIQUE (degree_id, name);
 
 -- 5) Semesters
@@ -61,6 +63,7 @@ ALTER TABLE semesters ADD COLUMN IF NOT EXISTS college_id INTEGER REFERENCES col
 UPDATE semesters s SET college_id = b.college_id FROM branches b WHERE b.id = s.branch_id AND s.college_id IS NULL;
 ALTER TABLE semesters ALTER COLUMN college_id SET NOT NULL;
 ALTER TABLE semesters DROP CONSTRAINT IF EXISTS semesters_branch_id_number_key;
+ALTER TABLE semesters DROP CONSTRAINT IF EXISTS semesters_branch_number_unique;
 ALTER TABLE semesters ADD CONSTRAINT semesters_branch_number_unique UNIQUE (branch_id, number);
 
 -- 6) Subjects
