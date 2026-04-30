@@ -4,7 +4,6 @@ import {
   BookOpen,
   Clock,
   User,
-  X,
   ChevronRight,
   Headphones,
   Loader2,
@@ -15,6 +14,8 @@ import {
 import { voteLibraryPost, deleteLibraryPost } from '../../services/libraryService';
 import { showToast } from '../../services/toast';
 import MarkdownBody from '../community/MarkdownBody';
+import ModalShell from '../ui/ModalShell';
+import Chip from '../ui/Chip';
 
 const spring = { type: 'spring', stiffness: 400, damping: 28 };
 
@@ -101,7 +102,7 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
         whileHover={{ scale: 1, y: 0 }}
         whileTap={{ scale: 1 }}
         transition={spring}
-        className="glass-card border border-black/10 rounded-2xl overflow-hidden shadow-lg shadow-black/10 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
+        className="ln-card border border-black/10 rounded-2xl overflow-hidden shadow-lg shadow-black/10 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
       >
         {/* Top gradient accent */}
         <div className="h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
@@ -119,10 +120,10 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg ${diff.bg} ${diff.border} ${diff.color} border`}>
+              <Chip variant="neutral" size="xs" className={`${diff.bg} ${diff.border} ${diff.color} border`}>
                 <span className={`w-1.5 h-1.5 rounded-full ${diff.dot}`} />
                 {diff.label}
-              </span>
+              </Chip>
               {isOwner && (
                 <motion.button
                   type="button"
@@ -238,84 +239,32 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
       {/* Full Content Modal */}
       <AnimatePresence>
         {contentOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
-            <motion.button
-              type="button"
-              aria-label="Close"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 modal-backdrop"
-              onClick={() => setContentOpen(false)}
-            />
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              initial={{ opacity: 0, scale: 0.96, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.96, y: 12 }}
-              transition={spring}
-              className="relative z-[101] w-full max-w-2xl max-h-[90vh] glass-float border border-black/10 rounded-2xl shadow-xl shadow-black/10 overflow-hidden flex flex-col"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal header */}
-              <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-black/10 bg-white/70 shrink-0">
-                <div className="min-w-0">
-                  <h2 className="text-lg font-bold text-text tracking-tight truncate">{post.topic}</h2>
-                  <div className="flex items-center gap-3 mt-1">
-                    <span className="text-xs text-text-muted flex items-center gap-1.5">
-                      <User size={12} strokeWidth={2} />
-                      {post.author_name}
-                    </span>
-                    <span className="text-xs text-text-muted flex items-center gap-1.5">
-                      <Clock size={12} strokeWidth={2} />
-                      {formatTime(post.created_at)}
-                    </span>
-                    <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md ${diff.bg} ${diff.border} ${diff.color} border`}>
-                      {diff.label}
-                    </span>
-                  </div>
+          <ModalShell
+            open={contentOpen}
+            onClose={() => setContentOpen(false)}
+            title={post.topic}
+            subtitle={`${post.author_name} · ${formatTime(post.created_at)}`}
+            maxWidth="max-w-2xl"
+          >
+            {post.audio_url ? (
+              <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3">
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <Headphones size={14} strokeWidth={2} className="text-primary" />
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">Listen</span>
                 </div>
-                <motion.button
-                  type="button"
-                  onClick={() => setContentOpen(false)}
-                  whileHover={{ scale: 1 }}
-                  whileTap={{ scale: 1 }}
-                  className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-black/5 shrink-0"
-                  aria-label="Close"
-                >
-                  <X size={20} strokeWidth={2} />
-                </motion.button>
+                <audio
+                  controls
+                  src={post.audio_url}
+                  className="nexus-audio-player flex-1 h-8 rounded-lg"
+                  preload="metadata"
+                />
               </div>
+            ) : null}
 
-              {/* Audio player in modal */}
-              {post.audio_url && (
-                <div className="flex items-center gap-3 mx-6 mt-4 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3">
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <Headphones size={14} strokeWidth={2} className="text-primary" />
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-primary/80">Listen</span>
-                  </div>
-                  <audio
-                    controls
-                    src={post.audio_url}
-                    className="nexus-audio-player flex-1 h-8 rounded-lg"
-                    preload="metadata"
-                  />
-                </div>
-              )}
-
-              {/* Content body */}
-              <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-5">
-                <div className="text-sm leading-relaxed">
-                  <MarkdownBody>{post.content}</MarkdownBody>
-                </div>
-              </div>
-
-              <div className="text-[10px] text-text-muted text-center px-4 py-2 border-t border-black/10 bg-white/70 shrink-0">
-                Press Esc or click outside to close
-              </div>
-            </motion.div>
-          </div>
+            <div className="text-sm leading-relaxed">
+              <MarkdownBody>{post.content}</MarkdownBody>
+            </div>
+          </ModalShell>
         )}
       </AnimatePresence>
     </>

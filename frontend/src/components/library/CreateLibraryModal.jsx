@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { createLibraryPost } from '../../services/libraryService';
 import { showToast } from '../../services/toast';
-
-const spring = { type: 'spring', stiffness: 400, damping: 32 };
+import ModalShell from '../ui/ModalShell';
+import Button from '../ui/Button';
 
 const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => {
   const [topic, setTopic] = useState('');
@@ -54,53 +53,25 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
   ];
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.button
-            type="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 modal-backdrop"
-            aria-label="Close modal"
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={spring}
-            className="relative w-full max-w-lg glass-float border border-black/10 shadow-xl shadow-black/10 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
-          >
-            {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 bg-white/70">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md shadow-primary/20">
-                  <Sparkles size={16} strokeWidth={2} className="text-white" />
-                </div>
-                <div>
-                  <h2 className="text-lg font-bold text-text tracking-tight">New Library Post</h2>
-                  <p className="text-[10px] text-text-muted font-medium">AI audio summary auto-generated</p>
-                </div>
-              </div>
-              <motion.button
-                type="button"
-                onClick={onClose}
-                whileHover={{ scale: 1 }}
-                whileTap={{ scale: 1 }}
-                transition={spring}
-                className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-black/5 transition-colors"
-              >
-                <X size={20} strokeWidth={2} />
-              </motion.button>
-            </div>
-
-            {/* Form */}
-            <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-              <div className="overflow-y-auto px-6 py-4 space-y-4 custom-scrollbar">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title="New Library Post"
+      subtitle="AI audio summary auto-generated"
+      icon={<Sparkles size={18} strokeWidth={2} className="text-primary" />}
+      maxWidth="max-w-lg"
+      footer={
+        <>
+          <Button variant="soft" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-library-form" disabled={submitting}>
+            {submitting ? 'Publishing…' : '✨ Publish'}
+          </Button>
+        </>
+      }
+    >
+      <form id="create-library-form" onSubmit={handleSubmit} className="space-y-4">
                 {error && (
                   <div className="rounded-xl bg-danger/15 border border-danger/30 text-danger text-sm px-4 py-2">
                     {error}
@@ -190,30 +161,8 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
                     required
                   />
                 </div>
-              </div>
-
-              {/* Footer */}
-              <div className="px-6 py-4 border-t border-black/10 bg-white/70 flex justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={onClose}
-                  className="px-4 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-text hover:bg-black/5 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {submitting ? 'Publishing…' : '✨ Publish'}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </form>
+    </ModalShell>
   );
 };
 

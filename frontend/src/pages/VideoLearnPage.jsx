@@ -165,41 +165,41 @@ const VideoLearnPage = () => {
 
         <div className="relative z-10 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
           <div className="max-w-3xl min-w-0 flex-1">
-          <h1 className="text-3xl font-bold text-text mb-2 flex items-center gap-3">
-            <FiYoutube className="text-danger" /> YouTube Fast-Learn
-          </h1>
-          <p className="text-text-muted mb-6">
-            Paste any educational YouTube link below to instantly generate a comprehensive lecture and chat environment. No pre-uploaded notes required. (Costs 5 ⚡)
-          </p>
+            <h1 className="text-3xl font-bold text-text mb-2 flex items-center gap-3">
+              <FiYoutube className="text-danger" /> YouTube Fast-Learn
+            </h1>
+            <p className="text-text-muted mb-6">
+              Paste any educational YouTube link below to instantly generate a comprehensive lecture and chat environment. No pre-uploaded notes required. (Costs 5 ⚡)
+            </p>
 
-          <form onSubmit={handleStartLearning} className="flex flex-col sm:flex-row gap-3" aria-label="Start from a YouTube URL">
-            <div className="relative flex-1">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <FiYoutube className="text-text-muted" size={18} />
+            <form onSubmit={handleStartLearning} className="flex flex-col sm:flex-row gap-3" aria-label="Start from a YouTube URL">
+              <div className="relative flex-1">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <FiYoutube className="text-text-muted" size={18} />
+                </div>
+                <input
+                  type="text"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full input-glass py-3 pl-11 pr-4 rounded-xl text-[15px]"
+                  disabled={processing}
+                  required
+                />
               </div>
-              <input
-                type="text"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full input-glass py-3 pl-11 pr-4 rounded-xl text-[15px]"
-                disabled={processing}
-                required
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={processing || !url.trim()}
-              className="btn-gradient py-3 px-6 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap"
-              style={processing ? { opacity: 0.7, pointerEvents: 'none' } : { background: 'linear-gradient(135deg, #ef4444, #f43f5e)' }}
-            >
-              {processing ? (
-                <>Processing Video <span className="animate-pulse">...</span></>
-              ) : (
-                <>Start Learning <FiArrowRight /></>
-              )}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={processing || !url.trim()}
+                className="btn-gradient py-3 px-6 rounded-xl flex items-center justify-center gap-2 whitespace-nowrap"
+                style={processing ? { opacity: 0.7, pointerEvents: 'none' } : { background: 'linear-gradient(135deg, #ef4444, #f43f5e)' }}
+              >
+                {processing ? (
+                  <>Processing Video <span className="animate-pulse">...</span></>
+                ) : (
+                  <>Start Learning <FiArrowRight /></>
+                )}
+              </button>
+            </form>
           </div>
           <PageMascot role="videoLearn" size="lg" className="shrink-0 self-center lg:self-start lg:pt-2" />
         </div>
@@ -240,8 +240,8 @@ const VideoLearnPage = () => {
                       type="button"
                       onClick={() => setStartAt(c.start)}
                       className={`w-full text-left px-4 py-3 rounded-xl border transition-colors ${Number(startAt) === Number(c.start)
-                          ? 'bg-primary/10 border-primary/25 text-primary'
-                          : 'bg-white/70 border-black/10 text-text hover:bg-white/90'
+                        ? 'bg-primary/10 border-primary/25 text-primary'
+                        : 'bg-white/70 border-black/10 text-text hover:bg-white/90'
                         }`}
                       title="Jump to time"
                     >

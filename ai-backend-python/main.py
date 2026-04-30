@@ -667,14 +667,80 @@ async def youtube_embed(req: YouTubeRequest):
 
         try:
             from youtube_transcript_api import YouTubeTranscriptApi
-            ytt_api = YouTubeTranscriptApi()
-            transcript_list = ytt_api.fetch(video_id)
-            segments = [{"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)} for entry in transcript_list]
+            def _proxy_dict_from_env() -> Optional[dict]:
+                """
+                YouTube often blocks cloud provider IPs (Render, AWS, etc.).
+                Support optional proxy via env:
+                  - YOUTUBE_TRANSCRIPT_PROXY (single URL, applied to http+https)
+                  - HTTPS_PROXY / HTTP_PROXY (standard)
+                """
+                p = (os.getenv("YOUTUBE_TRANSCRIPT_PROXY") or "").strip()
+                https_p = (os.getenv("HTTPS_PROXY") or "").strip()
+                http_p = (os.getenv("HTTP_PROXY") or "").strip()
+                if p:
+                    return {"http": p, "https": p}
+                if https_p or http_p:
+                    d = {}
+                    if http_p:
+                        d["http"] = http_p
+                    if https_p:
+                        d["https"] = https_p
+                    return d or None
+                return None
+
+            proxies = _proxy_dict_from_env()
+
+            # youtube-transcript-api has multiple APIs across versions; try the most compatible.
+            segments = []
+            transcript_entries = None
+            if hasattr(YouTubeTranscriptApi, "get_transcript"):
+                # Common API: returns list[dict] with 'text','start','duration'
+                transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)  # type: ignore
+                segments = [
+                    {
+                        "start": float(e.get("start", 0)),
+                        "duration": float(e.get("duration", 0)),
+                        "text": str(e.get("text", "")),
+                    }
+                    for e in (transcript_entries or [])
+                ]
+            else:
+                # Newer API used in this repo (fetch returns iterable with .text/.start/.duration)
+                ytt_api = YouTubeTranscriptApi()
+                try:
+                    transcript_list = ytt_api.fetch(video_id, proxies=proxies)  # type: ignore
+                except TypeError:
+                    transcript_list = ytt_api.fetch(video_id)  # type: ignore
+                segments = [
+                    {"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)}
+                    for entry in transcript_list
+                ]
+
             full_text = " ".join([s["text"] for s in segments])
         except Exception as transcript_err:
+            msg = str(transcript_err)
+            lower = msg.lower()
+            blocked = (
+                "too many requests" in lower
+                or "blocked" in lower
+                or "ip" in lower and "block" in lower
+                or "captcha" in lower
+            )
+            if blocked:
+                raise HTTPException(
+                    status_code=503,
+                    detail=(
+                        "YouTube blocked this server's IP from fetching transcripts (common on cloud hosting). "
+                        "Fix: set YOUTUBE_TRANSCRIPT_PROXY (or HTTPS_PROXY/HTTP_PROXY) on the AI backend service, "
+                        "or use a transcript provider/API instead."
+                    ),
+                )
             raise HTTPException(
                 status_code=400,
-                detail=f"Could not fetch transcript for this video. The video may not have captions enabled. Error: {str(transcript_err)}"
+                detail=(
+                    "Could not fetch transcript for this video. The video may not have captions enabled, "
+                    f"or YouTube is restricting access. Error: {msg}"
+                ),
             )
 
         if not full_text.strip():

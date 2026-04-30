@@ -16,6 +16,9 @@ import { fetchChallenges, submitChallengeSolution } from '../services/challengeS
 import { showToast } from '../services/toast';
 import PageMascot from '../components/ui/PageMascot';
 import EmptyState from '../components/ui/EmptyState';
+import ModalShell from '../components/ui/ModalShell';
+import Button from '../components/ui/Button';
+import Chip from '../components/ui/Chip';
 
 const difficultyConfig = {
   Easy: {
@@ -219,12 +222,12 @@ const ChallengesPage = () => {
                 {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-5">
                   {tags.slice(0, 5).map((tag) => (
-                    <span
+                    <Chip
                       key={tag}
-                      className="text-[11px] font-medium px-2.5 py-1 rounded-lg bg-white/70 text-text-muted border border-black/10 hover:border-primary/30 hover:text-primary transition-colors"
+                      size="xs"
                     >
                       {tag}
-                    </span>
+                    </Chip>
                   ))}
                 </div>
 
@@ -245,20 +248,17 @@ const ChallengesPage = () => {
                     </div>
                   </div>
 
-                  <motion.button
+                  <Button
                     type="button"
                     onClick={() => {
                       setActiveModal(challenge.id);
                       setGithubUrl('');
                     }}
-                    whileHover={{ scale: 1 }}
-                    whileTap={{ scale: 1 }}
-                    transition={springAnim}
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-primary to-accent text-white text-sm font-semibold shadow-lg shadow-primary/25 hover:shadow-primary/40 transition-shadow"
+                    className="px-4 py-2 rounded-xl text-sm font-semibold shadow-lg"
                   >
                     <Trophy size={14} />
                     Solve & Claim
-                  </motion.button>
+                  </Button>
                 </div>
               </div>
             </motion.div>
@@ -277,126 +277,81 @@ const ChallengesPage = () => {
       )}
 
       {/* Submission Modal */}
-      <AnimatePresence>
-        {activeModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop"
-            onClick={() => setActiveModal(null)}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              transition={springAnim}
-              className="w-full max-w-md rounded-2xl border border-black/10 bg-white/90 backdrop-blur-xl p-6 shadow-xl shadow-black/10"
-              onClick={(e) => e.stopPropagation()}
+      <ModalShell
+        open={Boolean(activeModal)}
+        onClose={() => setActiveModal(null)}
+        title="Submit solution"
+        subtitle="Link your GitHub repo or code"
+        icon={<Send size={18} className="text-primary" />}
+        maxWidth="max-w-md"
+        footer={
+          <>
+            <Button variant="soft" type="button" onClick={() => setActiveModal(null)}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => handleSubmit(activeModal)}
+              disabled={submitting || !githubUrl.trim()}
             >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                    <Send size={18} className="text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-lg font-bold text-text">Submit Solution</h2>
-                    <p className="text-xs text-text-muted">Link your GitHub repo or code</p>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal(null)}
-                  className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 transition-colors"
-                >
-                  <X size={18} />
-                </button>
+              {submitting ? (
+                <>
+                  <Loader2 size={16} className="animate-spin" />
+                  Submitting…
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={16} />
+                  Submit
+                </>
+              )}
+            </Button>
+          </>
+        }
+      >
+        {(() => {
+          const ch = challenges.find((c) => c.id === activeModal);
+          if (!ch) return null;
+          const diff = difficultyConfig[ch.difficulty] || difficultyConfig.Medium;
+          return (
+            <div className="p-4 rounded-2xl bg-white/70 border border-black/10">
+              <p className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-1">
+                {ch.company_name}
+              </p>
+              <p className="text-sm font-bold text-text leading-snug">{ch.title}</p>
+              <div className="flex items-center gap-3 mt-2">
+                <Chip className={`border ${diff.bg} ${diff.color} ${diff.border}`} size="xs">
+                  {ch.difficulty}
+                </Chip>
+                <Chip variant="warning" size="xs">
+                  <Coins size={12} /> {ch.bounty_credits} credits
+                </Chip>
               </div>
+            </div>
+          );
+        })()}
 
-              {/* Challenge info */}
-              {(() => {
-                const ch = challenges.find((c) => c.id === activeModal);
-                if (!ch) return null;
-                const diff = difficultyConfig[ch.difficulty] || difficultyConfig.Medium;
-                return (
-                  <div className="mb-6 p-4 rounded-xl bg-white/70 border border-black/10">
-                    <p className="text-xs font-semibold text-text-muted uppercase tracking-widest mb-1">
-                      {ch.company_name}
-                    </p>
-                    <p className="text-sm font-bold text-text leading-snug">{ch.title}</p>
-                    <div className="flex items-center gap-3 mt-2">
-                      <span className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded-full border ${diff.bg} ${diff.color} ${diff.border}`}>
-                        {ch.difficulty}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-amber-400 font-semibold">
-                        <Coins size={12} /> {ch.bounty_credits} credits
-                      </span>
-                    </div>
-                  </div>
-                );
-              })()}
-
-              {/* URL input */}
-              <div className="mb-6">
-                <label
-                  htmlFor="github-url-input"
-                  className="block text-sm font-medium text-text mb-2"
-                >
-                  GitHub / Code URL
-                </label>
-                <div className="relative">
-                  <ExternalLink
-                    size={16}
-                    className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted"
-                  />
-                  <input
-                    id="github-url-input"
-                    type="url"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    placeholder="https://github.com/you/solution-repo"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl bg-white/80 border border-black/10 text-sm text-text placeholder:text-text-muted/60 focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/15 transition-all"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !submitting) {
-                        handleSubmit(activeModal);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-              {/* Submit button */}
-              <motion.button
-                type="button"
-                onClick={() => handleSubmit(activeModal)}
-                disabled={submitting || !githubUrl.trim()}
-                whileHover={!submitting ? { scale: 1 } : {}}
-                whileTap={!submitting ? { scale: 1 } : {}}
-                transition={springAnim}
-                className={`w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-all ${submitting || !githubUrl.trim()
-                  ? 'bg-white/10 text-text-muted cursor-not-allowed'
-                  : 'bg-gradient-to-r from-primary to-accent text-white shadow-lg shadow-primary/25 hover:shadow-primary/40'
-                  }`}
-              >
-                {submitting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Submitting…
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle2 size={16} />
-                    Submit Solution
-                  </>
-                )}
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <div>
+          <label htmlFor="github-url-input" className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
+            GitHub / Code URL
+          </label>
+          <div className="relative">
+            <ExternalLink size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-text-muted" />
+            <input
+              id="github-url-input"
+              type="url"
+              value={githubUrl}
+              onChange={(e) => setGithubUrl(e.target.value)}
+              placeholder="https://github.com/you/solution-repo"
+              className="w-full pl-10 pr-4 py-3 rounded-xl ln-field text-sm placeholder:text-text-muted/60"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !submitting) handleSubmit(activeModal);
+              }}
+            />
+          </div>
+        </div>
+      </ModalShell>
     </div>
   );
 };

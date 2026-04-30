@@ -15,6 +15,9 @@ import {
 import api from '../services/api';
 import PageMascot from '../components/ui/PageMascot';
 import AiLoadingState from '../components/common/AiLoadingState';
+import ModalShell from '../components/ui/ModalShell';
+import Button from '../components/ui/Button';
+import Chip from '../components/ui/Chip';
 
 const TUTOR_ROADMAP_MESSAGES = [
   'Analyzing syllabus...',
@@ -584,134 +587,116 @@ const AiTutorPage = () => {
         </div>
 
         {/* Absence Modal */}
-        <AnimatePresence>
-          {showAbsence && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop"
-              onClick={() => setShowAbsence(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="glass-float rounded-2xl p-6 w-full max-w-md space-y-4"
+        <ModalShell
+          open={showAbsence}
+          onClose={() => setShowAbsence(false)}
+          title="Report absence"
+          subtitle="Reschedule your roadmap"
+          icon={<CalendarOff size={18} className="text-warning" />}
+          maxWidth="max-w-md"
+          footer={
+            <>
+              <Button variant="soft" type="button" onClick={() => setShowAbsence(false)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleReportAbsence}
+                disabled={absenceLoading || !absenceDates.trim()}
               >
-                <h3 className="text-lg font-bold text-text flex items-center gap-2">
-                  <CalendarOff size={20} className="text-warning" /> Report Absence
-                </h3>
-                <p className="text-sm text-text-muted">Enter missed dates (comma-separated, YYYY-MM-DD format):</p>
-                <input
-                  type="text"
-                  value={absenceDates}
-                  onChange={e => setAbsenceDates(e.target.value)}
-                  placeholder="2026-04-14, 2026-04-16"
-                  className="w-full input-glass py-3 px-4 rounded-xl text-sm"
-                />
-                <div className="flex gap-3">
-                  <button onClick={() => setShowAbsence(false)} className="flex-1 btn-secondary-outline py-2.5 rounded-xl text-sm">
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleReportAbsence}
-                    disabled={absenceLoading || !absenceDates.trim()}
-                    className="flex-1 btn-gradient py-2.5 rounded-xl text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                  >
-                    {absenceLoading ? <Loader2 className="animate-spin" size={16} /> : null}
-                    Reschedule
-                  </button>
-                </div>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                {absenceLoading ? <Loader2 className="animate-spin" size={16} /> : null}
+                Reschedule
+              </Button>
+            </>
+          }
+        >
+          <p className="text-sm text-text-muted">
+            Enter missed dates (comma-separated, YYYY-MM-DD format):
+          </p>
+          <input
+            type="text"
+            value={absenceDates}
+            onChange={e => setAbsenceDates(e.target.value)}
+            placeholder="2026-04-14, 2026-04-16"
+            className="w-full rounded-xl ln-field py-3 px-4 text-sm"
+          />
+        </ModalShell>
 
         {/* Performance Modal */}
-        <AnimatePresence>
-          {showPerf && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 z-50 flex items-center justify-center modal-backdrop"
-              onClick={() => setShowPerf(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                onClick={e => e.stopPropagation()}
-                className="glass-float rounded-2xl p-6 w-full max-w-lg max-h-[80vh] overflow-y-auto space-y-4"
-              >
-                <h3 className="text-lg font-bold text-text flex items-center gap-2">
-                  <BarChart3 size={20} className="text-primary" /> Performance Report
-                </h3>
-                {perfLoading ? (
-                  <div className="flex min-h-[12rem] items-center justify-center py-8">
-                    <AiLoadingState
-                      isLoading
-                      messages={TUTOR_PERF_MESSAGES}
-                      label="Loading performance report"
+        <ModalShell
+          open={showPerf}
+          onClose={() => setShowPerf(false)}
+          title="Performance report"
+          subtitle="Strengths, gaps, and recommendations"
+          icon={<BarChart3 size={18} className="text-primary" />}
+          maxWidth="max-w-lg"
+          footer={
+            <Button variant="soft" type="button" onClick={() => setShowPerf(false)} className="w-full sm:w-auto">
+              Close
+            </Button>
+          }
+        >
+          {perfLoading ? (
+            <div className="flex min-h-[12rem] items-center justify-center py-6">
+              <AiLoadingState isLoading messages={TUTOR_PERF_MESSAGES} label="Loading performance report" />
+            </div>
+          ) : perfReport?.error ? (
+            <p className="text-sm text-danger">{perfReport.error}</p>
+          ) : perfReport ? (
+            <div className="space-y-4">
+              {perfReport.overall_progress_percent != null && (
+                <div className="ln-card p-4">
+                  <p className="text-sm text-text-muted mb-2">Overall Progress</p>
+                  <div className="w-full h-3 bg-white/60 rounded-full overflow-hidden border border-black/10">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${Math.min(perfReport.overall_progress_percent, 100)}%` }}
+                      transition={{ duration: 1, ease: 'easeOut' }}
+                      className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
                     />
                   </div>
-                ) : perfReport?.error ? (
-                  <p className="text-sm text-danger">{perfReport.error}</p>
-                ) : perfReport ? (
-                  <div className="space-y-4">
-                    {perfReport.overall_progress_percent != null && (
-                      <div className="glass-card p-4">
-                        <p className="text-sm text-text-muted mb-2">Overall Progress</p>
-                        <div className="w-full h-3 bg-white/5 rounded-full overflow-hidden">
-                          <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: `${Math.min(perfReport.overall_progress_percent, 100)}%` }}
-                            transition={{ duration: 1, ease: 'easeOut' }}
-                            className="h-full bg-gradient-to-r from-primary to-accent rounded-full"
-                          />
-                        </div>
-                        <p className="text-right text-xs text-text-muted mt-1">{perfReport.overall_progress_percent?.toFixed(1)}%</p>
-                      </div>
-                    )}
-                    {perfReport.weak_topics?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-warning mb-2">Weak Topics</p>
-                        <div className="flex flex-wrap gap-2">
-                          {perfReport.weak_topics.map((t, i) => (
-                            <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-warning/10 border border-warning/20 text-warning">{t}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {perfReport.strong_topics?.length > 0 && (
-                      <div>
-                        <p className="text-sm font-semibold text-success mb-2">Strong Topics</p>
-                        <div className="flex flex-wrap gap-2">
-                          {perfReport.strong_topics.map((t, i) => (
-                            <span key={i} className="text-xs px-3 py-1.5 rounded-lg bg-success/10 border border-success/20 text-success">{t}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {perfReport.recommendations && (
-                      <div className="glass-card p-4">
-                        <p className="text-sm font-semibold text-text mb-2">Recommendations</p>
-                        <p className="text-sm text-text-muted whitespace-pre-wrap">{
-                          typeof perfReport.recommendations === 'string'
-                            ? perfReport.recommendations
-                            : JSON.stringify(perfReport.recommendations, null, 2)
-                        }</p>
-                      </div>
-                    )}
+                  <p className="text-right text-xs text-text-muted mt-1">
+                    {perfReport.overall_progress_percent?.toFixed(1)}%
+                  </p>
+                </div>
+              )}
+              {perfReport.weak_topics?.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-text mb-2">Weak Topics</p>
+                  <div className="flex flex-wrap gap-2">
+                    {perfReport.weak_topics.map((t, i) => (
+                      <Chip key={i} variant="warning">
+                        {t}
+                      </Chip>
+                    ))}
                   </div>
-                ) : null}
-                <button onClick={() => setShowPerf(false)} className="w-full btn-secondary-outline py-2.5 rounded-xl text-sm">Close</button>
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+                </div>
+              )}
+              {perfReport.strong_topics?.length > 0 && (
+                <div>
+                  <p className="text-sm font-semibold text-text mb-2">Strong Topics</p>
+                  <div className="flex flex-wrap gap-2">
+                    {perfReport.strong_topics.map((t, i) => (
+                      <Chip key={i} variant="success">
+                        {t}
+                      </Chip>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {perfReport.recommendations && (
+                <div className="ln-card p-4">
+                  <p className="text-sm font-semibold text-text mb-2">Recommendations</p>
+                  <p className="text-sm text-text-muted whitespace-pre-wrap">
+                    {typeof perfReport.recommendations === 'string'
+                      ? perfReport.recommendations
+                      : JSON.stringify(perfReport.recommendations, null, 2)}
+                  </p>
+                </div>
+              )}
+            </div>
+          ) : null}
+        </ModalShell>
 
         {/* Weekly Timeline */}
         <div className="space-y-6">

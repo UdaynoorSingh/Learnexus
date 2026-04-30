@@ -25,6 +25,8 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { showToast } from '../../services/toast';
 import MarkdownBody from './MarkdownBody';
+import ModalShell from '../ui/ModalShell';
+import Chip from '../ui/Chip';
 
 const spring = { type: 'spring', stiffness: 400, damping: 28 };
 
@@ -97,7 +99,7 @@ function CommentBranch({
   return (
     <li className="list-none">
       <div
-        className={`rounded-none px-3 py-2.5 border transition-colors ${
+        className={`rounded-xl px-3 py-2.5 border transition-colors ${
           accepted
             ? 'bg-green-600/10 border-green-600/40 ring-1 ring-green-600/20'
             : 'bg-white/70 border-black/10'
@@ -108,9 +110,9 @@ function CommentBranch({
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-sm font-semibold text-text">{node.author_name}</span>
               {node.is_ai_tutor && (
-                <span className="text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-md bg-indigo-600/25 text-indigo-600 border border-indigo-600/40">
+                <Chip variant="accent" size="xs">
                   🤖 AI Tutor
-                </span>
+                </Chip>
               )}
               {depth > 0 && (
                 <span className="text-[10px] font-semibold uppercase tracking-wide text-text-muted">
@@ -135,7 +137,7 @@ function CommentBranch({
                 whileHover={{ scale: 1 }}
                 whileTap={{ scale: 1 }}
                 transition={spring}
-                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors disabled:opacity-50 ${
+                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors disabled:opacity-50 ${
                   node.user_has_liked
                     ? 'bg-primary/15 border-primary/40 text-primary'
                     : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5'
@@ -157,7 +159,7 @@ function CommentBranch({
                   whileHover={{ scale: 1 }}
                   whileTap={{ scale: 1 }}
                   transition={spring}
-                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium border transition-colors ${
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors ${
                     replyingToId === node.id
                       ? 'bg-accent/15 border-accent/35 text-accent'
                       : ' border-black/10 text-text-muted hover:text-text hover:bg-black/5'
@@ -174,7 +176,7 @@ function CommentBranch({
               type="button"
               disabled={resolveBusy === node.id}
               onClick={() => onResolve(node.id)}
-              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-sm bg-green-600/20 text-green-600 border border-green-600/40 hover:bg-green-600/30 transition-colors disabled:opacity-50"
+              className="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg bg-green-600/20 text-green-600 border border-green-600/40 hover:bg-green-600/30 transition-colors disabled:opacity-50"
             >
               {resolveBusy === node.id ? '…' : 'Mark as answer'}
             </button>
@@ -188,7 +190,7 @@ function CommentBranch({
           className="mt-2 ml-1 pl-3 border-l border-blue-600/25 space-y-2"
         >
           {replyError && (
-            <div className="rounded-sm bg-red-600/15 border border-red-600/30 text-red-600 text-xs px-2.5 py-1.5">
+            <div className="rounded-lg bg-red-600/15 border border-red-600/30 text-red-600 text-xs px-2.5 py-1.5">
               {replyError}
             </div>
           )}
@@ -533,35 +535,35 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
       whileHover={{ scale: 1, y: 0 }}
       whileTap={{ scale: 1 }}
       transition={spring}
-      className="glass-card border border-black/10 rounded-2xl overflow-hidden shadow-xl hover:border-primary/25 transition-colors"
+      className="ln-card border border-black/10 rounded-2xl overflow-hidden shadow-xl hover:border-primary/25 transition-colors"
     >
       <div className="p-6 sm:p-7">
         <div className="flex gap-4">
-          <div className="w-11 h-11 rounded-none bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-sm">
+          <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-sm shrink-0 shadow-lg shadow-primary/20">
             {initial}
           </div>
           <div className="flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2 gap-y-1 pr-1">
               <span className="font-semibold text-text truncate">{post.author_name}</span>
               <span className="text-text-muted text-sm">· {formatTime(post.created_at)}</span>
-              <span className="text-xs font-medium px-2.5 py-0.5 rounded-sm bg-indigo-600/20 text-indigo-600 border border-indigo-600/30">
+              <Chip variant="primary" size="xs">
                 {post.tag}
-              </span>
+              </Chip>
               {bounty > 0 && (
-                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-warning/15 text-warning border border-warning/30 tracking-wide">
+                <Chip variant="warning">
                   Bounty · {bounty} ⚡
-                </span>
+                </Chip>
               )}
             </div>
             <h3 className="mt-2 text-lg font-bold text-text leading-snug tracking-tight pr-1">{post.title}</h3>
 
             {post.audio_url && (
-              <div className="mt-3 mb-1 flex items-center gap-3 rounded-none bg-gradient-to-r from-blue-600/10 via-indigo-600/5 to-transparent border border-blue-600/20 px-4 py-3 shadow-sm shadow-sm">
-                <span className="text-xs font-bold uppercase tracking-wider text-blue-500 shrink-0">🎧 Audio</span>
+              <div className="mt-3 mb-1 flex items-center gap-3 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3 shadow-sm shadow-primary/5">
+                <span className="text-xs font-bold uppercase tracking-wider text-primary shrink-0">🎧 Audio</span>
                 <audio
                   controls
                   src={post.audio_url}
-                  className="nexus-audio-player flex-1 h-8 rounded-sm"
+                  className="nexus-audio-player flex-1 h-8 rounded-lg"
                   preload="none"
                 />
               </div>
@@ -578,7 +580,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 <button
                   type="button"
                   onClick={() => setBodyExpanded((v) => !v)}
-                  className="mt-1.5 text-sm font-semibold text-blue-600 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-600/40 rounded"
+                  className="mt-1.5 text-sm font-semibold text-primary hover:underline focus:outline-none focus:ring-2 focus:ring-primary/40 rounded"
                 >
                   {bodyExpanded ? 'Read less' : 'Read more'}
                 </button>
@@ -669,10 +671,10 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
               </motion.button>
 
               {post.is_solved && (
-                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-green-600 px-3 py-2 rounded-none bg-green-600/15 border border-green-600/30">
+                <Chip variant="success">
                   <CircleCheck size={14} strokeWidth={2} />
                   Solved
-                </span>
+                </Chip>
               )}
             </div>
           </div>
@@ -686,7 +688,7 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
                 whileHover={{ scale: 1 }}
                 whileTap={{ scale: 1 }}
                 transition={spring}
-                className="inline-flex items-center justify-center rounded-none p-2.5 border border-red-600/40 bg-red-600/10 text-red-600 hover:bg-red-600/18 disabled:opacity-50"
+                className="inline-flex items-center justify-center rounded-xl p-2.5 border border-red-600/40 bg-red-600/10 text-red-600 hover:bg-red-600/18 disabled:opacity-50"
                 title="Delete this post (admin only)"
                 aria-label="Delete post as admin"
               >
@@ -783,56 +785,19 @@ const PostCard = ({ post, onPatchPost, onRemoved, readOnly = false }) => {
 
       {typeof document !== 'undefined' &&
         createPortal(
-          <AnimatePresence>
-            {fullImageOpen && post.image_url && !imgError && (
-              <div className="fixed inset-0 z-[100] flex items-center justify-center p-3 sm:p-6">
-                <motion.button
-                  type="button"
-                  aria-label="Close full image"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 modal-backdrop"
-                  onClick={() => setFullImageOpen(false)}
-                />
-                <motion.div
-                  role="dialog"
-                  aria-modal="true"
-                  aria-label="Post image full size"
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.96 }}
-                  transition={spring}
-                  className="relative z-[101] max-w-[min(100vw-1.5rem,1200px)] max-h-[min(92vh,920px)] w-full flex flex-col glass-float border border-black/10 rounded-2xl shadow-xl shadow-black/10 overflow-hidden"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-black/10 shrink-0 bg-white/70">
-                    <span className="text-xs font-semibold text-text-muted truncate pr-2">Full image</span>
-                    <motion.button
-                      type="button"
-                      onClick={() => setFullImageOpen(false)}
-                      whileHover={{ scale: 1 }}
-                      whileTap={{ scale: 1 }}
-                      className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-black/5 shrink-0"
-                      aria-label="Close"
-                    >
-                      <X size={20} strokeWidth={2} />
-                    </motion.button>
-                  </div>
-                  <div className="flex-1 min-h-0 overflow-auto custom-scrollbar flex items-center justify-center  p-2 sm:p-4">
-                    <img
-                      src={post.image_url}
-                      alt=""
-                      className="max-w-full max-h-[min(85vh,880px)] w-auto h-auto object-contain rounded-sm"
-                    />
-                  </div>
-                  <p className="text-[10px] text-text-muted text-center px-3 py-2 border-t border-black/10 shrink-0 bg-white/70">
-                    Press Esc or click outside to close
-                  </p>
-                </motion.div>
-              </div>
-            )}
-          </AnimatePresence>,
+          <ModalShell
+            open={fullImageOpen && Boolean(post.image_url) && !imgError}
+            onClose={() => setFullImageOpen(false)}
+            title="Full image"
+            maxWidth="max-w-[min(100vw-1.5rem,1200px)]"
+            contentClassName="p-2 sm:p-4 flex items-center justify-center"
+          >
+            <img
+              src={post.image_url}
+              alt=""
+              className="max-w-full max-h-[min(85vh,880px)] w-auto h-auto object-contain rounded-xl"
+            />
+          </ModalShell>,
           document.body
         )}
     </motion.article>

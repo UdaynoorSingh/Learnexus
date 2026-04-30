@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { X, Image as ImageIcon, Upload } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import { createPost, uploadCommunityImage } from '../../services/communityService';
 import { showToast } from '../../services/toast';
 import { useAuth } from '../../context/AuthContext';
+import ModalShell from '../ui/ModalShell';
+import Button from '../ui/Button';
 
 const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => {
   const { refreshUser } = useAuth();
@@ -47,8 +48,6 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
       setError('');
     }
   }, [open]);
-
-  const spring = { type: 'spring', stiffness: 400, damping: 32 };
 
   const handleFileChange = (e) => {
     const f = e.target.files?.[0];
@@ -109,43 +108,24 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
   };
 
   return (
-    <AnimatePresence>
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <motion.button
-            type="button"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 modal-backdrop"
-            aria-label="Close modal"
-            onClick={onClose}
-          />
-          <motion.div
-            role="dialog"
-            aria-modal="true"
-            initial={{ opacity: 0, y: 20, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.98 }}
-            transition={spring}
-            className="relative w-full max-w-lg glass-float border border-black/10 shadow-xl shadow-black/10 rounded-2xl overflow-hidden max-h-[90vh] flex flex-col"
-          >
-        <div className="flex items-center justify-between px-6 py-4 border-b border-black/10 bg-white/70">
-          <h2 className="text-lg font-bold text-text tracking-tight">Create post</h2>
-          <motion.button
-            type="button"
-            onClick={onClose}
-            whileHover={{ scale: 1 }}
-            whileTap={{ scale: 1 }}
-            transition={spring}
-            className="p-2 rounded-xl text-text-muted hover:text-text hover:bg-black/5 transition-colors"
-          >
-            <X size={20} strokeWidth={2} />
-          </motion.button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="flex flex-col flex-1 min-h-0">
-          <div className="overflow-y-auto px-6 py-4 space-y-4">
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title="Create post"
+      subtitle="Auto-tagged with AI channel normalization"
+      maxWidth="max-w-lg"
+      footer={
+        <>
+          <Button variant="soft" type="button" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button type="submit" form="create-post-form" disabled={submitting}>
+            {submitting ? 'Posting…' : 'Publish'}
+          </Button>
+        </>
+      }
+    >
+      <form id="create-post-form" onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="rounded-xl bg-danger/15 border border-danger/30 text-danger text-sm px-4 py-2">
                 {error}
@@ -291,29 +271,8 @@ const CreatePostModal = ({ open, onClose, onCreated, postCollegeId = null }) => 
                 placeholder="0"
               />
             </div>
-          </div>
-
-          <div className="px-6 py-4 border-t border-black/10 bg-white/70 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2.5 rounded-xl text-sm font-medium text-text-muted hover:text-text hover:bg-black/5 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={submitting}
-              className="btn-gradient px-5 py-2.5 rounded-xl text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {submitting ? 'Posting…' : 'Publish'}
-            </button>
-          </div>
-        </form>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+      </form>
+    </ModalShell>
   );
 };
 

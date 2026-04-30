@@ -8,6 +8,8 @@ import EmptyState from '../components/ui/EmptyState';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import PageMascot from '../components/ui/PageMascot';
 import { useAuth } from '../context/AuthContext';
+import Button from '../components/ui/Button';
+import Chip from '../components/ui/Chip';
 
 const spring = { type: 'spring', stiffness: 380, damping: 30 };
 
@@ -93,30 +95,23 @@ const NexusLibrary = () => {
             <div className="hidden sm:block">
               <PageMascot role="nexusLibrary" size="md" />
             </div>
-            <motion.button
-              type="button"
-              onClick={() => setModalOpen(true)}
-              whileHover={{ scale: 1 }}
-              whileTap={{ scale: 1 }}
-              transition={spring}
-              className="inline-flex items-center gap-2 btn-gradient rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg shadow-primary/25"
-            >
+            <Button type="button" onClick={() => setModalOpen(true)} className="px-6 py-3.5 rounded-xl shadow-lg">
               <Plus size={18} strokeWidth={2.5} />
               New Post
-            </motion.button>
+            </Button>
           </div>
         </div>
 
         {/* Stats + controls */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-primary/10 border border-primary/20 text-sm font-medium text-primary">
+          <Chip variant="primary" className="px-3.5 py-2 rounded-xl text-sm font-medium">
             <Headphones size={15} strokeWidth={2} />
             <span className="tabular-nums">{posts.length}</span> posts
-          </div>
-          <div className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-accent/10 border border-accent/20 text-sm font-medium text-accent">
+          </Chip>
+          <Chip variant="accent" className="px-3.5 py-2 rounded-xl text-sm font-medium">
             <Sparkles size={15} strokeWidth={2} />
             AI Audio
-          </div>
+          </Chip>
           <motion.button
             type="button"
             onClick={loadPosts}
@@ -131,17 +126,14 @@ const NexusLibrary = () => {
           </motion.button>
 
           {/* Mobile create button */}
-          <motion.button
+          <Button
             type="button"
             onClick={() => setModalOpen(true)}
-            whileHover={{ scale: 1 }}
-            whileTap={{ scale: 1 }}
-            transition={spring}
-            className="sm:hidden inline-flex items-center gap-2 btn-gradient rounded-xl px-4 py-2 text-sm font-semibold shadow-lg shadow-primary/25 ml-auto"
+            className="sm:hidden px-4 py-2 rounded-xl shadow-lg ml-auto"
           >
             <Plus size={16} strokeWidth={2.5} />
             New
-          </motion.button>
+          </Button>
         </div>
 
         {/* Scope tabs */}

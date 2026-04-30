@@ -16,6 +16,7 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { useAuth } from '../context/AuthContext';
 import PageMascot from '../components/ui/PageMascot';
 import { getPageMascot } from '../constants/mascots';
+import Button from '../components/ui/Button';
 
 const spring = { type: 'spring', stiffness: 380, damping: 30 };
 
@@ -347,17 +348,14 @@ const NexusBoard = () => {
               </motion.button>
             )}
             {showCreateButton && (
-              <motion.button
+              <Button
                 type="button"
                 onClick={() => setModalOpen(true)}
-                whileHover={{ scale: 1 }}
-                whileTap={{ scale: 1 }}
-                transition={spring}
-                className="inline-flex items-center justify-center gap-2 bg-primary text-white hover:opacity-90 border border-transparent rounded-xl px-6 py-3.5 text-sm font-semibold shadow-lg"
+                className="px-6 py-3.5 rounded-xl shadow-lg"
               >
                 <Plus size={18} strokeWidth={2.5} />
                 Create post
-              </motion.button>
+              </Button>
             )}
           </div>
         </motion.div>
