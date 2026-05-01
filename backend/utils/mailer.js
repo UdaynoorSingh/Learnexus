@@ -88,9 +88,54 @@ function shouldLogOtpToConsoleOnly() {
   );
 }
 
+function resendApiKey() {
+  return (process.env.RESEND_API_KEY || '').trim();
+}
+
+/** HTTPS (443); works on hosts that block outbound SMTP (e.g. Render free web services). */
+async function sendOtpViaResend(to, text, html) {
+  const key = resendApiKey();
+  const from =
+    (process.env.RESEND_FROM || process.env.SMTP_FROM || '').trim() ||
+    'Learnexus <onboarding@resend.dev>';
+  const res = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${key}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      from,
+      to: [to],
+      subject: 'Your Learnexus login code',
+      text,
+      html
+    })
+  });
+  const raw = await res.text();
+  if (!res.ok) {
+    let detail = raw.slice(0, 500);
+    try {
+      const j = JSON.parse(raw);
+      detail = j.message || j.name || detail;
+    } catch {
+      /* keep detail */
+    }
+    throw new Error(`Resend ${res.status}: ${detail}`);
+  }
+}
+
 async function sendOtpEmail(to, otp, expiresMinutes = 10) {
   if (shouldLogOtpToConsoleOnly()) {
     console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (not sent by email; expires in ${expiresMinutes} min)`);
+    return;
+  }
+
+  const text = `Your one-time code is ${otp}. It expires in ${expiresMinutes} minutes.`;
+  const html = `<p>Your one-time code is <strong>${otp}</strong>.</p><p>It expires in ${expiresMinutes} minutes.</p><p>If you did not request this, you can ignore this email.</p>`;
+
+  if (resendApiKey()) {
+    await sendOtpViaResend(to, text, html);
     return;
   }
 
@@ -100,8 +145,8 @@ async function sendOtpEmail(to, otp, expiresMinutes = 10) {
     from,
     to,
     subject: 'Your Learnexus login code',
-    text: `Your one-time code is ${otp}. It expires in ${expiresMinutes} minutes.`,
-    html: `<p>Your one-time code is <strong>${otp}</strong>.</p><p>It expires in ${expiresMinutes} minutes.</p><p>If you did not request this, you can ignore this email.</p>`
+    text,
+    html
   });
 }
 
