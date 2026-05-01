@@ -5,7 +5,6 @@ const { emailHostMatchesDomainSuffix } = require('../utils/collegeDomain');
 const { sendOtpEmail } = require('../utils/mailer');
 const { generateSixDigitCode, hashOtp, verifyOtp, normalizeEmail } = require('../utils/studentOtp');
 
-/** Cooldown between OTP emails per address (ms). */
 const OTP_RESEND_COOLDOWN_MS = Math.max(
   15_000,
   parseInt(process.env.OTP_RESEND_COOLDOWN_SEC || '60', 10) * 1000
@@ -42,9 +41,7 @@ function signToken(user) {
   );
 }
 
-/**
- * Resolve college from email host; returns { college, emailNorm, emailHost } or null + error response shape.
- */
+
 async function resolveStudentCollege(client, rawEmail) {
   const emailNorm = normalizeEmail(rawEmail);
   if (!emailNorm || !emailNorm.includes('@')) {
@@ -65,9 +62,7 @@ async function resolveStudentCollege(client, rawEmail) {
   return { college, emailNorm, emailHost };
 }
 
-/**
- * POST /student-request-otp — college domain must match; sends 6-digit code (email or dev console).
- */
+
 exports.studentRequestOtp = async (req, res) => {
   if (!smtpOrDevOtpReady()) {
     return res.status(503).json({
@@ -151,9 +146,7 @@ exports.studentRequestOtp = async (req, res) => {
   }
 };
 
-/**
- * POST /student-verify-otp — verify code, create/update student, return JWT.
- */
+
 exports.studentVerifyOtp = async (req, res) => {
   const rawEmail = req.body?.email;
   const codeRaw = req.body?.code;

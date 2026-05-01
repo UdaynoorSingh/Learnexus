@@ -35,7 +35,6 @@ class QuizFlow(Flow[TutorState]):
         """Step 1: Use AssessmentAgent to grade submitted answers."""
         logger.info(f"[QuizFlow] START — grading quiz_id='{self.quiz_id}'")
 
-        # Build quiz context
         quiz_state = self.state.quiz_state
         questions_text = ""
         for q in quiz_state.questions:
@@ -68,7 +67,6 @@ class QuizFlow(Flow[TutorState]):
         crew = Crew(agents=[agent], tasks=[task], verbose=True)
         result = crew.kickoff()
 
-        # Parse the grading result
         raw = str(result)
         try:
             import re
@@ -79,13 +77,11 @@ class QuizFlow(Flow[TutorState]):
             brace_end = raw.rindex("}") + 1
             self._grade_result = json.loads(raw[brace_start:brace_end])
         except Exception:
-            # Fallback: simple scoring
             self._grade_result = {
                 "score": 0, "total": len(quiz_state.questions),
                 "percentage": 0.0, "weak_topics": [],
             }
 
-        # Record the score
         quiz_score = QuizScore(
             quiz_id=self.quiz_id,
             score=self._grade_result.get("score", 0),
@@ -95,7 +91,6 @@ class QuizFlow(Flow[TutorState]):
         )
         self.state.quiz_scores.append(quiz_score)
 
-        # Record performance entry
         perf = PerformanceEntry(
             quiz_id=self.quiz_id,
             score=quiz_score.percentage,

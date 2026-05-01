@@ -1,6 +1,5 @@
 const pool = require('../config/db');
 
-/** Public list for Explore (id + name only). */
 exports.listPublicColleges = async (req, res) => {
   try {
     const result = await pool.query(

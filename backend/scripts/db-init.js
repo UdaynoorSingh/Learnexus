@@ -7,7 +7,6 @@ function shouldUseRelaxedSsl(connectionString) {
   try {
     const u = new URL(connectionString);
     const host = (u.hostname || '').toLowerCase();
-    // Supabase commonly requires SSL; local dev usually doesn't.
     return host.endsWith('.supabase.com') || host.includes('pooler.supabase.com');
   } catch {
     return false;
@@ -60,7 +59,6 @@ async function main() {
     try {
       await pool.end();
     } catch {
-      // ignore
     }
     process.exit(1);
   }

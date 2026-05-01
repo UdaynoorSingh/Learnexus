@@ -8,7 +8,6 @@ function pepper() {
   return p;
 }
 
-/** 6-digit string, no leading-zero bias beyond 100000–999999. */
 function generateSixDigitCode() {
   const n = crypto.randomInt(100000, 1000000);
   return String(n);
@@ -18,7 +17,6 @@ function normalizeEmail(email) {
   return String(email || '').trim().toLowerCase();
 }
 
-/** HMAC-SHA256 hex (64 chars) — store this, not the raw code. */
 function hashOtp(email, sixDigitCode) {
   const e = normalizeEmail(email);
   const digits = String(sixDigitCode || '').replace(/\D/g, '').slice(0, 6);

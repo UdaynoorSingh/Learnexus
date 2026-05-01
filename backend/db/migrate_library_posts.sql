@@ -1,6 +1,3 @@
--- Migration: Create library_posts table for Nexus Library feature
--- Run: psql -U postgres -d learnexus -f backend/db/migrate_library_posts.sql
-
 CREATE TABLE IF NOT EXISTS library_posts (
   id SERIAL PRIMARY KEY,
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -19,7 +16,6 @@ CREATE INDEX IF NOT EXISTS idx_library_posts_college ON library_posts(college_id
 CREATE INDEX IF NOT EXISTS idx_library_posts_created ON library_posts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_library_posts_difficulty ON library_posts(difficulty);
 
--- Votes on library posts (like/dislike)
 CREATE TABLE IF NOT EXISTS library_post_votes (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   post_id INTEGER NOT NULL REFERENCES library_posts(id) ON DELETE CASCADE,

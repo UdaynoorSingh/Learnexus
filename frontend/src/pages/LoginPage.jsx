@@ -58,7 +58,6 @@ const LoginPage = () => {
     <div className="min-h-screen relative overflow-hidden bg-transparent">
       <BrutalistBackdrop bubbleOpacity={0.82} />
 
-      {/* ── Floating pill navbar ── */}
       <motion.nav
         initial={{ y: -30, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -98,10 +97,8 @@ const LoginPage = () => {
         </div>
       </motion.nav>
 
-      {/* ── Main content area ── */}
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 md:pt-20 pb-16">
         <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
-          {/* ── Left column — Hero text ── */}
           <motion.div
             className="flex-1 max-w-xl w-full"
             initial={{ opacity: 0, y: 30 }}
@@ -110,7 +107,6 @@ const LoginPage = () => {
           >
             <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_minmax(0,auto)] gap-8 lg:gap-10 items-start">
               <div className="min-w-0">
-                {/* Badge chip */}
                 <motion.div
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
@@ -121,7 +117,6 @@ const LoginPage = () => {
                   AI-powered learning protocol
                 </motion.div>
 
-                {/* Bold hero heading */}
                 <h1 className="text-[2.75rem] sm:text-[3.25rem] md:text-[4rem] lg:text-[4.5rem] font-black text-[#1e2029] leading-[1.06] tracking-tight font-['Outfit']">
                   Learn{' '}
                   <br className="hidden sm:block" />
@@ -144,7 +139,6 @@ const LoginPage = () => {
                   autonomously. It's like magic, but for learning!
                 </motion.p>
 
-                {/* CTA buttons (desktop only — mobile scrolls to form) */}
                 <motion.div
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -171,19 +165,16 @@ const LoginPage = () => {
             </div>
           </motion.div>
 
-          {/* ── Right column — Login card + Geometric shapes ── */}
           <motion.div
             className="flex-1 flex flex-col items-center lg:items-end gap-8 w-full max-w-md lg:max-w-none"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.7, delay: 0.35 }}
           >
-            {/* Geometric shapes — visible on large screens behind the card */}
             <div className="hidden lg:block absolute right-0 top-[8rem] -z-[1] opacity-60">
               <GeometricShapes size="default" />
             </div>
 
-            {/* Login card */}
             <div
               id="login-form"
               className="w-full max-w-md relative z-10"
@@ -194,7 +185,6 @@ const LoginPage = () => {
                 animate={{ scale: 1, opacity: 1 }}
                 transition={{ delay: 0.5, ...springTransition }}
               >
-                {/* Card header */}
                 <div className="text-center mb-7">
                   <div className="w-14 h-14 mx-auto rounded-2xl overflow-hidden mb-4 border-2 border-[#1e2029] bg-[#fef9c3] shadow-[3px_3px_0_0_#1e2029]">
                     <img src="/logo.png" alt="LearnNexus" className="w-full h-full object-contain p-1" />
@@ -209,7 +199,6 @@ const LoginPage = () => {
                   </p>
                 </div>
 
-                {/* Alerts */}
                 <AnimatePresence>
                   {error && (
                     <motion.div
@@ -237,7 +226,6 @@ const LoginPage = () => {
                   )}
                 </AnimatePresence>
 
-                {/* Step 1 — email + name */}
                 <AnimatePresence mode="wait">
                   {step === 1 && (
                     <motion.form
@@ -309,7 +297,6 @@ const LoginPage = () => {
                     </motion.form>
                   )}
 
-                  {/* Step 2 — OTP code */}
                   {step === 2 && (
                     <motion.form
                       key="step-2"
@@ -402,7 +389,6 @@ const LoginPage = () => {
               </motion.div>
             </div>
 
-            {/* Geometric shapes — visible on mobile/tablet below the card */}
             <div className="lg:hidden flex justify-center">
               <GeometricShapes size="sm" />
             </div>

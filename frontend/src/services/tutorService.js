@@ -1,10 +1,4 @@
-/**
- * Agentic AI Tutor — Service Layer
- *
- * Standalone axios instance pointing at the tutor backend (/tutor proxy → port 5002).
- * Kept separate from the main api.js interceptor since the tutor service
- * uses in-memory student_id sessions, not JWT auth.
- */
+
 
 import axios from 'axios';
 import { asRateLimitRejection, showApiErrorToast } from './toast';
@@ -25,9 +19,7 @@ tutor.interceptors.response.use(
   }
 );
 
-/* ───── Course Initialization ───── */
 
-/** Optional axios request config (e.g. `{ skipErrorToast: true }` when UI shows its own error). */
 
 export async function initCourse(
   {
@@ -54,10 +46,9 @@ export async function initCourse(
     },
     requestConfig
   );
-  return data; // { student_id, roadmap, calendar_events }
+  return data; 
 }
 
-/* ───── Lecture Preparation ───── */
 
 export async function prepNextLecture(studentId, requestConfig = {}) {
   const { data } = await tutor.post(
@@ -67,10 +58,9 @@ export async function prepNextLecture(studentId, requestConfig = {}) {
     },
     requestConfig
   );
-  return data; // { lecture_index, title, topics, script, audio_url, duration_seconds }
+  return data; 
 }
 
-/* ───── Doubt Resolution ───── */
 
 export async function askDoubt(studentId, question, lectureIndex = 0, requestConfig = {}) {
   const { data } = await tutor.post(
@@ -82,10 +72,9 @@ export async function askDoubt(studentId, question, lectureIndex = 0, requestCon
     },
     requestConfig
   );
-  return data; // { answer, referenced_topics }
+  return data; 
 }
 
-/* ───── Quiz Submission ───── */
 
 export async function submitQuiz(studentId, quizId, answers, requestConfig = {}) {
   const { data } = await tutor.post(
@@ -93,28 +82,26 @@ export async function submitQuiz(studentId, quizId, answers, requestConfig = {})
     {
       student_id: studentId,
       quiz_id: quizId,
-      answers, // [{ question_id, selected_option }]
+      answers, 
     },
     requestConfig
   );
-  return data; // { score, total, percentage, weak_topics, scorecard, revision_lecture_injected }
+  return data; 
 }
 
-/* ───── Absence Reporting ───── */
 
 export async function reportAbsence(studentId, missedDates, requestConfig = {}) {
   const { data } = await tutor.post(
     '/report-absence',
     {
       student_id: studentId,
-      missed_dates: missedDates, // ["YYYY-MM-DD", ...]
+      missed_dates: missedDates,
     },
     requestConfig
   );
-  return data; // { updated_roadmap, rescheduled_events, changes_summary }
+  return data; 
 }
 
-/* ───── Performance Report ───── */
 
 export async function getPerformanceReport(studentId, requestConfig = {}) {
   const { data } = await tutor.get('/performance-report', {
@@ -124,7 +111,6 @@ export async function getPerformanceReport(studentId, requestConfig = {}) {
   return data;
 }
 
-/* ───── Health Check ───── */
 
 export async function healthCheck(requestConfig = {}) {
   const { data } = await tutor.get('/health', requestConfig);

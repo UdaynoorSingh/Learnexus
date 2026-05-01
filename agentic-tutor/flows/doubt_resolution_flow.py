@@ -20,7 +20,6 @@ logger = logging.getLogger("agentic_tutor.flows.doubt_resolution")
 class DoubtResolutionFlow(Flow[TutorState]):
     """Answers student doubts using only the current lecture context."""
 
-    # These will be set before kickoff
     student_question: str = ""
     question_lecture_index: int = 0
 
@@ -29,11 +28,9 @@ class DoubtResolutionFlow(Flow[TutorState]):
         """Use DoubtResolverAgent with tight context (current lecture only)."""
         logger.info(f"[DoubtResolutionFlow] START — question='{self.student_question[:100]}...'")
 
-        # Build a tight context window — current script + resources ONLY
         context_parts = []
 
         if self.state.current_script:
-            # Limit to first 3000 chars to keep context window tight
             script_excerpt = self.state.current_script[:3000]
             context_parts.append(f"=== CURRENT LECTURE SCRIPT ===\n{script_excerpt}")
 
@@ -63,7 +60,6 @@ class DoubtResolutionFlow(Flow[TutorState]):
         answer = str(result)
         logger.info(f"[DoubtResolutionFlow] SUCCESS — answer length={len(answer)} chars")
 
-        # Extract referenced topics from the current lecture
         current_lecture = None
         for week in self.state.course_roadmap.weeks:
             for day in week.days:

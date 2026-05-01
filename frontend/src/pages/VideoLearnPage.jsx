@@ -76,7 +76,6 @@ const VideoLearnPage = () => {
       setTopicId(tempTopicId);
       refreshUser();
 
-      // Persist the YouTube learn session (best-effort)
       try {
         await api.post('/sessions', {
           title: `YouTube Learn · ${vidId}`,
@@ -93,7 +92,6 @@ const VideoLearnPage = () => {
           }
         });
       } catch {
-        // ignore persistence errors
       }
 
 

@@ -1,6 +1,4 @@
-/**
- * Consistent page title block: hierarchy, spacing, optional actions slot.
- */
+
 const PageHeader = ({ eyebrow, title, description, children, className = '' }) => {
   return (
     <header className={`border-b border-slate-200/70 pb-6 mb-8 ${className}`.trim()}>

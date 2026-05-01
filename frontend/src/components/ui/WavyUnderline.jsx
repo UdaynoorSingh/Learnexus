@@ -1,9 +1,5 @@
 import { motion } from 'framer-motion';
 
-/**
- * WavyUnderline – renders text with an animated SVG wavy underline.
- * Inspired by the "Lifting." accent in the HireLoop design.
- */
 const WavyUnderline = ({
   children,
   color = '#f59e0b',

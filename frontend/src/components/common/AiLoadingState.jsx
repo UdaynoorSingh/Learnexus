@@ -7,10 +7,7 @@ export const DEFAULT_AI_LOADING_MESSAGES = [
   'Finalizing roadmap...',
 ];
 
-/**
- * Polished loading UI for long-running AI / LangGraph operations.
- * Cycles `messages` every 2s while `isLoading` is true.
- */
+
 export default function AiLoadingState({
   isLoading,
   messages = DEFAULT_AI_LOADING_MESSAGES,

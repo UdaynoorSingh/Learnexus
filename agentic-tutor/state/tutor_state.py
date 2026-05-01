@@ -10,33 +10,30 @@ from datetime import datetime
 import uuid
 
 
-# ──────────────────────── Student Profile ────────────────────────
 
 class StudentProfile(BaseModel):
     """Captures the student's learning preferences and constraints."""
     topic: str = ""
-    depth_level: str = "intermediate"           # beginner | intermediate | advanced
-    duration_weeks: int = 4                      # internal — always in weeks
-    duration_input: str = "4 weeks"              # original user input ("2 months", "8 weeks")
-    pace_speed: str = "normal"                   # slow | normal | fast
+    depth_level: str = "intermediate"          
+    duration_weeks: int = 4                     
+    duration_input: str = "4 weeks"            
+    pace_speed: str = "normal"                  
     preferred_language: str = "English"
-    learning_style: str = "visual"               # visual | auditory | reading | kinesthetic
-    constraints: Optional[str] = None            # free-form ("no weekends", etc.)
+    learning_style: str = "visual"              
+    constraints: Optional[str] = None            
 
 
-# ──────────────────────── Roadmap Schema ─────────────────────────
 
 class DayEntry(BaseModel):
     """A single day in the roadmap — can be a lecture or a quiz."""
-    day: str = ""                                # e.g. "Monday"
-    date: str = ""                               # ISO YYYY-MM-DD
+    day: str = ""                               
+    date: str = ""                              
     calendar_event_id: Optional[str] = None
-    type: str = "lecture"                         # "lecture" | "quiz"
+    type: str = "lecture"                        
     lecture_index: Optional[int] = None
     title: str = ""
     topics: List[str] = Field(default_factory=list)
     estimated_duration_minutes: int = 45
-    # Quiz-specific fields
     covers_lectures: List[int] = Field(default_factory=list)
     num_questions: Optional[int] = None
 
@@ -52,14 +49,12 @@ class CourseRoadmap(BaseModel):
     weeks: List[Week] = Field(default_factory=list)
 
 
-# ──────────────────────── Resources ──────────────────────────────
 
 class FetchedResources(BaseModel):
     web_results: List[dict] = Field(default_factory=list)
     library_notes: List[dict] = Field(default_factory=list)
 
 
-# ──────────────────────── Quiz & Assessment ──────────────────────
 
 class QuizQuestion(BaseModel):
     question_id: str = Field(default_factory=lambda: str(uuid.uuid4())[:8])
@@ -88,7 +83,6 @@ class QuizScore(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
-# ──────────────────────── Performance ────────────────────────────
 
 class PerformanceEntry(BaseModel):
     lecture_index: Optional[int] = None
@@ -99,17 +93,15 @@ class PerformanceEntry(BaseModel):
     timestamp: str = Field(default_factory=lambda: datetime.utcnow().isoformat())
 
 
-# ──────────────────────── Calendar ───────────────────────────────
 
 class CalendarEvent(BaseModel):
     event_id: str = ""
     title: str = ""
     date: str = ""
     description: str = ""
-    status: str = "created"                      # created | updated | deleted
+    status: str = "created"                  
 
 
-# ═══════════════════ MASTER STATE ════════════════════════════════
 
 class TutorState(BaseModel):
     """

@@ -17,7 +17,6 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores import FAISS
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
-# Never let .env override PORT from the host (Render, Fly, etc.)
 _platform_port = os.environ.get("PORT")
 load_dotenv()
 if _platform_port is not None:
@@ -99,7 +98,6 @@ class YouTubeRequest(BaseModel):
 class ConceptGraphRequest(BaseModel):
     topicId: Optional[Any] = None
     contextMode: str = "both"
-    # Optional extra hint (e.g. user's goal / currently viewed topic name)
     hint: Optional[str] = None
 
 
@@ -216,7 +214,6 @@ def _strip_code_fences(s: str) -> str:
     return t
 
 def _fallback_graph_from_text(text: str) -> dict:
-    # Lightweight fallback: pull top-ish unique terms and connect sequentially.
     raw = re.sub(r"[\[\]():,.;\"'`]+", " ", (text or "").lower())
     tokens = [t for t in raw.split() if 4 <= len(t) <= 20 and t.isascii()]
     stop = {
@@ -250,7 +247,6 @@ async def concept_graph(req: ConceptGraphRequest):
         topic_id = req.topicId
         hint = (req.hint or "").strip()
 
-        # If no topicId provided, we can't retrieve FAISS context; still allow a generic graph.
         context = ""
         if topic_id is not None and str(topic_id).strip() != "":
             context = retrieve_context(topic_id, "core concepts, relationships, prerequisites, and next steps", k=20, context_mode=req.contextMode)
@@ -291,7 +287,6 @@ Notes/snippets:
             data = json.loads(text_resp)
             if not isinstance(data, dict) or "nodes" not in data or "edges" not in data:
                 raise ValueError("missing keys")
-            # Light normalization
             nodes = data.get("nodes") or []
             edges = data.get("edges") or []
             if not isinstance(nodes, list) or not isinstance(edges, list):
@@ -515,7 +510,6 @@ async def generate_task_ideas(req: TaskIdeasRequest):
         except json.JSONDecodeError:
             ideas_list = [line.strip("- *") for line in text_resp.split("\n") if line.strip()]
             
-        # Ensure we return a list of exactly what was asked, up to 4 items.
         return {"ideas": ideas_list[:4]}
     except Exception as e:
         import traceback
@@ -690,12 +684,10 @@ async def youtube_embed(req: YouTubeRequest):
 
             proxies = _proxy_dict_from_env()
 
-            # youtube-transcript-api has multiple APIs across versions; try the most compatible.
             segments = []
             transcript_entries = None
             if hasattr(YouTubeTranscriptApi, "get_transcript"):
-                # Common API: returns list[dict] with 'text','start','duration'
-                transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)  # type: ignore
+                transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies) 
                 segments = [
                     {
                         "start": float(e.get("start", 0)),
@@ -705,12 +697,11 @@ async def youtube_embed(req: YouTubeRequest):
                     for e in (transcript_entries or [])
                 ]
             else:
-                # Newer API used in this repo (fetch returns iterable with .text/.start/.duration)
                 ytt_api = YouTubeTranscriptApi()
                 try:
-                    transcript_list = ytt_api.fetch(video_id, proxies=proxies)  # type: ignore
+                    transcript_list = ytt_api.fetch(video_id, proxies=proxies)  
                 except TypeError:
-                    transcript_list = ytt_api.fetch(video_id)  # type: ignore
+                    transcript_list = ytt_api.fetch(video_id) 
                 segments = [
                     {"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)}
                     for entry in transcript_list
@@ -772,7 +763,6 @@ Transcript excerpt:
 {summary_text}"""
         summary = call_groq(summary_prompt).strip()
 
-        # Lightweight chapters: pick ~8 anchors evenly spaced
         chapters = []
         if segments:
             target = 8
@@ -1147,12 +1137,10 @@ User query: "{query}"
             data = json.loads(text_resp)
             if not isinstance(data, dict) or "message" not in data:
                 raise ValueError("missing keys")
-            # Ensure suggestions is a list
             if "suggestions" not in data or not isinstance(data.get("suggestions"), list):
                 data["suggestions"] = [{"name": "Dashboard", "path": "/dashboard", "description": "Start here to see your overview"}]
             return data
         except (json.JSONDecodeError, ValueError):
-            # Fallback: return a generic helpful response
             return {
                 "message": text_resp[:300] if text_resp else "Hey! I'm Nex, your guide. Try asking me what you'd like to learn or do!",
                 "suggestions": [
@@ -1169,7 +1157,6 @@ User query: "{query}"
 
 
 if __name__ == "__main__":
-    # Render injects PORT; local default 5001 (matches Node backend AI_BACKEND_URL default).
     port = int(os.environ.get("PORT") or "5001")
     reload = os.environ.get("PORT") is None
     uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload)

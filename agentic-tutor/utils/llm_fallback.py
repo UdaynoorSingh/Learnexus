@@ -13,7 +13,6 @@ from crewai import LLM
 
 logger = logging.getLogger("agentic_tutor.llm")
 
-# ────────── Model Catalogs (free-tier only) ──────────
 
 GROQ_MODELS = {
     "large": "groq/llama-3.3-70b-versatile",
@@ -97,7 +96,6 @@ def get_llm(
     return _build_llm(model_string, temperature)
 
 
-# ────────── Convenience constructors per agent role ──────────
 
 def roadmap_llm() -> LLM:
     return get_llm(size="large", provider="groq", temperature=0.5)
@@ -124,7 +122,6 @@ def performance_tracker_llm() -> LLM:
     return get_llm(size="small", provider="groq", temperature=0.3)
 
 
-# ────────── Fallback wrapper ──────────
 
 FALLBACK_CHAIN = ["groq", "openrouter", "nvidia"]
 
@@ -140,6 +137,5 @@ def get_llm_with_fallback(size: str = "large", temperature: float = 0.7) -> LLM:
             return llm
         except Exception as e:
             logger.warning(f"Failed to build LLM from {provider}: {e}")
-    # ultimate fallback
     logger.error("All providers failed, falling back to groq/llama-3.1-8b-instant")
     return _build_llm("groq/llama-3.1-8b-instant", temperature)

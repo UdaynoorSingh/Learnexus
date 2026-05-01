@@ -1,8 +1,4 @@
-/**
- * Global toast bridge — Layout.jsx listens for `learnexus-toast`.
- * Use `skipErrorToast: true` on axios request config to suppress the global API error toast
- * when a screen handles errors locally (avoids duplicate messages).
- */
+
 
 export const showToast = (type, message, step = null) => {
   window.dispatchEvent(
@@ -20,7 +16,6 @@ export const showRateLimitToast = () => {
   );
 };
 
-/** Normalize FastAPI `detail` (string | object) and common Node `{ error }` shapes */
 export function extractApiErrorMessage(error) {
   if (!error) return 'Something went wrong. Please try again.';
   const data = error.response?.data;
@@ -48,7 +43,6 @@ export function extractApiErrorMessage(error) {
   );
 }
 
-/** True when backend signals rate / quota exhaustion (Node or Python). */
 export function isLikelyRateLimitError(error) {
   const status = error.response?.status;
   const errorMsg = JSON.stringify(error.response?.data || '').toLowerCase();
@@ -63,10 +57,6 @@ export function isLikelyRateLimitError(error) {
   );
 }
 
-/**
- * If this error should become a synthetic rate-limit rejection, build it and return it.
- * Otherwise return null. Caller should `if (x) return Promise.reject(x)`.
- */
 export function asRateLimitRejection(error) {
   if (!isLikelyRateLimitError(error)) return null;
   showRateLimitToast();
@@ -77,10 +67,6 @@ export function asRateLimitRejection(error) {
   return rateLimitError;
 }
 
-/**
- * Sleek investor-demo messaging for axios failures (Node API + proxied Python).
- * Respects `error.config.skipErrorToast === true`.
- */
 export function showApiErrorToast(error) {
   if (!error || error.config?.skipErrorToast || error.isRateLimit) return;
   if (error.__learnexusGlobalToastShown) return;

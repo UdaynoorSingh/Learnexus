@@ -254,7 +254,6 @@ JOIN branches br ON br.id = sem.branch_id AND br.name = 'Computer Science & Engi
 WHERE NOT EXISTS (SELECT 1 FROM teachers te WHERE te.subject_id = sub.id AND te.name = v.tname);
 
 
--- Default admin password: admin123 (bcrypt). Change after first login or run create-admin.js.
 INSERT INTO users (name, email, college_id, role, credits, is_verified, password)
 SELECT
   'Admin',

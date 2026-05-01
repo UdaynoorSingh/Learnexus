@@ -456,12 +456,10 @@ exports.createChallenge = async (req, res) => {
       return res.status(400).json({ error: 'Missing required challenge fields.' });
     }
     
-    // tags can be an array or string
     let tagsJSON = tags;
     if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
     if (!tagsJSON) tagsJSON = '[]';
     
-    // Convert bounty_credits to int fallback to 0
     let credits = parseInt(bounty_credits, 10);
     if (isNaN(credits)) credits = 5;
 
@@ -485,7 +483,6 @@ exports.updateChallenge = async (req, res) => {
     const { id } = req.params;
     const { company_name, title, description, difficulty, bounty_credits, tags } = req.body;
     
-    // tags can be an array or string
     let tagsJSON = tags;
     if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
     if (!tagsJSON) tagsJSON = '[]';

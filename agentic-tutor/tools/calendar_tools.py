@@ -16,10 +16,8 @@ from googleapiclient.discovery import build
 
 logger = logging.getLogger("agentic_tutor.tools.calendar")
 
-# If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/calendar.events"]
 
-# Make sure we use the agentic-tutor root directory for finding credentials.json
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CREDS_FILE = os.path.join(BASE_DIR, "credentials.json")
 TOKEN_FILE = os.path.join(BASE_DIR, "token.json")
@@ -28,11 +26,9 @@ def get_calendar_service():
     """Authenticates using credentials.json and returns the Google Calendar service."""
     creds = None
     
-    # 1. Check if token.json exists (user previously logged in)
     if os.path.exists(TOKEN_FILE):
         creds = Credentials.from_authorized_user_file(TOKEN_FILE, SCOPES)
         
-    # 2. If no valid credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             try:
@@ -48,15 +44,12 @@ def get_calendar_service():
                 raise FileNotFoundError(error_msg)
 
             logger.info("Triggering Google OAuth Flow - please check your browser to authorize...")
-            # This opens the browser for Desktop OAuth flow
             flow = InstalledAppFlow.from_client_secrets_file(CREDS_FILE, SCOPES)
             creds = flow.run_local_server(port=0)
 
-        # Save the credentials for the next run
         with open(TOKEN_FILE, "w") as token:
             token.write(creds.to_json())
 
-    # Build the service
     service = build("calendar", "v3", credentials=creds)
     return service
 
@@ -71,7 +64,6 @@ def add_google_calendar_event(title: str, date: str, description: str = "") -> s
     try:
         service = get_calendar_service()
         
-        # Parse date and set duration to 1 hour
         start_datetime = datetime.fromisoformat(date)
         end_datetime = start_datetime + timedelta(hours=1)
 
@@ -95,7 +87,6 @@ def add_google_calendar_event(title: str, date: str, description: str = "") -> s
             },
         }
 
-        # Insert event into primary calendar
         event = service.events().insert(calendarId="primary", body=event_body).execute()
         event_id = event.get("id")
         event_link = event.get("htmlLink")
@@ -128,16 +119,13 @@ def update_google_calendar_event(event_id: str, new_date: str) -> str:
     try:
         service = get_calendar_service()
         
-        # Get existing event
         event = service.events().get(calendarId="primary", eventId=event_id).execute()
 
-        # Update times
         start_datetime = datetime.fromisoformat(new_date)
         end_datetime = start_datetime + timedelta(hours=1)
         event["start"]["dateTime"] = start_datetime.isoformat()
         event["end"]["dateTime"] = end_datetime.isoformat()
 
-        # Update event on primary calendar
         updated_event = service.events().update(calendarId="primary", eventId=event_id, body=event).execute()
         
         import json

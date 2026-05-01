@@ -34,7 +34,6 @@ class CourseInitFlow(Flow[TutorState]):
 
         profile = self.state.student_profile
 
-        # Parse duration — support months
         duration_weeks = profile.duration_weeks
         duration_str = profile.duration_input.lower()
         if "month" in duration_str:
@@ -45,7 +44,6 @@ class CourseInitFlow(Flow[TutorState]):
             except Exception:
                 pass
 
-        # Calculate start date (next Monday)
         today = datetime.utcnow()
         days_until_monday = (7 - today.weekday()) % 7
         if days_until_monday == 0:
@@ -114,16 +112,13 @@ Output ONLY valid JSON matching this exact schema:
         crew = Crew(agents=[agent], tasks=[task], verbose=True)
         result = crew.kickoff()
 
-        # Parse the JSON from the LLM output
         raw = str(result)
         logger.info(f"[CourseInitFlow] Raw roadmap output length: {len(raw)} chars")
 
         try:
-            # Extract JSON from potential markdown code blocks
             json_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", raw)
             if json_match:
                 raw = json_match.group(1).strip()
-            # Try to find JSON object
             brace_start = raw.index("{")
             brace_end = raw.rindex("}") + 1
             json_str = raw[brace_start:brace_end]
@@ -132,7 +127,6 @@ Output ONLY valid JSON matching this exact schema:
             logger.error(f"[CourseInitFlow] Failed to parse roadmap JSON: {e}")
             raise ValueError(f"RoadmapAgent produced invalid JSON: {e}")
 
-        # Validate against our Pydantic schema
         roadmap = CourseRoadmap(**roadmap_data)
         self.state.course_roadmap = roadmap
         logger.info(f"[CourseInitFlow] SUCCESS — Roadmap generated: {roadmap.course_title}, {roadmap.total_weeks} weeks")
@@ -146,7 +140,6 @@ Output ONLY valid JSON matching this exact schema:
         events = []
         for week in self.state.course_roadmap.weeks:
             for day in week.days:
-                # Call the mock tool
                 import json as _json
                 result_str = add_google_calendar_event.run(
                     title=day.title,
@@ -155,7 +148,6 @@ Output ONLY valid JSON matching this exact schema:
                 )
                 result = _json.loads(result_str)
 
-                # Store the event
                 event = CalendarEvent(
                     event_id=result["event_id"],
                     title=day.title,

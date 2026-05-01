@@ -1,6 +1,3 @@
--- Ephemeral OTP rows for student email sign-in (college domain still enforced in app code).
--- "TTL" behavior: expires_at is checked on read; expired rows are deleted on request/verify and optionally by cron.
-
 CREATE TABLE IF NOT EXISTS student_signin_otps (
   id SERIAL PRIMARY KEY,
   email VARCHAR(320) NOT NULL,

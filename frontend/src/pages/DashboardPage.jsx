@@ -24,7 +24,6 @@ import collaborationWhiteboardIllustration from '../assets/illustrations/collabo
 import collaborationChatIllustration from '../assets/illustrations/collaboration-chat.svg';
 import workspaceSnapshotIllustration from '../assets/illustrations/workspace-snapshot.svg';
 
-/* ── Animation constants ── */
 const spring = { type: 'spring', stiffness: 420, damping: 32 };
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,7 +34,6 @@ const itemVariants = {
   show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 350, damping: 25 } }
 };
 
-/** Stat row: section eases in, then each KPI card staggers (nested staggerChildren) */
 const statRowVariants = {
   hidden: { opacity: 0, y: 18 },
   show: {
@@ -69,9 +67,7 @@ const addDays = (d, delta) => {
   return dt;
 };
 
-/* ═══════════════════════════════════════════════════════════
-   TiltCard — Physics-based 3D hover tilt via mouse position
-   ═══════════════════════════════════════════════════════════ */
+
 const TiltCard = ({ children, className = '', glowColor = 'rgba(14,165,233,0.15)', floatDelay = 0, variants: cardVariants = itemVariants }) => {
   const ref = useRef(null);
 
@@ -86,9 +82,7 @@ const TiltCard = ({ children, className = '', glowColor = 'rgba(14,165,233,0.15)
   );
 };
 
-/* ═══════════════════════════════════════════════════════════
-   DASHBOARD PAGE
-   ═══════════════════════════════════════════════════════════ */
+
 const DashboardPage = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
@@ -125,7 +119,6 @@ const DashboardPage = () => {
 
   const fetchDashboardData = async () => {
     try {
-      // Overview (pins, sessions, events) - best effort
       try {
         const overviewRes = await api.get('/dashboard/overview');
         const pins = Array.isArray(overviewRes.data?.pins) ? overviewRes.data.pins : [];
@@ -157,7 +150,6 @@ const DashboardPage = () => {
       const creditsRes = await api.get('/credits/history');
       setRecentNotes(creditsRes.data.slice(0, 5));
 
-      // Concept graph (cached in Postgres; computed by AI backend if needed)
       try {
         const graphRes = await api.get('/dashboard/concept-graph');
         setConceptGraph(graphRes.data);
@@ -177,7 +169,6 @@ const DashboardPage = () => {
       const k = toDayKey(tx.created_at);
       if (k) days.add(k);
     }
-    // streak: consecutive days including today (or yesterday if nothing today)
     const todayKey = toDayKey(new Date());
     const yesterdayKey = toDayKey(addDays(new Date(), -1));
     const streakAnchor = days.has(todayKey) ? new Date() : days.has(yesterdayKey) ? addDays(new Date(), -1) : null;
@@ -229,11 +220,9 @@ const DashboardPage = () => {
   ];
 
   const togglePin = async (to) => {
-    // Optimistic local update
     const nextPinned = pinned.includes(to) ? pinned.filter((x) => x !== to) : [to, ...pinned].slice(0, 6);
     setPinned(nextPinned);
 
-    // Persist best-effort
     try {
       if (pinsIndex?.[to]?.id) {
         await api.delete(`/dashboard/pins/${pinsIndex[to].id}`);
@@ -276,7 +265,6 @@ const DashboardPage = () => {
       }
     } catch (err) {
       console.error('Failed to generate task ideas:', err);
-      // Fallback
       setTaskIdeas([
         `Make a 20‑minute plan for: ${t}`,
         `List key concepts + 5 practice questions on: ${t}`,
@@ -305,7 +293,6 @@ const DashboardPage = () => {
       initial="hidden"
       animate="show"
     >
-      {/* ══════ HEADER / HERO (light) ══════ */}
       <motion.div
         variants={itemVariants}
         className="relative rounded-3xl overflow-hidden"
@@ -388,16 +375,13 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Study-themed feature blocks & Mascot (right side on desktop) */}
         <div className="pointer-events-none absolute right-8 top-1/2 -translate-y-1/2 z-[2] hidden lg:flex items-center gap-8" style={{ perspective: '1000px' }}>
           <PageMascot role="dashboard" size="hero" className="drop-shadow-2xl" />
 
-          {/* Feature Blocks (Abstract Shapes) */}
           <GeometricShapes size="sm" className="opacity-90" />
         </div>
       </motion.div>
 
-      {/* ══════ STAT CARDS — Framer Motion staggerChildren per card ══════ */}
       <motion.div variants={statRowVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {statCards.map((stat, i) => (
           <TiltCard key={i} variants={statCardVariants} glowColor="rgba(15,23,42,0.06)" floatDelay={i * 0.8}>
@@ -438,7 +422,6 @@ const DashboardPage = () => {
         </motion.div>
       )}
 
-      {/* ══════ QUICK ACTIONS GRID — floating ══════ */}
       <motion.div variants={itemVariants}>
         <div className="flex items-end justify-between gap-4 mb-4">
           <div>
@@ -492,7 +475,6 @@ const DashboardPage = () => {
         </div>
       </motion.div>
 
-      {/* ══════ WORKSPACE GRID (interactive widgets) ══════ */}
       <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         <div className="lg:col-span-7 space-y-6">
           <TiltCard glowColor="rgba(249,115,22,0.10)" floatDelay={0.25}>
@@ -841,7 +823,6 @@ const DashboardPage = () => {
         </div>
       </motion.div>
 
-      {/* ══════ CHARTS — floating ══════ */}
       {chartData && (
         <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TiltCard glowColor="rgba(139,92,246,0.12)" floatDelay={0.5}>
@@ -892,7 +873,6 @@ const DashboardPage = () => {
         </motion.div>
       )}
 
-      {/* Recent Activity moved into workspace grid */}
     </motion.div>
   );
 };

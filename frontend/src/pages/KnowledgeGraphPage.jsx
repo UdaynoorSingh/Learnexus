@@ -9,11 +9,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 const NODE_COLORS = {
   root: '#ffffff',
-  degree: '#7c3aed',   // Purple
-  branch: '#3b82f6',   // Blue
-  semester: '#f59e0b', // Orange
-  subject: '#ef4444',  // Red
-  topic: '#10b981',    // Green
+  degree: '#7c3aed',   
+  branch: '#3b82f6',   
+  semester: '#f59e0b', 
+  subject: '#ef4444',
+  topic: '#10b981',    
 };
 
 const KnowledgeGraphPage = () => {
@@ -23,12 +23,10 @@ const KnowledgeGraphPage = () => {
   const fgRef = useRef();
 
   const [graphData, setGraphData] = useState({ nodes: [], links: [] });
-  // Track the drill-down path: array of nodes from root to current selected
   const [activePath, setActivePath] = useState([]);
   const [selectedNode, setSelectedNode] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Initialize graph with root node and degrees
   useEffect(() => {
     initGraph();
   }, [catalogParams]);
@@ -50,10 +48,9 @@ const KnowledgeGraphPage = () => {
       });
 
       setGraphData({ nodes, links });
-      setActivePath([rootNode]); // Start with root in path
+      setActivePath([rootNode]);
 
       if (degrees.length === 1) {
-        // Auto-expand if only one degree
         handleNodeClick(nodes[1]);
       }
     } catch (err) {
@@ -87,13 +84,12 @@ const KnowledgeGraphPage = () => {
         childrenType = 'topic';
       } else {
         setIsLoading(false);
-        return; // Leaf node
+        return; 
       }
 
       const res = await api.get(endpoint, { params: catalogParams });
       const children = res.data;
 
-      // Rebuild path up to this node
       const pathIndex = activePath.findIndex(p => p.id === node.id);
       let newPath = [];
       if (pathIndex >= 0) {
@@ -103,16 +99,13 @@ const KnowledgeGraphPage = () => {
       }
       setActivePath(newPath);
 
-      // Rebuild the graph: only nodes in path + new children
       const newNodes = [...newPath];
       const newLinks = [];
 
-      // Link path nodes together
       for (let i = 0; i < newPath.length - 1; i++) {
         newLinks.push({ source: newPath[i].id, target: newPath[i+1].id, weight: 0.8 });
       }
 
-      // Add children and link them to the current node
       children.forEach(child => {
         const childId = `${childrenType}-${child.id}`;
         newNodes.push({
@@ -128,7 +121,6 @@ const KnowledgeGraphPage = () => {
 
       setGraphData({ nodes: newNodes, links: newLinks });
 
-      // Zoom to the newly expanded node after a short delay
       setTimeout(() => {
         if (fgRef.current) {
           const distance = 80;
@@ -151,7 +143,6 @@ const KnowledgeGraphPage = () => {
   const handleNodeClick = useCallback((node) => {
     setSelectedNode(node);
     
-    // Auto-focus camera on click
     if (fgRef.current) {
       const distance = 120;
       const distRatio = 1 + distance / Math.hypot(node.x || 1, node.y || 1, node.z || 1);
@@ -180,7 +171,6 @@ const KnowledgeGraphPage = () => {
 
   return (
     <div className="relative w-full h-[calc(100vh-64px)] overflow-hidden bg-slate-900 rounded-2xl border border-black/10 shadow-2xl">
-      {/* Top Bar */}
       <div className="absolute top-4 left-4 right-4 z-10 flex items-center justify-between pointer-events-none">
         <div className="pointer-events-auto flex items-center gap-3 bg-white/10 backdrop-blur-md border border-white/20 p-2 pr-4 rounded-full text-white shadow-lg">
           <button 
@@ -200,14 +190,12 @@ const KnowledgeGraphPage = () => {
         )}
       </div>
 
-      {/* 3D Graph Container */}
       <div className="absolute inset-0 w-full h-full">
         {graphData.nodes.length > 0 && (
           <DigitalGraph3D
             ref={fgRef}
             graph={graphData}
             onNodeClick={handleNodeClick}
-            // Stop auto-rotation so the user can freely explore and click
             speed={0} 
             cameraDistance={6.0}
             pointSize={30}
@@ -215,7 +203,6 @@ const KnowledgeGraphPage = () => {
         )}
       </div>
 
-      {/* Side Panel for Selected Node */}
       <AnimatePresence>
         {selectedNode && (
           <motion.div
@@ -274,7 +261,6 @@ const KnowledgeGraphPage = () => {
         )}
       </AnimatePresence>
 
-      {/* Legend */}
       <div className="absolute bottom-6 left-6 z-10 bg-slate-900/80 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col gap-2">
         <p className="text-xs font-bold text-white/50 uppercase tracking-widest mb-1">Graph Legend</p>
         {Object.entries(NODE_COLORS).filter(([k]) => k !== 'root').map(([type, color]) => (

@@ -1,8 +1,6 @@
 import FloatingBubbles from './FloatingBubbles';
 
-/**
- * Shared HireLoop-inspired canvas: subtle dot grid + softly animated color blobs.
- */
+
 const BrutalistBackdrop = ({ bubbleOpacity = 0.72, className = '' }) => {
   return (
     <div className={`ln-backdrop-root pointer-events-none fixed inset-0 z-0 overflow-hidden ${className}`} aria-hidden="true">

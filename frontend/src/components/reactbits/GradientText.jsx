@@ -1,7 +1,4 @@
-/* ────────────────────────────────────────────────────────────
-   GradientText — from react-bits (framer-motion based)
-   Source: https://reactbits.dev/text-animations/gradient-text
-   ──────────────────────────────────────────────────────────── */
+  
 
 import { useState, useCallback, useRef } from 'react';
 import { motion, useMotionValue, useAnimationFrame, useTransform } from 'framer-motion';

@@ -73,7 +73,7 @@ def trigger_sarvam_tts(script: str, language: str = "English") -> str:
     import json
     result = {
         "audio_url": "https://mock-cdn.sarvam.ai/lecture_audio_" + uuid.uuid4().hex[:8] + ".mp3",
-        "duration_seconds": max(60, len(script) // 3),  # rough estimate
+        "duration_seconds": max(60, len(script) // 3),  
         "language": language,
         "status": "generated",
     }

@@ -1,4 +1,3 @@
--- Company Challenges (Bounty-Backed Micro-Internships)
 CREATE TABLE IF NOT EXISTS company_challenges (
   id SERIAL PRIMARY KEY,
   company_name VARCHAR(255) NOT NULL,
@@ -25,7 +24,6 @@ CREATE INDEX IF NOT EXISTS idx_challenge_submissions_challenge ON challenge_subm
 CREATE INDEX IF NOT EXISTS idx_challenge_submissions_user ON challenge_submissions(user_id);
 CREATE INDEX IF NOT EXISTS idx_company_challenges_created ON company_challenges(created_at DESC);
 
--- Seed data: 3 realistic, high-level challenges
 INSERT INTO company_challenges (company_name, title, description, difficulty, bounty_credits, tags) VALUES
 (
   'Google',

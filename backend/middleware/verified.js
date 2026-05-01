@@ -1,6 +1,4 @@
-/**
- * Require authenticated user with is_verified = true (attach via auth middleware first).
- */
+
 function requireVerified(req, res, next) {
   if (!req.user) {
     return res.status(401).json({ error: 'Access denied. No token provided.' });

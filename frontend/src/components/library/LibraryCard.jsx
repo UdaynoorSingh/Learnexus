@@ -104,11 +104,9 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
         transition={spring}
         className="ln-card border border-black/10 rounded-2xl overflow-hidden shadow-lg shadow-black/10 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 flex flex-col"
       >
-        {/* Top gradient accent */}
         <div className="h-1 bg-gradient-to-r from-primary via-accent to-secondary" />
 
         <div className="p-5 sm:p-6 flex flex-col flex-1">
-          {/* Header: author + time + difficulty */}
           <div className="flex items-center justify-between gap-3 mb-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold text-xs shrink-0 shadow-md shadow-primary/20">
@@ -142,17 +140,14 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
             </div>
           </div>
 
-          {/* Topic / Title */}
           <h3 className="text-lg font-bold text-text leading-snug tracking-tight mb-2">
             {post.topic}
           </h3>
 
-          {/* Description */}
           <p className="text-sm text-text-muted leading-relaxed line-clamp-3 mb-4">
             {post.description}
           </p>
 
-          {/* Audio Player */}
           {post.audio_url ? (
             <div className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-primary/10 via-accent/5 to-transparent border border-primary/20 px-4 py-3 mb-4 shadow-sm shadow-primary/5">
               <div className="flex items-center gap-1.5 shrink-0">
@@ -173,9 +168,7 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
             </div>
           )}
 
-          {/* Like / Dislike + Read button */}
           <div className="mt-auto pt-1 flex items-center gap-2">
-            {/* Like */}
             <motion.button
               type="button"
               onClick={() => handleVote('like')}
@@ -197,7 +190,6 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               <span className="tabular-nums">{post.like_count ?? 0}</span>
             </motion.button>
 
-            {/* Dislike */}
             <motion.button
               type="button"
               onClick={() => handleVote('dislike')}
@@ -219,7 +211,6 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
               <span className="tabular-nums">{post.dislike_count ?? 0}</span>
             </motion.button>
 
-            {/* Read Full Content */}
             <motion.button
               type="button"
               onClick={() => setContentOpen(true)}
@@ -236,7 +227,6 @@ const LibraryCard = ({ post, currentUserId, onPatch, onRemoved }) => {
         </div>
       </motion.div>
 
-      {/* Full Content Modal */}
       <AnimatePresence>
         {contentOpen && (
           <ModalShell

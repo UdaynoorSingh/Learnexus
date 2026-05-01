@@ -20,7 +20,6 @@ export const generateExam = async (topicId) => {
   return res.data.exam;
 };
 
-/** Optional axios request config (e.g. `{ skipErrorToast: true }` when the caller shows its own error UI). */
 export const processYouTubeVideo = async (topicId, url, requestConfig = {}) => {
   const res = await api.post('/ai/youtube/embed', { topicId, url }, requestConfig);
   return res.data;

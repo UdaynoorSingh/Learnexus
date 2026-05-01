@@ -26,7 +26,6 @@ class PerformanceFlow(Flow[TutorState]):
         """Use PerformanceTrackerAgent to analyze all quiz scores and performance data."""
         logger.info("[PerformanceFlow] START — analyzing performance...")
 
-        # Compile quiz history
         quiz_history = ""
         for qs in self.state.quiz_scores:
             quiz_history += (
@@ -37,7 +36,6 @@ class PerformanceFlow(Flow[TutorState]):
         if not quiz_history:
             quiz_history = "\nNo quizzes taken yet."
 
-        # Compile performance log
         perf_log = ""
         for entry in self.state.performance_log:
             perf_log += f"\n- {entry.notes} | Weak: {', '.join(entry.weak_topics)}"
@@ -45,7 +43,6 @@ class PerformanceFlow(Flow[TutorState]):
         if not perf_log:
             perf_log = "\nNo performance entries yet."
 
-        # Total lectures in roadmap
         total_lectures = sum(
             1 for w in self.state.course_roadmap.weeks
             for d in w.days if d.type == "lecture"
@@ -78,7 +75,6 @@ class PerformanceFlow(Flow[TutorState]):
         raw = str(result)
         logger.info(f"[PerformanceFlow] SUCCESS — Report generated, length={len(raw)} chars")
 
-        # Try to parse JSON, fallback to raw text
         try:
             import re
             json_match = re.search(r"```(?:json)?\s*([\s\S]*?)```", raw)

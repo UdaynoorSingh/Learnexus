@@ -55,11 +55,9 @@ export default function CommandPalette({ open, onOpenChange, commands = [] }) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [open, normalized, activeIdx, navigate, onOpenChange]);
 
-  // Keep palette from feeling weird when user navigates
   useEffect(() => {
     if (!open) return;
     onOpenChange(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   return (

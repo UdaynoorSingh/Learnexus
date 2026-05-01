@@ -1,10 +1,7 @@
 const pool = require('../config/db');
 const { generateAudioDirect } = require('../utils/generateAudioSummary');
 
-/**
- * GET /api/library/posts
- * List all library posts with like/dislike counts and current user's vote.
- */
+
 exports.getLibraryPosts = async (req, res) => {
   try {
     const scope = (req.query.scope || 'college').toLowerCase();
@@ -38,10 +35,7 @@ exports.getLibraryPosts = async (req, res) => {
   }
 };
 
-/**
- * GET /api/library/posts/:id
- * Get a single library post (full content) with vote data.
- */
+
 exports.getLibraryPost = async (req, res) => {
   try {
     const postId = parseInt(req.params.id, 10);
@@ -72,10 +66,7 @@ exports.getLibraryPost = async (req, res) => {
   }
 };
 
-/**
- * POST /api/library/posts
- * Create a new library post. Description is directly used for TTS (no Groq).
- */
+
 exports.createLibraryPost = async (req, res) => {
   try {
     const { topic, description, content, difficulty } = req.body;
@@ -106,7 +97,6 @@ exports.createLibraryPost = async (req, res) => {
       postCollegeId = null;
     }
 
-    // Insert post immediately (no audio yet)
     const result = await pool.query(
       `INSERT INTO library_posts (user_id, college_id, topic, description, content, difficulty)
        VALUES ($1, $2, $3, $4, $5, $6)
@@ -116,7 +106,6 @@ exports.createLibraryPost = async (req, res) => {
 
     const newPost = result.rows[0];
 
-    // Fire-and-forget: generate audio directly from description (no Groq)
     generateAudioDirect(trimmedDesc)
       .then(audioUrl => {
         if (audioUrl) {
@@ -127,7 +116,6 @@ exports.createLibraryPost = async (req, res) => {
       })
       .catch(err => console.error('[NexusLibrary] Audio pipeline error:', err));
 
-    // Fetch with author name + counts
     const enriched = await pool.query(
       `SELECT lp.*, u.name AS author_name,
         0 AS like_count, 0 AS dislike_count, NULL AS user_vote
@@ -144,11 +132,7 @@ exports.createLibraryPost = async (req, res) => {
   }
 };
 
-/**
- * POST /api/library/posts/:id/vote
- * Toggle like or dislike. Body: { type: 'like' | 'dislike' }
- * Clicking same vote again removes it. Clicking opposite switches it.
- */
+
 exports.voteLibraryPost = async (req, res) => {
   const postId = parseInt(req.params.id, 10);
   if (Number.isNaN(postId)) {
@@ -166,14 +150,12 @@ exports.voteLibraryPost = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Check post exists
     const postCheck = await client.query('SELECT id FROM library_posts WHERE id = $1', [postId]);
     if (postCheck.rows.length === 0) {
       await client.query('ROLLBACK');
       return res.status(404).json({ error: 'Post not found.' });
     }
 
-    // Check existing vote
     const existing = await client.query(
       'SELECT vote_type FROM library_post_votes WHERE user_id = $1 AND post_id = $2',
       [userId, postId]
@@ -183,14 +165,12 @@ exports.voteLibraryPost = async (req, res) => {
 
     if (existing.rows.length > 0) {
       if (existing.rows[0].vote_type === voteType) {
-        // Same vote → remove (toggle off)
         await client.query(
           'DELETE FROM library_post_votes WHERE user_id = $1 AND post_id = $2',
           [userId, postId]
         );
         userVote = null;
       } else {
-        // Opposite vote → switch
         await client.query(
           'UPDATE library_post_votes SET vote_type = $1 WHERE user_id = $2 AND post_id = $3',
           [voteType, userId, postId]
@@ -198,7 +178,6 @@ exports.voteLibraryPost = async (req, res) => {
         userVote = voteType;
       }
     } else {
-      // No vote → add
       await client.query(
         'INSERT INTO library_post_votes (user_id, post_id, vote_type) VALUES ($1, $2, $3)',
         [userId, postId, voteType]
@@ -206,7 +185,6 @@ exports.voteLibraryPost = async (req, res) => {
       userVote = voteType;
     }
 
-    // Get updated counts
     const likes = await client.query(
       "SELECT COUNT(*)::int AS c FROM library_post_votes WHERE post_id = $1 AND vote_type = 'like'",
       [postId]
@@ -232,10 +210,7 @@ exports.voteLibraryPost = async (req, res) => {
   }
 };
 
-/**
- * DELETE /api/library/posts/:id
- * Delete a library post (owner only).
- */
+
 exports.deleteLibraryPost = async (req, res) => {
   const postId = parseInt(req.params.id, 10);
   if (Number.isNaN(postId)) {

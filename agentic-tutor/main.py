@@ -16,10 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import uvicorn
 
-# ──────────────── Load shared .env ────────────────
-# Try the shared .env from ai-backend-python first, then local.
-# ai-backend-python/.env often sets PORT=5001 for that service. This app must use
-# TUTOR_PORT (default 5002) locally, or Render's injected PORT in production.
+
 _host_port = os.environ.get("PORT")
 env_paths = [
     Path(__file__).parent.parent / "ai-backend-python" / ".env",
@@ -32,10 +29,8 @@ for env_path in env_paths:
 if _host_port is not None:
     os.environ["PORT"] = _host_port
 else:
-    # Drop PORT copied from shared .env so we bind to TUTOR_PORT / 5002, not 5001.
     os.environ.pop("PORT", None)
 
-# ──────────────── Logging ─────────────────────────
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(name)-35s | %(levelname)-7s | %(message)s",
@@ -43,11 +38,9 @@ logging.basicConfig(
 )
 logger = logging.getLogger("agentic_tutor")
 
-# Disable noisy third-party loggers
 for noisy in ["httpx", "httpcore", "openai", "litellm"]:
     logging.getLogger(noisy).setLevel(logging.WARNING)
 
-# ──────────────── FastAPI App ─────────────────────
 app = FastAPI(
     title="Agentic AI Tutor",
     description=(
@@ -68,7 +61,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ──────────────── Register Router ─────────────────
 from routers.tutor_router import router as tutor_router
 app.include_router(tutor_router)
 
@@ -83,9 +75,7 @@ async def root():
     }
 
 
-# ──────────────── Run ─────────────────────────────
 if __name__ == "__main__":
-    # Render and other hosts set PORT; local dev can use TUTOR_PORT (default 5002).
     port = int(os.environ.get("PORT") or os.getenv("TUTOR_PORT") or "5002")
     reload = os.environ.get("PORT") is None
     logger.info(f"Starting Agentic AI Tutor on port {port}...")

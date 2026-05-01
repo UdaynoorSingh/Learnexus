@@ -58,7 +58,6 @@ exports.getConceptGraph = async (req, res) => {
       return res.status(400).json({ error: 'Invalid topicId.' });
     }
 
-    // 24h cache window per topic/user (good enough to start; will tighten with source_hash later)
     const cached = await pool.query(
       `SELECT id, source_hash, graph, updated_at
        FROM concept_graph_cache

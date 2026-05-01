@@ -22,14 +22,12 @@ const AiTutorFab = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Auto-scroll to bottom on new messages
   useEffect(() => {
     if (chatEndRef.current) {
       chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [messages, isLoading]);
 
-  // Focus input when chat opens
   useEffect(() => {
     if (isChatOpen && inputRef.current) {
       setTimeout(() => inputRef.current?.focus(), 300);
@@ -40,7 +38,6 @@ const AiTutorFab = () => {
     const query = inputValue.trim();
     if (!query || isLoading) return;
 
-    // Add user message
     setMessages(prev => [...prev, { role: 'user', text: query, suggestions: [] }]);
     setInputValue('');
     setIsLoading(true);
@@ -82,7 +79,6 @@ const AiTutorFab = () => {
     setIsChatOpen(false);
   };
 
-  // Animation variants for the breathing effect
   const breathingVariants = {
     idle: {
       scale: [1, 1.02, 1],
@@ -114,7 +110,6 @@ const AiTutorFab = () => {
             transition={{ type: "spring", stiffness: 300, damping: 25 }}
             className="mb-4 w-[340px] sm:w-[380px] bg-white/95 backdrop-blur-xl border border-black/10 shadow-[0_8px_30px_rgb(0,0,0,0.12)] rounded-3xl overflow-hidden pointer-events-auto"
           >
-            {/* Chat Header */}
             <div className="bg-gradient-to-r from-[#6C4FD4] to-[#8B5CF6] p-4 flex items-center justify-between text-white shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="w-9 h-9 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-2 ring-white/30">
@@ -139,13 +134,11 @@ const AiTutorFab = () => {
               </button>
             </div>
             
-            {/* Chat Body */}
             <div className="p-4 h-[320px] overflow-y-auto bg-gradient-to-b from-slate-50/80 to-white/60 flex flex-col gap-3 scroll-smooth"
               style={{ scrollbarWidth: 'thin', scrollbarColor: '#d4d4d8 transparent' }}
             >
               {messages.map((msg, i) => (
                 <div key={i} className={`flex flex-col gap-2 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                  {/* Message bubble */}
                   <motion.div
                     initial={{ opacity: 0, y: 8, scale: 0.97 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -159,7 +152,6 @@ const AiTutorFab = () => {
                     {msg.text}
                   </motion.div>
 
-                  {/* Feature suggestion cards */}
                   {msg.suggestions && msg.suggestions.length > 0 && (
                     <div className="flex flex-col gap-1.5 w-full max-w-[88%]">
                       {msg.suggestions.map((s, j) => (
@@ -186,7 +178,6 @@ const AiTutorFab = () => {
                 </div>
               ))}
 
-              {/* Typing indicator */}
               {isLoading && (
                 <motion.div
                   initial={{ opacity: 0, y: 6 }}
@@ -201,7 +192,6 @@ const AiTutorFab = () => {
               <div ref={chatEndRef} />
             </div>
             
-            {/* Chat Input */}
             <div className="p-3 bg-white/90 border-t border-black/[0.04] flex items-center gap-2">
               <input 
                 ref={inputRef}

@@ -58,30 +58,24 @@ const TUTOR_PERF_MESSAGES = [
   'Drafting recommendations...',
 ];
 
-/* ── animation presets ── */
 const spring = { type: 'spring', stiffness: 420, damping: 32 };
 const fadeIn = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.5 } };
 
-/* ══════════════════════════════════════════════════════════════════
-   MAIN PAGE COMPONENT
-   ══════════════════════════════════════════════════════════════════ */
 
 const AiTutorPage = () => {
   const location = useLocation();
   const initialTopic = location.state?.topic || '';
 
-  /* ── session state ── */
   const [studentId, setStudentId] = useState(() => sessionStorage.getItem('tutor_student_id') || '');
   const [roadmap, setRoadmap] = useState(() => {
     const saved = sessionStorage.getItem('tutor_roadmap');
     return saved ? JSON.parse(saved) : null;
   });
   const [calendarEvents, setCalendarEvents] = useState([]);
-  const [view, setView] = useState(roadmap ? 'roadmap' : 'setup'); // setup | roadmap | day
+  const [view, setView] = useState(roadmap ? 'roadmap' : 'setup'); 
   const [selectedDay, setSelectedDay] = useState(null);
   const [selectedWeekIdx, setSelectedWeekIdx] = useState(null);
 
-  /* ── setup form ── */
   const [formData, setFormData] = useState({
     topic: initialTopic,
     depth_level: 'intermediate',
@@ -94,11 +88,9 @@ const AiTutorPage = () => {
   const [initLoading, setInitLoading] = useState(false);
   const [initError, setInitError] = useState('');
 
-  /* ── lecture state ── */
   const [lectureData, setLectureData] = useState(null);
   const [lectureLoading, setLectureLoading] = useState(false);
 
-  /* ── browser TTS ── */
   const [ttsPlaying, setTtsPlaying] = useState(false);
   const [ttsPaused, setTtsPaused] = useState(false);
   const [ttsRate, setTtsRate] = useState(1);
@@ -134,39 +126,32 @@ const AiTutorPage = () => {
     setTtsPaused(false);
   };
 
-  /* cleanup TTS on unmount or day change */
   useEffect(() => {
     return () => window.speechSynthesis?.cancel();
   }, [selectedDay]);
 
-  /* ── doubt chat ── */
   const [doubtHistory, setDoubtHistory] = useState([]);
   const [doubtInput, setDoubtInput] = useState('');
   const [doubtLoading, setDoubtLoading] = useState(false);
   const chatEndRef = useRef(null);
 
-  /* ── quiz ── */
   const [quizAnswers, setQuizAnswers] = useState({});
   const [quizResult, setQuizResult] = useState(null);
   const [quizLoading, setQuizLoading] = useState(false);
 
-  /* ── absence ── */
   const [showAbsence, setShowAbsence] = useState(false);
   const [absenceDates, setAbsenceDates] = useState('');
   const [absenceLoading, setAbsenceLoading] = useState(false);
 
-  /* ── performance ── */
   const [perfReport, setPerfReport] = useState(null);
   const [perfLoading, setPerfLoading] = useState(false);
   const [showPerf, setShowPerf] = useState(false);
 
-  /* persist session */
   useEffect(() => {
     if (studentId) sessionStorage.setItem('tutor_student_id', studentId);
     if (roadmap) sessionStorage.setItem('tutor_roadmap', JSON.stringify(roadmap));
   }, [studentId, roadmap]);
 
-  // Rehydrate from DB (survives server restarts) if sessionStorage is empty
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -190,7 +175,6 @@ const AiTutorPage = () => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [doubtHistory, doubtLoading]);
 
-  /* ── detect server-side session lost (server restart clears in-memory store) ── */
   const isSessionLost = (err) => {
     const status = err?.response?.status;
     const detail = err?.response?.data?.detail || '';
@@ -221,7 +205,6 @@ const AiTutorPage = () => {
       setCalendarEvents(result.calendar_events || []);
       setView('roadmap');
 
-      // Persist roadmap (best-effort) so it survives reloads/server restarts
       try {
         await api.put(
           '/dashboard/tutor-state',
@@ -236,7 +219,6 @@ const AiTutorPage = () => {
           { skipErrorToast: true }
         );
       } catch {
-        // ignore persistence errors
       }
     } catch (err) {
       console.error(err);
@@ -357,9 +339,7 @@ const AiTutorPage = () => {
     setFormData(fd => ({ ...fd, topic: '' }));
   };
 
-  /* ══════════════════ RENDER ══════════════════ */
 
-  /* ── VIEW 1: Course Setup ── */
   if (view === 'setup') {
     return (
       <div className="max-w-4xl mx-auto space-y-8 animate-fadeInUp">
@@ -531,7 +511,6 @@ const AiTutorPage = () => {
     );
   }
 
-  /* ── VIEW 2: Roadmap Dashboard ── */
   if (view === 'roadmap' && roadmap) {
     const totalLectures = roadmap.weeks?.reduce(
       (acc, w) => acc + w.days.filter(d => d.type === 'lecture').length, 0
@@ -586,7 +565,6 @@ const AiTutorPage = () => {
           </div>
         </div>
 
-        {/* Absence Modal */}
         <ModalShell
           open={showAbsence}
           onClose={() => setShowAbsence(false)}
@@ -622,7 +600,6 @@ const AiTutorPage = () => {
           />
         </ModalShell>
 
-        {/* Performance Modal */}
         <ModalShell
           open={showPerf}
           onClose={() => setShowPerf(false)}
@@ -698,7 +675,6 @@ const AiTutorPage = () => {
           ) : null}
         </ModalShell>
 
-        {/* Weekly Timeline */}
         <div className="space-y-6">
           {roadmap.weeks?.map((week, wIdx) => (
             <motion.div
@@ -765,13 +741,11 @@ const AiTutorPage = () => {
     );
   }
 
-  /* ── VIEW 3: Day Detail ── */
   if (view === 'day' && selectedDay) {
     const isLecture = selectedDay.type === 'lecture';
 
     return (
       <div className="max-w-7xl mx-auto space-y-6 animate-fadeInUp">
-        {/* Back nav */}
         <button
           onClick={() => { setView('roadmap'); setSelectedDay(null); }}
           className="flex items-center gap-2 text-sm text-text-muted hover:text-text transition-colors"
@@ -779,7 +753,6 @@ const AiTutorPage = () => {
           <ArrowLeft size={16} /> Back to Roadmap
         </button>
 
-        {/* Day header */}
         <div className={`glass-card p-6 relative overflow-hidden border ${isLecture ? 'border-primary/20' : 'border-accent/20'
           }`}>
           <div className={`absolute top-0 right-0 w-48 h-48 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3 pointer-events-none ${isLecture ? 'bg-primary/10' : 'bg-accent/10'
@@ -806,9 +779,7 @@ const AiTutorPage = () => {
         </div>
 
         {isLecture ? (
-          /* ─── LECTURE VIEW ─── */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            {/* Script panel */}
             <div className="lg:col-span-7 space-y-4">
               {!lectureData && !lectureLoading && (
                 <div className="glass-card p-8 flex flex-col items-center text-center space-y-4">
@@ -845,7 +816,6 @@ const AiTutorPage = () => {
 
               {lectureData && !lectureData.error && (
                 <div className="space-y-4">
-                  {/* Browser TTS Player */}
                   {lectureData.script && (
                     <div className="glass-card p-4 border border-primary/15">
                       <div className="flex items-center gap-4">
@@ -858,7 +828,6 @@ const AiTutorPage = () => {
                         </div>
                       </div>
                       <div className="flex items-center gap-3 mt-3">
-                        {/* Play / Pause */}
                         {!ttsPlaying ? (
                           <motion.button
                             whileHover={{ scale: 1 }}
@@ -888,7 +857,6 @@ const AiTutorPage = () => {
                           </motion.button>
                         )}
 
-                        {/* Stop */}
                         <motion.button
                           whileHover={{ scale: 1 }}
                           whileTap={{ scale: 1 }}
@@ -899,7 +867,6 @@ const AiTutorPage = () => {
                           <Square size={16} />
                         </motion.button>
 
-                        {/* Speed control */}
                         <div className="flex items-center gap-2 ml-auto">
                           <span className="text-[10px] text-text-muted uppercase tracking-wider">Speed</span>
                           {[0.75, 1, 1.25, 1.5, 2].map(rate => (
@@ -949,7 +916,6 @@ const AiTutorPage = () => {
                     </div>
                   )}
 
-                  {/* Script */}
                   <div className="glass-card flex flex-col max-h-[600px]">
                     <div className="p-4 border-b border-black/10 flex items-center gap-2 shrink-0">
                       <BookOpen size={18} className="text-primary" />
@@ -975,10 +941,8 @@ const AiTutorPage = () => {
               )}
             </div>
 
-            {/* Doubt chat */}
             <div className="lg:col-span-5">
               <div className="glass-float flex flex-col h-[calc(100vh-12rem)] max-h-[700px] border border-black/10 rounded-2xl overflow-hidden sticky top-24 shadow-xl shadow-black/10">
-                {/* Chat header */}
                 <div className="px-4 py-3 border-b border-black/10 flex items-center gap-3 shrink-0 bg-white/70">
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/15 text-primary border border-primary/25">
                     <Bot size={18} />
@@ -991,7 +955,6 @@ const AiTutorPage = () => {
                   </div>
                 </div>
 
-                {/* Chat messages */}
                 <div className="p-4 overflow-y-auto flex-1 space-y-3 min-h-0 bg-white/40">
                   {doubtHistory.length === 0 && (
                     <div className="flex flex-col items-center justify-center py-10 text-center px-4">
@@ -1037,7 +1000,6 @@ const AiTutorPage = () => {
                   <div ref={chatEndRef} />
                 </div>
 
-                {/* Chat input */}
                 <div className="border-t border-black/10 shrink-0 bg-white/70 backdrop-blur-md p-3">
                   <form onSubmit={handleAskDoubt} className="flex gap-2">
                     <input
@@ -1063,7 +1025,6 @@ const AiTutorPage = () => {
             </div>
           </div>
         ) : (
-          /* ─── QUIZ VIEW ─── */
           <div className="max-w-2xl mx-auto space-y-6">
             {!quizResult ? (
               <>
@@ -1086,7 +1047,6 @@ const AiTutorPage = () => {
                     Submit your answers below. The AI will grade them and inject revision lectures if needed.
                   </p>
 
-                  {/* Generate mock question inputs */}
                   {Array.from({ length: selectedDay.num_questions || 5 }).map((_, qIdx) => {
                     const qid = `q${qIdx}`;
                     return (

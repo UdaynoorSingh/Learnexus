@@ -1,13 +1,7 @@
-/**
- * generateAudioSummary.js
- *
- * Pipeline: Groq Llama 70B summarization → Sarvam TTS → Cloudinary upload
- * Returns the Cloudinary secure_url of the generated audio, or null on failure.
- */
+
 
 const cloudinary = require("cloudinary").v2;
 
-// Ensure Cloudinary is configured (may already be configured via postImageUpload.js)
 if (!cloudinary.config().cloud_name) {
   cloudinary.config({
     cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -19,7 +13,6 @@ if (!cloudinary.config().cloud_name) {
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const SARVAM_API_KEY = process.env.SARVAM_API_KEY;
 
-// Hard cap: ~6,000 words / ~24,000 chars to stay well within Groq token limits
 const MAX_INPUT_CHARS = 24000;
 
 /**
@@ -155,26 +148,22 @@ async function generateAudioSummary(textContent) {
   }
 
   try {
-    // Step 0: Truncate large input to prevent token-limit issues
     const truncated = textContent.slice(0, MAX_INPUT_CHARS);
 
     console.log(
       `[AudioSummary] Starting pipeline (${truncated.length} chars)...`,
     );
 
-    // Step 1: Summarize with Groq
     const summary = await summarizeWithGroq(truncated);
     console.log(
       `[AudioSummary] Groq summary generated (${summary.split(/\s+/).length} words).`,
     );
 
-    // Step 2: Text-to-Speech with Sarvam
     const audioBase64 = await textToSpeechSarvam(summary);
     console.log(
       `[AudioSummary] Sarvam TTS complete (${Math.round(audioBase64.length / 1024)}KB base64).`,
     );
 
-    // Step 3: Upload to Cloudinary
     const audioUrl = await uploadToCloudinary(audioBase64);
     console.log(`[AudioSummary] Cloudinary upload complete: ${audioUrl}`);
 
@@ -203,16 +192,14 @@ async function generateAudioDirect(scriptText) {
   }
 
   try {
-    // Sarvam has input limits — truncate to ~500 chars (safe for ~1 min speech)
     const trimmed = scriptText.trim().slice(0, 500);
 
     console.log(`[AudioDirect] Starting TTS (${trimmed.length} chars)...`);
 
-    // Step 1: Text-to-Speech with Sarvam
     const audioBase64 = await textToSpeechSarvam(trimmed);
     console.log(`[AudioDirect] Sarvam TTS complete (${Math.round(audioBase64.length / 1024)}KB base64).`);
 
-    // Step 2: Upload to Cloudinary
+  
     const audioUrl = await uploadToCloudinary(audioBase64);
     console.log(`[AudioDirect] Cloudinary upload complete: ${audioUrl}`);
 

@@ -46,7 +46,6 @@ const springAnim = { type: 'spring', stiffness: 400, damping: 30 };
 const CompanyLogo = ({ companyName }) => {
   const [error, setError] = useState(false);
 
-  // Attempt to guess domain (e.g. "Google" -> "google.com")
   const cleanName = typeof companyName === 'string' ? companyName.toLowerCase().replace(/[^a-z0-9]/g, '') : 'company';
   const domain = `${cleanName}.com`;
 
@@ -124,7 +123,6 @@ const ChallengesPage = () => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -151,7 +149,6 @@ const ChallengesPage = () => {
           </div>
         </div>
 
-        {/* Stats bar */}
         <div className="flex items-center gap-6 mt-6 flex-wrap">
           <div className="flex items-center gap-2 text-sm text-text-muted">
             <Sparkles size={14} className="text-amber-400" />
@@ -169,7 +166,6 @@ const ChallengesPage = () => {
         </div>
       </motion.div>
 
-      {/* Challenge Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {challenges.map((challenge, i) => {
           const diff = difficultyConfig[challenge.difficulty] || difficultyConfig.Medium;
@@ -188,11 +184,9 @@ const ChallengesPage = () => {
               whileHover={{ y: 0, scale: 1, transition: { type: 'spring', stiffness: 400, damping: 20 } }}
               className="group relative rounded-3xl glass-panel overflow-hidden hover:border-primary/40 transition-all duration-500 hover:shadow-[0_20px_60px_-15px_rgba(14,165,233,0.3)]"
             >
-              {/* Top accent bar */}
               <div className="absolute top-0 left-0 h-1 w-full bg-gradient-to-r from-primary via-accent to-amber-500 opacity-50 group-hover:opacity-100 transition-opacity" />
 
               <div className="p-7 relative z-10">
-                {/* Company + Difficulty Row */}
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <CompanyLogo companyName={challenge.company_name} />
@@ -209,17 +203,14 @@ const ChallengesPage = () => {
                   </span>
                 </div>
 
-                {/* Title */}
                 <h3 className="text-lg font-bold text-text leading-snug mb-3 line-clamp-2 group-hover:text-primary transition-colors">
                   {challenge.title}
                 </h3>
 
-                {/* Description */}
                 <p className="text-sm text-text-muted leading-relaxed line-clamp-3 mb-4">
                   {challenge.description}
                 </p>
 
-                {/* Tags */}
                 <div className="flex flex-wrap gap-1.5 mb-5">
                   {tags.slice(0, 5).map((tag) => (
                     <Chip
@@ -231,7 +222,6 @@ const ChallengesPage = () => {
                   ))}
                 </div>
 
-                {/* Footer: Bounty + Submissions + CTA */}
                 <div className="flex items-center justify-between pt-4 border-t border-black/10">
                   <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
@@ -276,7 +266,6 @@ const ChallengesPage = () => {
         />
       )}
 
-      {/* Submission Modal */}
       <ModalShell
         open={Boolean(activeModal)}
         onClose={() => setActiveModal(null)}

@@ -33,8 +33,7 @@ logger = logging.getLogger("agentic_tutor.router")
 
 router = APIRouter(prefix="/tutor", tags=["Agentic AI Tutor"])
 
-# ──────────────────────── In-Memory Session Store ────────────────
-# Production: replace with Redis or a database
+
 sessions: dict[str, TutorState] = {}
 active_flow_count: int = 0
 
@@ -45,13 +44,12 @@ def _get_state(student_id: str) -> TutorState:
     return sessions[student_id]
 
 
-# ──────────────────────── Request / Response Models ──────────────
 
 class InitCourseRequest(BaseModel):
     topic: str
     depth_level: str = "intermediate"
     duration_weeks: Optional[int] = None
-    duration_input: str = "4 weeks"     # supports "2 months", "8 weeks", etc.
+    duration_input: str = "4 weeks"     
     pace_speed: str = "normal"
     preferred_language: str = "English"
     learning_style: str = "visual"
@@ -81,10 +79,9 @@ class SubmitQuizRequest(BaseModel):
 
 class ReportAbsenceRequest(BaseModel):
     student_id: str
-    missed_dates: List[str]     # ["2025-08-04", "2025-08-06"]
+    missed_dates: List[str]    
 
 
-# ──────────────────────── ENDPOINTS ──────────────────────────────
 
 @router.get("/health")
 async def health_check():
@@ -106,10 +103,8 @@ async def init_course(req: InitCourseRequest):
     global active_flow_count
     logger.info(f"[API] /init-course — topic='{req.topic}'")
 
-    # Build student profile
     duration_weeks = req.duration_weeks
     if duration_weeks is None:
-        # Parse from duration_input
         import re
         lower = req.duration_input.lower()
         match = re.search(r"(\d+)", lower)
@@ -130,7 +125,6 @@ async def init_course(req: InitCourseRequest):
         constraints=req.constraints,
     )
 
-    # Create state and run the flow
     state = TutorState(student_profile=profile)
 
     active_flow_count += 1
@@ -144,7 +138,6 @@ async def init_course(req: InitCourseRequest):
     finally:
         active_flow_count -= 1
 
-    # Persist session
     sessions[state.student_id] = flow.state
 
     return {
@@ -172,7 +165,6 @@ async def prep_next_lecture(req: StudentIdRequest):
     finally:
         active_flow_count -= 1
 
-    # Update session with new state
     sessions[req.student_id] = flow.state
 
     return result
@@ -208,7 +200,6 @@ async def submit_quiz(req: SubmitQuizRequest, background_tasks: BackgroundTasks)
     state = _get_state(req.student_id)
     logger.info(f"[API] /submit-quiz — student={req.student_id}, quiz_id={req.quiz_id}")
 
-    # If quiz state doesn't have questions, generate mock ones for testing
     if not state.quiz_state.questions:
         state.quiz_state = QuizState(
             quiz_id=req.quiz_id,
@@ -222,7 +213,6 @@ async def submit_quiz(req: SubmitQuizRequest, background_tasks: BackgroundTasks)
             ],
         )
 
-    # Store submitted answers
     state.quiz_state.submitted_answers = [
         SubmittedAnswer(question_id=a.question_id, selected_option=a.selected_option)
         for a in req.answers
@@ -243,7 +233,6 @@ async def submit_quiz(req: SubmitQuizRequest, background_tasks: BackgroundTasks)
 
     sessions[req.student_id] = flow.state
 
-    # Run performance analysis in background
     background_tasks.add_task(_run_performance_analysis, req.student_id)
 
     return result

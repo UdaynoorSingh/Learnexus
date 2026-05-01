@@ -1,7 +1,4 @@
-/* ────────────────────────────────────────────────────────────
-   Particles — from react-bits (OGL WebGL particles)
-   Source: https://reactbits.dev/backgrounds/particles
-   ──────────────────────────────────────────────────────────── */
+
 
 import { useEffect, useRef } from 'react';
 import { Renderer, Camera, Geometry, Program, Mesh } from 'ogl';

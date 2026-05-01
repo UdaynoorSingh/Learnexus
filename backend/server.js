@@ -1,8 +1,5 @@
 const dns = require('dns');
-// Many hosts (e.g. Render) have broken or missing IPv6 egress. Gmail returns AAAA; Node then fails with ENETUNREACH on :587.
-if (typeof dns.setDefaultResultOrder === 'function') {
-  dns.setDefaultResultOrder('ipv4first');
-}
+if (typeof dns.setDefaultResultOrder === 'function') dns.setDefaultResultOrder('ipv4first');
 
 const express = require('express');
 const cors = require('cors');
@@ -12,10 +9,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 require('dotenv').config();
 
-/**
- * Browsers send Origin as full URL (e.g. https://app.vercel.app). FRONTEND_URL must match.
- * If env is missing the scheme (common mistake: learnexus-beta.vercel.app), CORS breaks.
- */
+
 function normalizeFrontendOriginEntry(raw) {
   const s = String(raw || '').trim();
   if (!s) return null;
@@ -35,7 +29,6 @@ function normalizeFrontendOriginEntry(raw) {
   }
 }
 
-/** Comma-separated in env, e.g. https://app.vercel.app,https://preview.vercel.app */
 let allowedOrigins = (process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
   .map(normalizeFrontendOriginEntry)
@@ -78,7 +71,6 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use('/uploads', express.static(uploadsDir));
 
-// Must be declared before mounting auth-protected "/api" routers.
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: 'learnexus-backend' });
 });

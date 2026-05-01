@@ -69,7 +69,6 @@ const NexusLibrary = () => {
 
   return (
     <div className="min-h-[calc(100vh-4rem)]">
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}
@@ -102,7 +101,6 @@ const NexusLibrary = () => {
           </div>
         </div>
 
-        {/* Stats + controls */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
           <Chip variant="primary" className="px-3.5 py-2 rounded-xl text-sm font-medium">
             <Headphones size={15} strokeWidth={2} />
@@ -125,7 +123,6 @@ const NexusLibrary = () => {
             <RefreshCw size={14} strokeWidth={2} className={loading ? 'animate-spin' : ''} />
           </motion.button>
 
-          {/* Mobile create button */}
           <Button
             type="button"
             onClick={() => setModalOpen(true)}
@@ -136,7 +133,6 @@ const NexusLibrary = () => {
           </Button>
         </div>
 
-        {/* Scope tabs */}
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
@@ -162,14 +158,12 @@ const NexusLibrary = () => {
         </div>
       </motion.div>
 
-      {/* Error */}
       {error && (
         <div className="mb-4 rounded-2xl bg-danger/15 border border-danger/30 text-danger text-sm px-4 py-3">
           {error}
         </div>
       )}
 
-      {/* Content */}
       {loading ? (
         <div className="rounded-2xl border border-slate-200/80 bg-white/70 shadow-sm">
           <LoadingSpinner size="lg" text="Loading the library…" />
@@ -202,7 +196,6 @@ const NexusLibrary = () => {
         </motion.div>
       )}
 
-      {/* Create modal */}
       <CreateLibraryModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}

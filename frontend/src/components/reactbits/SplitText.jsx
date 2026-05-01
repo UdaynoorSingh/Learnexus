@@ -1,7 +1,4 @@
-/* ────────────────────────────────────────────────────────────
-   SplitText — Custom framer-motion version (no GSAP dependency)
-   Inspired by react-bits SplitText component
-   ──────────────────────────────────────────────────────────── */
+
 
 import { useMemo } from 'react';
 import { motion } from 'framer-motion';
@@ -12,7 +9,7 @@ export default function SplitText({
   delay = 50,
   duration = 0.5,
   ease = 'easeOut',
-  splitType = 'chars', // 'chars' | 'words'
+  splitType = 'chars', 
   from = { opacity: 0, y: 40 },
   to = { opacity: 1, y: 0 },
   tag = 'p',

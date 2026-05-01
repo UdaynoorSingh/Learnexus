@@ -82,7 +82,6 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
                   🎤 Your <strong>description</strong> will be converted into a 1-minute audio summary using AI text-to-speech. Write it as you'd say it!
                 </p>
 
-                {/* Topic */}
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
                     Topic *
@@ -98,7 +97,6 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
                   />
                 </div>
 
-                {/* Description (= Audio Script) */}
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1">
                     Description / Audio Script *
@@ -120,7 +118,6 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
                   </p>
                 </div>
 
-                {/* Difficulty */}
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-2">
                     Difficulty Level
@@ -144,7 +141,6 @@ const CreateLibraryModal = ({ open, onClose, onCreated, scope = 'college' }) => 
                   </div>
                 </div>
 
-                {/* Content */}
                 <div>
                   <label className="block text-xs font-semibold text-text-muted uppercase tracking-wider mb-1.5">
                     Content *

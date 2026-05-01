@@ -16,11 +16,7 @@ function useLockBodyScroll(active) {
   }, [active]);
 }
 
-/**
- * ModalShell
- * - Unifies modal backdrop + panel styling across the app.
- * - Provides header/body/footer slots.
- */
+
 export default function ModalShell({
   open,
   onClose,

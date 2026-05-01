@@ -5,7 +5,6 @@ import LoadingSpinner from '../components/common/LoadingSpinner';
 import { FiCheck, FiX, FiTrash2, FiPlus, FiFileText, FiUsers, FiBookOpen, FiAlertTriangle, FiChevronDown, FiMail, FiEdit2, FiExternalLink } from 'react-icons/fi';
 import NoteViewerModal from '../components/common/NoteViewerModal';
 
-/** Normalize domain suffix: "mit.edu", "@mit.edu", or "user@mit.edu" → "mit.edu" */
 function normalizeEmailDomainSuffix(raw) {
   let s = String(raw || '').trim().toLowerCase();
   if (!s) return '';
@@ -60,7 +59,6 @@ const AdminPage = () => {
   const [challengesList, setChallengesList] = useState([]);
   const [editingChallengeId, setEditingChallengeId] = useState(null);
 
-  /** API query/body scope: superadmin picks any registered college; college admin is fixed to their institution. */
   const catalogParams = useMemo(() => {
     if (user?.role === 'superadmin' && adminCollegeId) {
       return { collegeId: String(adminCollegeId) };

@@ -1,10 +1,6 @@
 const pool = require('../config/db');
 
-/**
- * GET /api/challenges
- * Fetch all active company challenges, ordered by newest first.
- * Also returns the submission count for each challenge.
- */
+
 exports.getChallenges = async (req, res) => {
   try {
     const result = await pool.query(`
@@ -24,17 +20,12 @@ exports.getChallenges = async (req, res) => {
   }
 };
 
-/**
- * POST /api/challenges/submit
- * Submit a solution for a challenge. Body: { challenge_id, github_url }
- * Requires authentication.
- */
+
 exports.submitChallenge = async (req, res) => {
   try {
     const { challenge_id, github_url } = req.body;
     const userId = req.user.id;
 
-    // Validate inputs
     if (!challenge_id || !Number.isInteger(Number(challenge_id))) {
       return res.status(400).json({ error: 'Valid challenge_id is required.' });
     }
@@ -45,7 +36,6 @@ exports.submitChallenge = async (req, res) => {
 
     const trimmedUrl = github_url.trim();
 
-    // Basic URL validation
     try {
       const parsed = new URL(trimmedUrl);
       if (!['http:', 'https:'].includes(parsed.protocol)) {
@@ -55,7 +45,6 @@ exports.submitChallenge = async (req, res) => {
       return res.status(400).json({ error: 'Invalid URL format.' });
     }
 
-    // Verify challenge exists
     const challengeCheck = await pool.query(
       'SELECT id FROM company_challenges WHERE id = $1',
       [challenge_id]
@@ -65,7 +54,6 @@ exports.submitChallenge = async (req, res) => {
       return res.status(404).json({ error: 'Challenge not found.' });
     }
 
-    // Check for duplicate submission
     const existingSubmission = await pool.query(
       'SELECT id FROM challenge_submissions WHERE challenge_id = $1 AND user_id = $2',
       [challenge_id, userId]
@@ -75,7 +63,6 @@ exports.submitChallenge = async (req, res) => {
       return res.status(409).json({ error: 'You have already submitted a solution for this challenge.' });
     }
 
-    // Insert submission
     const result = await pool.query(
       `INSERT INTO challenge_submissions (challenge_id, user_id, github_url, status)
        VALUES ($1, $2, $3, 'Pending')

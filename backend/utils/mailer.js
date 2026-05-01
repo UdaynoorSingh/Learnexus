@@ -20,11 +20,6 @@ function smtpHost() {
   return 'localhost';
 }
 
-/**
- * PaaS (e.g. Render) often has no working IPv6 egress. Nodemailer may still try Gmail's AAAA and fail
- * with ENETUNREACH. Prefer an IPv4 literal for the TCP connect and set tls.servername for cert validation.
- * Set SMTP_SKIP_IPV4_RESOLVE=true to use the hostname only (e.g. IPv6-only lab).
- */
 async function smtpConnectTarget(hostname) {
   const name = String(hostname || '').trim();
   if (!name) return { host: name, servername: null };
@@ -43,9 +38,7 @@ async function smtpConnectTarget(hostname) {
     if (v4 && v4.length > 0) {
       return { host: v4[0], servername: name };
     }
-  } catch {
-    // Use hostname (IPv6-only host, DNS hiccup, etc.).
-  }
+  } catch {}
   return { host: name, servername: null };
 }
 
@@ -77,10 +70,6 @@ async function createTransport() {
   return nodemailer.createTransport(config);
 }
 
-/**
- * Local dev without a mail server: set DEV_OTP_TO_CONSOLE=true and NODE_ENV=development
- * (OTP is printed to the server console instead of sending email).
- */
 function shouldLogOtpToConsoleOnly() {
   return (
     process.env.NODE_ENV !== 'production' &&

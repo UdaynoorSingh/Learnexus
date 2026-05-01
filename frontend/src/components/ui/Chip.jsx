@@ -1,9 +1,5 @@
 import { cn } from '../../utils/cn';
 
-/**
- * Chip — small label used for tags/difficulty/status.
- * Keeps radius + border + typography consistent.
- */
 export default function Chip({ className, variant = 'neutral', size = 'sm', ...props }) {
   const variants = {
     neutral: 'bg-white/70 text-text-muted border border-black/10 hover:bg-white/90 hover:text-text hover:border-black/20',

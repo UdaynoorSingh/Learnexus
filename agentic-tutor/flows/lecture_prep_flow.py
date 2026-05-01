@@ -61,7 +61,6 @@ class LecturePrepFlow(Flow[TutorState]):
         crew = Crew(agents=[agent], tasks=[task], verbose=True)
         result = crew.kickoff()
 
-        # Store resources in state
         self.state.fetched_resources = FetchedResources(
             web_results=[{"summary": str(result)}],
             library_notes=[],
@@ -128,7 +127,6 @@ class LecturePrepFlow(Flow[TutorState]):
             "duration_seconds": audio_result.get("duration_seconds", 0),
         }
 
-        # Advance the lecture index for next time
         self.state.current_lecture_index += 1
 
         logger.info(f"[LecturePrepFlow] SUCCESS — Audio ready: {audio_result.get('audio_url', '')}")

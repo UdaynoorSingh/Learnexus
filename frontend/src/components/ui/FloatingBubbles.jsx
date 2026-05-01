@@ -1,6 +1,5 @@
 import { motion } from 'framer-motion';
 
-/* Pale yellow / lavender / mint — HireLoop-style blobs, softly blurred */
 const bubbleConfigs = [
   { size: 420, color: 'rgba(253, 224, 71, 0.22)', left: '-6%', top: '-4%', duration: 5.8, delay: 0, blur: 72 },
   { size: 360, color: 'rgba(196, 181, 253, 0.2)', left: '68%', top: '-2%', duration: 6.4, delay: 0.4, blur: 68 },
