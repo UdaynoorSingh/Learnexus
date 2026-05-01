@@ -1,3 +1,5 @@
+const dns = require('dns').promises;
+const net = require('net');
 const nodemailer = require('nodemailer');
 
 function smtpUser() {
@@ -18,13 +20,43 @@ function smtpHost() {
   return 'localhost';
 }
 
-function createTransport() {
+/**
+ * PaaS (e.g. Render) often has no working IPv6 egress. Nodemailer may still try Gmail's AAAA and fail
+ * with ENETUNREACH. Prefer an IPv4 literal for the TCP connect and set tls.servername for cert validation.
+ * Set SMTP_SKIP_IPV4_RESOLVE=true to use the hostname only (e.g. IPv6-only lab).
+ */
+async function smtpConnectTarget(hostname) {
+  const name = String(hostname || '').trim();
+  if (!name) return { host: name, servername: null };
+  if (net.isIP(name)) {
+    const sn = (process.env.SMTP_TLS_SERVERNAME || '').trim() || null;
+    return { host: name, servername: sn };
+  }
+  if (/^localhost$/i.test(name)) {
+    return { host: name, servername: null };
+  }
+  if (process.env.SMTP_SKIP_IPV4_RESOLVE === 'true' || process.env.SMTP_SKIP_IPV4_RESOLVE === '1') {
+    return { host: name, servername: null };
+  }
+  try {
+    const v4 = await dns.resolve4(name);
+    if (v4 && v4.length > 0) {
+      return { host: v4[0], servername: name };
+    }
+  } catch {
+    // Use hostname (IPv6-only host, DNS hiccup, etc.).
+  }
+  return { host: name, servername: null };
+}
+
+async function createTransport() {
   const port = parseInt(process.env.SMTP_PORT || '587', 10);
   const secure = process.env.SMTP_SECURE === 'true' || port === 465;
   const user = smtpUser();
   const pass = smtpPass();
+  const { host, servername } = await smtpConnectTarget(smtpHost());
   const config = {
-    host: smtpHost(),
+    host,
     port,
     secure,
     auth: user && pass ? { user, pass } : undefined,
@@ -34,8 +66,13 @@ function createTransport() {
   if (process.env.SMTP_REQUIRE_TLS === 'true') {
     config.requireTLS = true;
   }
+  const tlsOpts = {};
+  if (servername) tlsOpts.servername = servername;
   if (process.env.SMTP_TLS_REJECT_UNAUTHORIZED === 'false') {
-    config.tls = { ...(config.tls || {}), rejectUnauthorized: false };
+    tlsOpts.rejectUnauthorized = false;
+  }
+  if (Object.keys(tlsOpts).length) {
+    config.tls = tlsOpts;
   }
   return nodemailer.createTransport(config);
 }
@@ -58,7 +95,7 @@ async function sendOtpEmail(to, otp, expiresMinutes = 10) {
   }
 
   const from = process.env.SMTP_FROM || smtpUser() || 'noreply@learnexus.local';
-  const transporter = createTransport();
+  const transporter = await createTransport();
   await transporter.sendMail({
     from,
     to,
