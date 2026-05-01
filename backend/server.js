@@ -1,3 +1,9 @@
+const dns = require('dns');
+// Many hosts (e.g. Render) have broken or missing IPv6 egress. Gmail returns AAAA; Node then fails with ENETUNREACH on :587.
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
