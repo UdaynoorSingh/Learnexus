@@ -20,11 +20,10 @@ const lastOtpSendAt = new Map();
 function smtpOrDevOtpReady() {
   const user = (process.env.SMTP_USER || process.env.SMTP_EMAIL || '').trim();
   const pass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '').trim();
-  const resend = (process.env.RESEND_API_KEY || '').trim();
   const devConsole =
     process.env.NODE_ENV !== 'production' &&
     (process.env.DEV_OTP_TO_CONSOLE === 'true' || process.env.DEV_OTP_TO_CONSOLE === '1');
-  return devConsole || !!resend || (!!user && !!pass);
+  return devConsole || (!!user && !!pass);
 }
 
 async function cleanupExpiredOtps(client) {
@@ -73,7 +72,7 @@ exports.studentRequestOtp = async (req, res) => {
   if (!smtpOrDevOtpReady()) {
     return res.status(503).json({
       error:
-        'Email is not configured. Set RESEND_API_KEY (recommended on Render free tier; SMTP ports are blocked), or SMTP_EMAIL + SMTP_PASSWORD, or DEV_OTP_TO_CONSOLE=true for local dev.'
+        'Email is not configured. Set SMTP_EMAIL + SMTP_PASSWORD (Gmail app password) or DEV_OTP_TO_CONSOLE=true for local dev.'
     });
   }
 
