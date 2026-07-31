@@ -97,7 +97,7 @@ connectDB()
   .then(() => {
     server.listen(PORT, () => {
       console.log(`Learnexus Backend running on port ${PORT}`);
-      console.log(`OTP email (SMTP): ${isEmailConfigured() ? 'configured' : 'NOT configured — set SMTP_EMAIL + SMTP_PASSWORD'}`);
+      console.log(`OTP email (SMTP): ${isEmailConfigured() ? 'configured' : 'NOT configured — set SMTP_EMAIL + SMTP_PASSWORD (and RESEND_API_KEY as Render fallback)'}`);
       if (process.env.ENABLE_GHOST_STUDENT !== 'false') {
         const { startGhostStudentWorker } = require('./workers/ghostStudent');
         startGhostStudentWorker();
