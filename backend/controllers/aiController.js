@@ -1,6 +1,10 @@
-const pool = require('../config/db');
+const { User } = require('../models');
 
 const AI_BACKEND_URL = process.env.AI_BACKEND_URL || 'http://localhost:5001';
+
+async function deductCredits(userId, amount) {
+  await User.findOneAndUpdate({ id: userId }, { $inc: { credits: -amount } });
+}
 
 exports.teach = async (req, res) => {
   try {
@@ -115,8 +119,8 @@ exports.flashcards = async (req, res) => {
 
 exports.examGenerate = async (req, res) => {
   try {
-    const creditCheck = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
-    const userCredits = creditCheck.rows[0]?.credits || 0;
+    const user = await User.findOne({ id: req.user.id });
+    const userCredits = user?.credits || 0;
 
     if (userCredits < 1) {
       return res.status(403).json({ error: 'Not enough credits! Upload more notes to earn credits.' });
@@ -136,9 +140,7 @@ exports.examGenerate = async (req, res) => {
     }
 
     const data = await response.json();
-
-    await pool.query('UPDATE users SET credits = credits - 1 WHERE id = $1', [req.user.id]);
-
+    await deductCredits(req.user.id, 1);
     res.json(data);
   } catch (error) {
     console.error('AI Proxy Exam error:', error);
@@ -148,8 +150,8 @@ exports.examGenerate = async (req, res) => {
 
 exports.youtubeEmbed = async (req, res) => {
   try {
-    const creditCheck = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
-    const userCredits = creditCheck.rows[0]?.credits || 0;
+    const user = await User.findOne({ id: req.user.id });
+    const userCredits = user?.credits || 0;
 
     if (userCredits < 5) {
       return res.status(403).json({ error: 'Not enough credits! You need 5 credits to process a YouTube video. Upload more notes to earn credits.' });
@@ -173,9 +175,7 @@ exports.youtubeEmbed = async (req, res) => {
     }
 
     const data = await response.json();
-
-    await pool.query('UPDATE users SET credits = credits - 5 WHERE id = $1', [req.user.id]);
-
+    await deductCredits(req.user.id, 5);
     res.json(data);
   } catch (error) {
     console.error('AI Proxy YouTube error:', error);
@@ -185,8 +185,8 @@ exports.youtubeEmbed = async (req, res) => {
 
 exports.mindmap = async (req, res) => {
   try {
-    const creditCheck = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
-    const userCredits = creditCheck.rows[0]?.credits || 0;
+    const user = await User.findOne({ id: req.user.id });
+    const userCredits = user?.credits || 0;
 
     if (userCredits < 2) {
       return res.status(403).json({ error: 'Not enough credits! You need 2 credits to generate a mind map. Upload more notes to earn credits.' });
@@ -210,9 +210,7 @@ exports.mindmap = async (req, res) => {
     }
 
     const data = await response.json();
-
-    await pool.query('UPDATE users SET credits = credits - 2 WHERE id = $1', [req.user.id]);
-
+    await deductCredits(req.user.id, 2);
     res.json(data);
   } catch (error) {
     console.error('AI Proxy Mindmap error:', error);
@@ -222,8 +220,8 @@ exports.mindmap = async (req, res) => {
 
 exports.podcast = async (req, res) => {
   try {
-    const creditCheck = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
-    const userCredits = creditCheck.rows[0]?.credits || 0;
+    const user = await User.findOne({ id: req.user.id });
+    const userCredits = user?.credits || 0;
 
     if (userCredits < 3) {
       return res.status(403).json({ error: 'Not enough credits! You need 3 credits to generate an audio overview. Upload more notes to earn credits.' });
@@ -247,9 +245,7 @@ exports.podcast = async (req, res) => {
     }
 
     const data = await response.json();
-
-    await pool.query('UPDATE users SET credits = credits - 3 WHERE id = $1', [req.user.id]);
-
+    await deductCredits(req.user.id, 3);
     res.json(data);
   } catch (error) {
     console.error('AI Proxy Podcast error:', error);

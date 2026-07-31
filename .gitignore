@@ -39,3 +39,9 @@ frontend/.env
 #python backend
 /ai-backend-python/.env
 /ai-backend-python/venv
+
+# agentic tutor secrets (Google OAuth — never commit)
+agentic-tutor/token.json
+agentic-tutor/credentials.json
+agentic-tutor/.env
+agentic-tutor/__pycache__/

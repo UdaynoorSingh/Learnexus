@@ -11,7 +11,7 @@ LearNexus is a multi-tenant student learning platform that combines:
 This repo contains **3 running services**:
 
 - **Frontend**: `LearnNexus/frontend` (React + Vite)
-- **Backend API**: `LearnNexus/backend` (Node.js + Express + Socket.IO + PostgreSQL)
+- **Backend API**: `LearnNexus/backend` (Node.js + Express + Socket.IO + MongoDB)
 - **AI services**:
   - `LearnNexus/ai-backend-python` (FastAPI: OCR, RAG/FAISS, moderation, tutor tools)
   - `LearnNexus/agentic-tutor` (FastAPI: CrewAI-based “agentic tutor” flows)
@@ -25,9 +25,9 @@ This repo contains **3 running services**:
 1. **User uses the web app** (React routes like `/upload`, `/ai-tutor`, `/nexus-board`).
 2. Frontend calls **Backend API** at `http://localhost:5000/api` with `Authorization: Bearer <JWT>`.
 3. Backend:
-   - validates JWT and loads the user from Postgres
+   - validates JWT and loads the user from MongoDB
    - enforces **college scoping** (`college_id`) for almost all data
-   - stores/retrieves data from **PostgreSQL**
+   - stores/retrieves data from **MongoDB**
    - triggers AI calls by proxying to the **AI backend** (`AI_BACKEND_URL`)
 4. AI backend:
    - runs OCR on uploaded note images/PDFs (from Cloudinary URL)
@@ -37,8 +37,8 @@ This repo contains **3 running services**:
 
 ### Data storage layers
 
-- **PostgreSQL** (system of record): users, colleges, academic catalog, notes metadata, community posts/comments, credits/transactions, dashboard state, challenges, etc.
-- **Cloudinary** (file storage): uploaded PDFs/images and post images. URLs are stored in Postgres (e.g. `notes.file_url`).
+- **MongoDB** (system of record): users, colleges, academic catalog, notes metadata, community posts/comments, credits/transactions, dashboard state, challenges, etc.
+- **Cloudinary** (file storage): uploaded PDFs/images and post images. URLs are stored in MongoDB (e.g. `notes.file_url`).
 - **FAISS indexes on disk** (AI backend): vector stores under `ai-backend-python/vector_stores/...` for topic notes, YouTube transcripts, and community solved-thread knowledge.
 
 ---
@@ -55,7 +55,7 @@ This repo contains **3 running services**:
 ### Backend
 - Node.js + Express
 - Socket.IO
-- PostgreSQL (`pg`)
+- MongoDB (`mongoose`)
 - JWT auth
 - Cloudinary uploads (multer + cloudinary storage)
 
@@ -99,11 +99,11 @@ Schema and migrations live in `LearnNexus/backend/db/`.
 ### Prerequisites
 - **Node.js** (recommended: 18+)
 - **Python** (recommended: 3.10+)
-- **PostgreSQL** (local or hosted)
+- **MongoDB** (local or [MongoDB Atlas](https://www.mongodb.com/atlas))
 
 ### 1) Database
 
-Create a Postgres DB and set `DATABASE_URL` for the backend. Then initialize schema + migrations + seed:
+Create a MongoDB database (Atlas cluster or local `mongod`) and set `MONGODB_URI` in the backend `.env`. Then seed initial data:
 
 ```powershell
 cd LearnNexus\backend
@@ -111,10 +111,7 @@ npm install
 npm run db:init
 ```
 
-`db:init` applies:
-- `db/schema.sql`
-- all `db/migrate_*.sql`
-- `db/seed.sql`
+`db:init` creates collections, indexes, and seeds demo colleges, academic catalog, and default users.
 
 ### 2) Backend API (Express)
 
@@ -126,7 +123,7 @@ Minimum required variables (example):
 PORT=5000
 FRONTEND_URL=http://localhost:5173
 JWT_SECRET=change-me
-DATABASE_URL=postgresql://postgres:password@localhost:5432/learnexus
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster>.mongodb.net/learnexus?retryWrites=true&w=majority
 
 # AI backend proxy
 AI_BACKEND_URL=http://localhost:5001
@@ -241,7 +238,7 @@ npm run dev
 - Backend and both FastAPI services support platform-provided `PORT` (Render-style).
 - In production, set:
   - `FRONTEND_URL` correctly (CORS origin must match)
-  - `DATABASE_URL` (managed Postgres recommended)
+  - `MONGODB_URI` (MongoDB Atlas recommended)
   - AI provider keys on the AI services
   - Cloudinary keys on backend
 
@@ -252,4 +249,14 @@ npm run dev
 Do **not** commit real `.env` files or API keys. If any keys were ever exposed, **rotate them** in the provider dashboards.
 
 Recommended: add `.env` files to `.gitignore` and use `.env.example` templates only.
+
+---
+
+## Documentation for evaluation
+
+Read `DOCUMENTATION.md` for a quick, complete explanation of:
+- architecture + folder interactions
+- data storage (MongoDB + Cloudinary + FAISS)
+- AI pipelines (OCR → embeddings → RAG)
+- core end-to-end flows you can explain in an evaluation
 

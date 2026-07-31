@@ -1,23 +1,21 @@
-const pool = require('../config/db');
-
+const { User, Transaction } = require('../models');
+const { leanDocs } = require('../utils/mongoHelpers');
 
 exports.getBalance = async (req, res) => {
   try {
-    const result = await pool.query('SELECT credits FROM users WHERE id = $1', [req.user.id]);
-    res.json({ credits: result.rows[0].credits });
+    const user = await User.findOne({ id: req.user.id });
+    res.json({ credits: user?.credits ?? 0 });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }
 };
 
-
 exports.getHistory = async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT 50',
-      [req.user.id]
-    );
-    res.json(result.rows);
+    const txs = await Transaction.find({ user_id: req.user.id })
+      .sort({ created_at: -1 })
+      .limit(50);
+    res.json(leanDocs(txs));
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }

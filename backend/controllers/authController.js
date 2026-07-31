@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const pool = require('../config/db');
+const { College, User, StudentSigninOtp } = require('../models');
+const { leanDoc } = require('../utils/mongoHelpers');
 const { emailHostMatchesDomainSuffix } = require('../utils/collegeDomain');
-const { sendOtpEmail } = require('../utils/mailer');
+const { sendOtpEmail, isEmailConfigured } = require('../utils/mailer');
 const { generateSixDigitCode, hashOtp, verifyOtp, normalizeEmail } = require('../utils/studentOtp');
 
 const OTP_RESEND_COOLDOWN_MS = Math.max(
@@ -16,33 +17,20 @@ const OTP_EXPIRY_MINUTES = Math.min(
 
 const lastOtpSendAt = new Map();
 
-function smtpOrDevOtpReady() {
-  const user = (process.env.SMTP_USER || process.env.SMTP_EMAIL || '').trim();
-  const pass = (process.env.SMTP_PASS || process.env.SMTP_PASSWORD || '').trim();
-  const devConsole =
-    process.env.NODE_ENV !== 'production' &&
-    (process.env.DEV_OTP_TO_CONSOLE === 'true' || process.env.DEV_OTP_TO_CONSOLE === '1');
-  return devConsole || (!!user && !!pass);
-}
 
-async function cleanupExpiredOtps(client) {
-  await client.query(`DELETE FROM student_signin_otps WHERE expires_at < NOW()`);
+async function cleanupExpiredOtps() {
+  await StudentSigninOtp.deleteMany({ expires_at: { $lt: new Date() } });
 }
 
 function signToken(user) {
   return jwt.sign(
-    {
-      userId: user.id,
-      collegeId: user.college_id,
-      isVerified: user.is_verified
-    },
+    { userId: user.id, collegeId: user.college_id, isVerified: user.is_verified },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
 }
 
-
-async function resolveStudentCollege(client, rawEmail) {
+async function resolveStudentCollege(rawEmail) {
   const emailNorm = normalizeEmail(rawEmail);
   if (!emailNorm || !emailNorm.includes('@')) {
     return { error: { status: 400, body: { error: 'A valid university email is required.' } } };
@@ -52,22 +40,28 @@ async function resolveStudentCollege(client, rawEmail) {
     return { error: { status: 400, body: { error: 'A valid university email is required.' } } };
   }
   const emailHost = parts[1].trim().toLowerCase();
-  const collegesRes = await client.query('SELECT id, name, domain_suffix FROM colleges');
-  const college = collegesRes.rows.find((c) =>
-    emailHostMatchesDomainSuffix(emailHost, c.domain_suffix)
-  );
+  const colleges = await College.find();
+  const college = colleges.find((c) => emailHostMatchesDomainSuffix(emailHost, c.domain_suffix));
   if (!college) {
     return { error: { status: 403, body: { error: 'College not supported.' } } };
   }
-  return { college, emailNorm, emailHost };
+  return { college: leanDoc(college), emailNorm, emailHost };
 }
 
+async function loadUserWithCollege(emailNorm) {
+  const user = await User.findOne({ email: emailNorm.toLowerCase() });
+  if (!user) return null;
+  const college = await College.findOne({ id: user.college_id });
+  const row = leanDoc(user);
+  row.college_name = college?.name || null;
+  return row;
+}
 
 exports.studentRequestOtp = async (req, res) => {
-  if (!smtpOrDevOtpReady()) {
+  if (!isEmailConfigured()) {
     return res.status(503).json({
       error:
-        'Email is not configured. Set SMTP_EMAIL + SMTP_PASSWORD (Gmail app password) or DEV_OTP_TO_CONSOLE=true for local dev.'
+        'Email is not configured. Set SMTP_EMAIL + SMTP_PASSWORD (Gmail app password) on Render, or DEV_OTP_TO_CONSOLE=true for local dev.'
     });
   }
 
@@ -77,23 +71,16 @@ exports.studentRequestOtp = async (req, res) => {
     return res.status(400).json({ error: 'Name is required.' });
   }
 
-  const client = await pool.connect();
   try {
-    const resolved = await resolveStudentCollege(client, rawEmail);
+    const resolved = await resolveStudentCollege(rawEmail);
     if (resolved.error) {
       return res.status(resolved.error.status).json(resolved.error.body);
     }
     const { college, emailNorm } = resolved;
 
-    const existing = await client.query(
-      `SELECT id, role FROM users WHERE LOWER(email) = LOWER($1)`,
-      [emailNorm]
-    );
-    if (existing.rows.length > 0) {
-      const row = existing.rows[0];
-      if (row.role === 'admin' || row.role === 'superadmin') {
-        return res.status(403).json({ error: 'Staff accounts must sign in from the admin page.' });
-      }
+    const existing = await User.findOne({ email: emailNorm });
+    if (existing && (existing.role === 'admin' || existing.role === 'superadmin')) {
+      return res.status(403).json({ error: 'Staff accounts must sign in from the admin page.' });
     }
 
     const now = Date.now();
@@ -104,18 +91,20 @@ exports.studentRequestOtp = async (req, res) => {
       });
     }
 
-    await cleanupExpiredOtps(client);
-    await client.query(`DELETE FROM student_signin_otps WHERE LOWER(email) = LOWER($1)`, [emailNorm]);
+    await cleanupExpiredOtps();
+    await StudentSigninOtp.deleteMany({ email: emailNorm });
 
     const code = generateSixDigitCode();
     const otpHash = hashOtp(emailNorm, code);
     const expiresAt = new Date(Date.now() + OTP_EXPIRY_MINUTES * 60 * 1000);
 
-    await client.query(
-      `INSERT INTO student_signin_otps (email, name, college_id, otp_hash, expires_at)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [emailNorm, nameTrim.slice(0, 255), college.id, otpHash, expiresAt]
-    );
+    await StudentSigninOtp.create({
+      email: emailNorm,
+      name: nameTrim.slice(0, 255),
+      college_id: college.id,
+      otp_hash: otpHash,
+      expires_at: expiresAt
+    });
 
     lastOtpSendAt.set(emailNorm, now);
 
@@ -123,7 +112,7 @@ exports.studentRequestOtp = async (req, res) => {
       await sendOtpEmail(emailNorm, code, OTP_EXPIRY_MINUTES);
     } catch (mailErr) {
       console.error('sendOtpEmail error:', mailErr);
-      await client.query(`DELETE FROM student_signin_otps WHERE LOWER(email) = LOWER($1)`, [emailNorm]);
+      await StudentSigninOtp.deleteMany({ email: emailNorm });
       lastOtpSendAt.delete(emailNorm);
       return res.status(502).json({ error: 'Could not send email. Check SMTP settings.' });
     }
@@ -133,19 +122,10 @@ exports.studentRequestOtp = async (req, res) => {
       expiresInMinutes: OTP_EXPIRY_MINUTES
     });
   } catch (error) {
-    if (error.code === '42P01') {
-      return res.status(500).json({
-        error:
-          'OTP table missing. Run backend/db/migrate_student_signin_otp.sql against your database.'
-      });
-    }
     console.error('studentRequestOtp error:', error);
     return res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
-
 
 exports.studentVerifyOtp = async (req, res) => {
   const rawEmail = req.body?.email;
@@ -159,28 +139,22 @@ exports.studentVerifyOtp = async (req, res) => {
     return res.status(400).json({ error: 'Enter the 6-digit code from your email.' });
   }
 
-  const client = await pool.connect();
-  let tx = false;
   try {
-    await cleanupExpiredOtps(client);
+    await cleanupExpiredOtps();
 
-    const otpRes = await client.query(
-      `SELECT id, email, name, college_id, otp_hash, expires_at
-       FROM student_signin_otps
-       WHERE LOWER(email) = LOWER($1) AND expires_at > NOW()
-       ORDER BY id DESC
-       LIMIT 1`,
-      [emailNorm]
-    );
-    if (otpRes.rows.length === 0) {
+    const otpRow = await StudentSigninOtp.findOne({
+      email: emailNorm,
+      expires_at: { $gt: new Date() }
+    }).sort({ id: -1 });
+
+    if (!otpRow) {
       return res.status(400).json({ error: 'Invalid or expired code. Request a new one.' });
     }
-    const otpRow = otpRes.rows[0];
     if (!verifyOtp(emailNorm, code, otpRow.otp_hash)) {
       return res.status(400).json({ error: 'Invalid code.' });
     }
 
-    const collegeCheck = await resolveStudentCollege(client, emailNorm);
+    const collegeCheck = await resolveStudentCollege(emailNorm);
     if (collegeCheck.error) {
       return res.status(collegeCheck.error.status).json(collegeCheck.error.body);
     }
@@ -191,67 +165,35 @@ exports.studentVerifyOtp = async (req, res) => {
     const nameTrim = String(otpRow.name || '').trim().slice(0, 255);
     const college = collegeCheck.college;
 
-    await client.query('BEGIN');
-    tx = true;
-
-    const existing = await client.query(
-      `SELECT id, role, college_id FROM users WHERE LOWER(email) = LOWER($1) FOR UPDATE`,
-      [emailNorm]
-    );
-    if (existing.rows.length > 0) {
-      const row = existing.rows[0];
-      if (row.role === 'admin' || row.role === 'superadmin') {
-        await client.query('ROLLBACK');
-        tx = false;
+    const existing = await User.findOne({ email: emailNorm });
+    if (existing) {
+      if (existing.role === 'admin' || existing.role === 'superadmin') {
         return res.status(403).json({ error: 'Staff accounts must sign in from the admin page.' });
       }
-      await client.query(
-        `UPDATE users SET
-           college_id = $2,
-           name = $3,
-           is_verified = true,
-           otp_code = NULL,
-           otp_expiry = NULL
-         WHERE id = $1`,
-        [row.id, college.id, nameTrim]
-      );
+      existing.college_id = college.id;
+      existing.name = nameTrim;
+      existing.is_verified = true;
+      existing.otp_code = null;
+      existing.otp_expiry = null;
+      await existing.save();
     } else {
-      await client.query(
-        `INSERT INTO users (name, email, college_id, is_verified)
-         VALUES ($1, $2, $3, true)`,
-        [nameTrim, emailNorm, college.id]
-      );
-    }
-
-    await client.query(`DELETE FROM student_signin_otps WHERE LOWER(email) = LOWER($1)`, [emailNorm]);
-    await client.query('COMMIT');
-    tx = false;
-  } catch (error) {
-    if (tx) await client.query('ROLLBACK').catch(() => {});
-    if (error.code === '42P01') {
-      return res.status(500).json({
-        error:
-          'OTP table missing. Run backend/db/migrate_student_signin_otp.sql against your database.'
+      await User.create({
+        name: nameTrim,
+        email: emailNorm,
+        college_id: college.id,
+        is_verified: true
       });
     }
+
+    await StudentSigninOtp.deleteMany({ email: emailNorm });
+  } catch (error) {
     console.error('studentVerifyOtp error:', error);
     return res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 
   try {
-    const refreshed = await pool.query(
-      `SELECT u.id, u.name, u.email, u.role, u.credits, u.college_id, u.is_verified, c.name AS college_name
-       FROM users u
-       LEFT JOIN colleges c ON c.id = u.college_id
-       WHERE LOWER(u.email) = LOWER($1)`,
-      [emailNorm]
-    );
-    const row = refreshed.rows[0];
-    if (!row) {
-      return res.status(500).json({ error: 'Server error.' });
-    }
+    const row = await loadUserWithCollege(emailNorm);
+    if (!row) return res.status(500).json({ error: 'Server error.' });
     const token = signToken(row);
     res.json({
       user: {
@@ -280,20 +222,10 @@ exports.adminLogin = async (req, res) => {
     }
     const emailNorm = String(email).trim().toLowerCase();
 
-    const r = await pool.query(
-      `SELECT u.id, u.name, u.email, u.role, u.credits, u.college_id, u.is_verified, u.password,
-              c.name AS college_name
-       FROM users u
-       LEFT JOIN colleges c ON c.id = u.college_id
-       WHERE LOWER(u.email) = LOWER($1)`,
-      [emailNorm]
-    );
-
-    if (r.rows.length === 0) {
+    const row = await loadUserWithCollege(emailNorm);
+    if (!row) {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
-
-    const row = r.rows[0];
     if (row.role !== 'admin' && row.role !== 'superadmin') {
       return res.status(403).json({ error: 'This sign-in is only for staff accounts.' });
     }

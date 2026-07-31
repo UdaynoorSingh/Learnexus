@@ -1,4 +1,18 @@
-const pool = require('../config/db');
+const {
+  College,
+  User,
+  Note,
+  Topic,
+  Degree,
+  Branch,
+  Semester,
+  Subject,
+  Teacher,
+  Transaction,
+  CompanyChallenge,
+  ChallengeSubmission
+} = require('../models');
+const { leanDoc, leanDocs, isDuplicateKeyError, aggregateByDay } = require('../utils/mongoHelpers');
 
 function isSuperAdmin(user) {
   return user && user.role === 'superadmin';
@@ -24,32 +38,34 @@ function targetCollegeIdForWrites(req) {
 }
 
 async function assertNoteAdminAccess(req, noteId) {
-  const r = await pool.query('SELECT id, college_id, uploaded_by FROM notes WHERE id = $1', [noteId]);
-  if (r.rows.length === 0) {
-    return { ok: false, status: 404, error: 'Note not found.' };
-  }
-  const row = r.rows[0];
-  if (isSuperAdmin(req.user)) return { ok: true, row };
+  const row = await Note.findOne({ id: Number(noteId) });
+  if (!row) return { ok: false, status: 404, error: 'Note not found.' };
+  if (isSuperAdmin(req.user)) return { ok: true, row: leanDoc(row) };
   if (row.college_id !== req.user.college_id) {
     return { ok: false, status: 403, error: 'Forbidden.' };
   }
-  return { ok: true, row };
+  return { ok: true, row: leanDoc(row) };
+}
+
+async function enrichNote(n) {
+  const uploader = n.uploaded_by ? await User.findOne({ id: n.uploaded_by }) : null;
+  const topic = n.topic_id ? await Topic.findOne({ id: n.topic_id }) : null;
+  return {
+    ...leanDoc(n),
+    uploader_name: uploader?.name || null,
+    topic_name: topic?.name || null
+  };
 }
 
 exports.getCollegesAdmin = async (req, res) => {
   try {
     if (isSuperAdmin(req.user)) {
-      const result = await pool.query(
-        'SELECT id, name, domain_suffix, created_at FROM colleges ORDER BY name'
-      );
-      return res.json(result.rows);
+      const colleges = await College.find().sort({ name: 1 });
+      return res.json(leanDocs(colleges));
     }
     if (req.user.role === 'admin' && req.user.college_id != null) {
-      const result = await pool.query(
-        'SELECT id, name, domain_suffix, created_at FROM colleges WHERE id = $1',
-        [req.user.college_id]
-      );
-      return res.json(result.rows);
+      const college = await College.findOne({ id: req.user.college_id });
+      return res.json(college ? [leanDoc(college)] : []);
     }
     return res.status(403).json({ error: 'Forbidden.' });
   } catch (error) {
@@ -67,13 +83,13 @@ exports.createCollegeAdmin = async (req, res) => {
     if (!name || !domainSuffix) {
       return res.status(400).json({ error: 'name and domain_suffix are required.' });
     }
-    const result = await pool.query(
-      'INSERT INTO colleges (name, domain_suffix) VALUES ($1, LOWER(TRIM($2))) RETURNING *',
-      [String(name).trim(), String(domainSuffix).trim()]
-    );
-    res.status(201).json(result.rows[0]);
+    const college = await College.create({
+      name: String(name).trim(),
+      domain_suffix: String(domainSuffix).trim().toLowerCase()
+    });
+    res.status(201).json(leanDoc(college));
   } catch (error) {
-    if (error.code === '23505') {
+    if (isDuplicateKeyError(error)) {
       return res.status(409).json({ error: 'A college with this domain suffix already exists.' });
     }
     console.error('createCollegeAdmin error:', error);
@@ -89,29 +105,15 @@ exports.updateCollegeAdmin = async (req, res) => {
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid id.' });
     const { name, domain_suffix: domainSuffix } = req.body;
-    const fields = [];
-    const vals = [];
-    let i = 1;
-    if (name != null) {
-      fields.push(`name = $${i++}`);
-      vals.push(String(name).trim());
-    }
-    if (domainSuffix != null) {
-      fields.push(`domain_suffix = LOWER(TRIM($${i++}))`);
-      vals.push(String(domainSuffix).trim());
-    }
-    if (fields.length === 0) {
-      return res.status(400).json({ error: 'No fields to update.' });
-    }
-    vals.push(id);
-    const result = await pool.query(
-      `UPDATE colleges SET ${fields.join(', ')} WHERE id = $${i} RETURNING *`,
-      vals
-    );
-    if (result.rows.length === 0) return res.status(404).json({ error: 'College not found.' });
-    res.json(result.rows[0]);
+
+    const college = await College.findOne({ id });
+    if (!college) return res.status(404).json({ error: 'College not found.' });
+    if (name != null) college.name = String(name).trim();
+    if (domainSuffix != null) college.domain_suffix = String(domainSuffix).trim().toLowerCase();
+    await college.save();
+    res.json(leanDoc(college));
   } catch (error) {
-    if (error.code === '23505') {
+    if (isDuplicateKeyError(error)) {
       return res.status(409).json({ error: 'A college with this domain suffix already exists.' });
     }
     console.error('updateCollegeAdmin error:', error);
@@ -126,13 +128,16 @@ exports.deleteCollegeAdmin = async (req, res) => {
     }
     const id = parseInt(req.params.id, 10);
     if (Number.isNaN(id)) return res.status(400).json({ error: 'Invalid id.' });
-    const result = await pool.query('DELETE FROM colleges WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) return res.status(404).json({ error: 'College not found.' });
-    res.json({ ok: true, id });
-  } catch (error) {
-    if (error.code === '23503') {
+
+    const userCount = await User.countDocuments({ college_id: id });
+    if (userCount > 0) {
       return res.status(409).json({ error: 'Cannot delete college: dependent records exist.' });
     }
+
+    const del = await College.findOneAndDelete({ id });
+    if (!del) return res.status(404).json({ error: 'College not found.' });
+    res.json({ ok: true, id });
+  } catch (error) {
     console.error('deleteCollegeAdmin error:', error);
     res.status(500).json({ error: 'Server error.' });
   }
@@ -141,17 +146,11 @@ exports.deleteCollegeAdmin = async (req, res) => {
 exports.getPendingNotes = async (req, res) => {
   try {
     const cf = resolveNotesCollegeFilter(req);
-    const result = await pool.query(
-      `SELECT n.*, u.name as uploader_name, t.name as topic_name
-       FROM notes n
-       JOIN users u ON n.uploaded_by = u.id
-       JOIN topics t ON n.topic_id = t.id
-       WHERE n.is_verified = FALSE
-       AND ($1::int IS NULL OR n.college_id = $1)
-       ORDER BY n.created_at DESC`,
-      [cf]
-    );
-    res.json(result.rows);
+    const filter = { is_verified: false };
+    if (cf != null) filter.college_id = cf;
+    const notes = await Note.find(filter).sort({ created_at: -1 });
+    const rows = await Promise.all(notes.map(enrichNote));
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }
@@ -165,20 +164,19 @@ exports.verifyNote = async (req, res) => {
     if (!access.ok) return res.status(access.status).json({ error: access.error });
 
     if (verified) {
-      await pool.query('UPDATE notes SET is_verified = TRUE WHERE id = $1', [noteId]);
-
-      const note = await pool.query('SELECT uploaded_by FROM notes WHERE id = $1', [noteId]);
-      if (note.rows.length > 0) {
-        await pool.query('UPDATE users SET credits = credits + 3 WHERE id = $1', [note.rows[0].uploaded_by]);
-        await pool.query(
-          'INSERT INTO transactions (user_id, credits_added, reason) VALUES ($1, 3, $2)',
-          [note.rows[0].uploaded_by, 'Note verified by admin']
-        );
+      await Note.updateOne({ id: Number(noteId) }, { is_verified: true });
+      const note = await Note.findOne({ id: Number(noteId) });
+      if (note?.uploaded_by) {
+        await User.findOneAndUpdate({ id: note.uploaded_by }, { $inc: { credits: 3 } });
+        await Transaction.create({
+          user_id: note.uploaded_by,
+          credits_added: 3,
+          reason: 'Note verified by admin'
+        });
       }
-
       res.json({ message: 'Note approved.' });
     } else {
-      await pool.query('DELETE FROM notes WHERE id = $1', [noteId]);
+      await Note.deleteOne({ id: Number(noteId) });
       res.json({ message: 'Note rejected and deleted.' });
     }
   } catch (error) {
@@ -191,7 +189,7 @@ exports.deleteNote = async (req, res) => {
     const { noteId } = req.params;
     const access = await assertNoteAdminAccess(req, noteId);
     if (!access.ok) return res.status(access.status).json({ error: access.error });
-    await pool.query('DELETE FROM notes WHERE id = $1', [noteId]);
+    await Note.deleteOne({ id: Number(noteId) });
     res.json({ message: 'Note deleted.' });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
@@ -199,165 +197,124 @@ exports.deleteNote = async (req, res) => {
 };
 
 exports.createDegree = async (req, res) => {
-  const client = await pool.connect();
   try {
     const { name } = req.body;
     if (!name) return res.status(400).json({ error: 'name is required.' });
     const cid = targetCollegeIdForWrites(req);
-    await client.query('BEGIN');
-    const result = await client.query(
-      'INSERT INTO degrees (name, college_id) VALUES ($1, $2) RETURNING *',
-      [String(name).trim(), cid]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(result.rows[0]);
+    const degree = await Degree.create({ name: String(name).trim(), college_id: cid });
+    res.status(201).json(leanDoc(degree));
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
 
 exports.createBranch = async (req, res) => {
-  const client = await pool.connect();
   try {
     const { name, degreeId } = req.body;
     if (!name || degreeId == null) {
       return res.status(400).json({ error: 'name and degreeId are required.' });
     }
     const cid = targetCollegeIdForWrites(req);
-    await client.query('BEGIN');
-    const d = await client.query('SELECT college_id FROM degrees WHERE id = $1', [degreeId]);
-    if (d.rows.length === 0 || d.rows[0].college_id !== cid) {
-      await client.query('ROLLBACK');
+    const degree = await Degree.findOne({ id: Number(degreeId) });
+    if (!degree || degree.college_id !== cid) {
       return res.status(400).json({ error: 'Invalid degree for this college.' });
     }
-    const result = await client.query(
-      'INSERT INTO branches (name, degree_id, college_id) VALUES ($1, $2, $3) RETURNING *',
-      [String(name).trim(), degreeId, cid]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(result.rows[0]);
+    const branch = await Branch.create({
+      name: String(name).trim(),
+      degree_id: Number(degreeId),
+      college_id: cid
+    });
+    res.status(201).json(leanDoc(branch));
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
 
 exports.createSemester = async (req, res) => {
-  const client = await pool.connect();
   try {
     const { number, branchId } = req.body;
     if (number == null || branchId == null) {
       return res.status(400).json({ error: 'number and branchId are required.' });
     }
     const cid = targetCollegeIdForWrites(req);
-    await client.query('BEGIN');
-    const b = await client.query('SELECT college_id FROM branches WHERE id = $1', [branchId]);
-    if (b.rows.length === 0 || b.rows[0].college_id !== cid) {
-      await client.query('ROLLBACK');
+    const branch = await Branch.findOne({ id: Number(branchId) });
+    if (!branch || branch.college_id !== cid) {
       return res.status(400).json({ error: 'Invalid branch for this college.' });
     }
-    const result = await client.query(
-      'INSERT INTO semesters (number, branch_id, college_id) VALUES ($1, $2, $3) RETURNING *',
-      [number, branchId, cid]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(result.rows[0]);
+    const semester = await Semester.create({
+      number,
+      branch_id: Number(branchId),
+      college_id: cid
+    });
+    res.status(201).json(leanDoc(semester));
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
 
 exports.createSubject = async (req, res) => {
-  const client = await pool.connect();
   try {
     const { name, semesterId } = req.body;
     if (!name || semesterId == null) {
       return res.status(400).json({ error: 'name and semesterId are required.' });
     }
     const cid = targetCollegeIdForWrites(req);
-    await client.query('BEGIN');
-    const s = await client.query('SELECT college_id FROM semesters WHERE id = $1', [semesterId]);
-    if (s.rows.length === 0 || s.rows[0].college_id !== cid) {
-      await client.query('ROLLBACK');
+    const semester = await Semester.findOne({ id: Number(semesterId) });
+    if (!semester || semester.college_id !== cid) {
       return res.status(400).json({ error: 'Invalid semester for this college.' });
     }
-    const result = await client.query(
-      'INSERT INTO subjects (name, semester_id, college_id) VALUES ($1, $2, $3) RETURNING *',
-      [String(name).trim(), semesterId, cid]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(result.rows[0]);
+    const subject = await Subject.create({
+      name: String(name).trim(),
+      semester_id: Number(semesterId),
+      college_id: cid
+    });
+    res.status(201).json(leanDoc(subject));
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
 
 exports.createTopic = async (req, res) => {
-  const client = await pool.connect();
   try {
     const { name, subjectId, parentTopicId, teacherId } = req.body;
     if (!name || subjectId == null) {
       return res.status(400).json({ error: 'name and subjectId are required.' });
     }
     const cid = targetCollegeIdForWrites(req);
-    await client.query('BEGIN');
-    const sub = await client.query('SELECT college_id FROM subjects WHERE id = $1', [subjectId]);
-    if (sub.rows.length === 0 || sub.rows[0].college_id !== cid) {
-      await client.query('ROLLBACK');
+    const subject = await Subject.findOne({ id: Number(subjectId) });
+    if (!subject || subject.college_id !== cid) {
       return res.status(400).json({ error: 'Invalid subject for this college.' });
     }
     if (teacherId != null) {
-      const te = await client.query(
-        'SELECT college_id, subject_id FROM teachers WHERE id = $1',
-        [teacherId]
-      );
+      const te = await Teacher.findOne({ id: Number(teacherId) });
       if (
-        te.rows.length === 0 ||
-        te.rows[0].college_id !== cid ||
-        (te.rows[0].subject_id != null && te.rows[0].subject_id !== parseInt(subjectId, 10))
+        !te ||
+        te.college_id !== cid ||
+        (te.subject_id != null && te.subject_id !== parseInt(subjectId, 10))
       ) {
-        await client.query('ROLLBACK');
         return res.status(400).json({ error: 'Invalid teacher for this subject/college.' });
       }
     }
-    const result = await client.query(
-      'INSERT INTO topics (name, subject_id, parent_topic_id, teacher_id, college_id) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [String(name).trim(), subjectId, parentTopicId || null, teacherId || null, cid]
-    );
-    await client.query('COMMIT');
-    res.status(201).json(result.rows[0]);
+    const topic = await Topic.create({
+      name: String(name).trim(),
+      subject_id: Number(subjectId),
+      parent_topic_id: parentTopicId || null,
+      teacher_id: teacherId || null,
+      college_id: cid
+    });
+    res.status(201).json(leanDoc(topic));
   } catch (error) {
-    await client.query('ROLLBACK');
     res.status(500).json({ error: 'Server error.' });
-  } finally {
-    client.release();
   }
 };
 
 exports.getAllNotes = async (req, res) => {
   try {
     const cf = resolveNotesCollegeFilter(req);
-    const result = await pool.query(
-      `SELECT n.*, u.name as uploader_name, t.name as topic_name
-       FROM notes n
-       JOIN users u ON n.uploaded_by = u.id
-       JOIN topics t ON n.topic_id = t.id
-       WHERE ($1::int IS NULL OR n.college_id = $1)
-       ORDER BY n.created_at DESC`,
-      [cf]
-    );
-    res.json(result.rows);
+    const filter = cf == null ? {} : { college_id: cf };
+    const notes = await Note.find(filter).sort({ created_at: -1 });
+    const rows = await Promise.all(notes.map(enrichNote));
+    res.json(rows);
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }
@@ -366,33 +323,14 @@ exports.getAllNotes = async (req, res) => {
 exports.getStats = async (req, res) => {
   try {
     const cf = resolveNotesCollegeFilter(req);
-    const users = await pool.query(
-      cf == null
-        ? 'SELECT COUNT(*) FROM users'
-        : 'SELECT COUNT(*) FROM users WHERE college_id = $1',
-      cf == null ? [] : [cf]
-    );
-    const notes = await pool.query(
-      cf == null ? 'SELECT COUNT(*) FROM notes' : 'SELECT COUNT(*) FROM notes WHERE college_id = $1',
-      cf == null ? [] : [cf]
-    );
-    const topics = await pool.query(
-      cf == null ? 'SELECT COUNT(*) FROM topics' : 'SELECT COUNT(*) FROM topics WHERE college_id = $1',
-      cf == null ? [] : [cf]
-    );
-    const pendingNotes = await pool.query(
-      cf == null
-        ? 'SELECT COUNT(*) FROM notes WHERE is_verified = FALSE'
-        : 'SELECT COUNT(*) FROM notes WHERE is_verified = FALSE AND college_id = $1',
-      cf == null ? [] : [cf]
-    );
-
-    res.json({
-      totalUsers: parseInt(users.rows[0].count),
-      totalNotes: parseInt(notes.rows[0].count),
-      totalTopics: parseInt(topics.rows[0].count),
-      pendingNotes: parseInt(pendingNotes.rows[0].count)
-    });
+    const filter = cf == null ? {} : { college_id: cf };
+    const [totalUsers, totalNotes, totalTopics, pendingNotes] = await Promise.all([
+      User.countDocuments(filter),
+      Note.countDocuments(filter),
+      Topic.countDocuments(filter),
+      Note.countDocuments({ ...filter, is_verified: false })
+    ]);
+    res.json({ totalUsers, totalNotes, totalTopics, pendingNotes });
   } catch (error) {
     res.status(500).json({ error: 'Server error.' });
   }
@@ -401,47 +339,14 @@ exports.getStats = async (req, res) => {
 exports.getChartStats = async (req, res) => {
   try {
     const cf = resolveNotesCollegeFilter(req);
-    const uploadsRes = await pool.query(
-      cf == null
-        ? `
-      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count
-      FROM notes
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY TO_CHAR(created_at, 'MM-DD')
-      ORDER BY date ASC
-    `
-        : `
-      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count
-      FROM notes
-      WHERE college_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY TO_CHAR(created_at, 'MM-DD')
-      ORDER BY date ASC
-    `,
-      cf == null ? [] : [cf]
-    );
-
-    const usersRes = await pool.query(
-      cf == null
-        ? `
-      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count
-      FROM users
-      WHERE created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY TO_CHAR(created_at, 'MM-DD')
-      ORDER BY date ASC
-    `
-        : `
-      SELECT TO_CHAR(created_at, 'MM-DD') as date, COUNT(*) as count
-      FROM users
-      WHERE college_id = $1 AND created_at >= NOW() - INTERVAL '7 days'
-      GROUP BY TO_CHAR(created_at, 'MM-DD')
-      ORDER BY date ASC
-    `,
-      cf == null ? [] : [cf]
-    );
-
+    const filter = cf == null ? {} : { college_id: cf };
+    const [uploadsRes, usersRes] = await Promise.all([
+      aggregateByDay(Note, filter),
+      aggregateByDay(User, filter)
+    ]);
     res.json({
-      uploadsData: uploadsRes.rows.map((r) => ({ date: r.date, uploads: parseInt(r.count) })),
-      usersData: usersRes.rows.map((r) => ({ date: r.date, users: parseInt(r.count) }))
+      uploadsData: uploadsRes.map((r) => ({ date: r.date, uploads: r.count })),
+      usersData: usersRes.map((r) => ({ date: r.date, users: r.count }))
     });
   } catch (error) {
     console.error(error);
@@ -455,23 +360,20 @@ exports.createChallenge = async (req, res) => {
     if (!company_name || !title || !description || !difficulty) {
       return res.status(400).json({ error: 'Missing required challenge fields.' });
     }
-    
-    let tagsJSON = tags;
-    if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
-    if (!tagsJSON) tagsJSON = '[]';
-    
+    let tagsData = tags;
+    if (!tagsData) tagsData = [];
     let credits = parseInt(bounty_credits, 10);
     if (isNaN(credits)) credits = 5;
 
-    const query = `
-      INSERT INTO company_challenges (company_name, title, description, difficulty, bounty_credits, tags)
-      VALUES ($1, $2, $3, $4, $5, $6)
-      RETURNING *
-    `;
-    const values = [company_name, title, description, difficulty, credits, tagsJSON];
-
-    const result = await pool.query(query, values);
-    res.status(201).json(result.rows[0]);
+    const challenge = await CompanyChallenge.create({
+      company_name,
+      title,
+      description,
+      difficulty,
+      bounty_credits: credits,
+      tags: tagsData
+    });
+    res.status(201).json(leanDoc(challenge));
   } catch (error) {
     console.error('createChallenge error:', error);
     res.status(500).json({ error: 'Server error creating company challenge.' });
@@ -482,33 +384,21 @@ exports.updateChallenge = async (req, res) => {
   try {
     const { id } = req.params;
     const { company_name, title, description, difficulty, bounty_credits, tags } = req.body;
-    
-    let tagsJSON = tags;
-    if (Array.isArray(tags)) tagsJSON = JSON.stringify(tags);
-    if (!tagsJSON) tagsJSON = '[]';
-    
-    let credits = parseInt(bounty_credits, 10);
-    if (isNaN(credits)) credits = 5;
 
-    const query = `
-      UPDATE company_challenges 
-      SET company_name = COALESCE($1, company_name),
-          title = COALESCE($2, title),
-          description = COALESCE($3, description),
-          difficulty = COALESCE($4, difficulty),
-          bounty_credits = COALESCE($5, bounty_credits),
-          tags = COALESCE($6, tags)
-      WHERE id = $7
-      RETURNING *
-    `;
-    const values = [company_name, title, description, difficulty, credits, tagsJSON, id];
-    
-    const result = await pool.query(query, values);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Challenge not found.' });
+    const challenge = await CompanyChallenge.findOne({ id: Number(id) });
+    if (!challenge) return res.status(404).json({ error: 'Challenge not found.' });
+
+    if (company_name != null) challenge.company_name = company_name;
+    if (title != null) challenge.title = title;
+    if (description != null) challenge.description = description;
+    if (difficulty != null) challenge.difficulty = difficulty;
+    if (bounty_credits != null) {
+      const credits = parseInt(bounty_credits, 10);
+      if (!isNaN(credits)) challenge.bounty_credits = credits;
     }
-    
-    res.json(result.rows[0]);
+    if (tags != null) challenge.tags = tags;
+    await challenge.save();
+    res.json(leanDoc(challenge));
   } catch (err) {
     console.error('updateChallenge error:', err);
     res.status(500).json({ error: 'Server error updating challenge.' });
@@ -518,11 +408,9 @@ exports.updateChallenge = async (req, res) => {
 exports.deleteChallenge = async (req, res) => {
   try {
     const { id } = req.params;
-    await pool.query('DELETE FROM challenge_submissions WHERE challenge_id = $1', [id]);
-    const result = await pool.query('DELETE FROM company_challenges WHERE id = $1 RETURNING id', [id]);
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Challenge not found.' });
-    }
+    await ChallengeSubmission.deleteMany({ challenge_id: Number(id) });
+    const del = await CompanyChallenge.findOneAndDelete({ id: Number(id) });
+    if (!del) return res.status(404).json({ error: 'Challenge not found.' });
     res.json({ message: 'Challenge deleted successfully.' });
   } catch (err) {
     console.error('deleteChallenge error:', err);

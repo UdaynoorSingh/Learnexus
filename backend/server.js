@@ -89,11 +89,20 @@ app.use('/api/challenges', require('./routes/challengeRoutes'));
 app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/sessions', require('./routes/sessionsRoutes'));
 
+const connectDB = require('./config/db');
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`Learnexus Backend running on port ${PORT}`);
-  if (process.env.ENABLE_GHOST_STUDENT !== 'false') {
-    const { startGhostStudentWorker } = require('./workers/ghostStudent');
-    startGhostStudentWorker();
-  }
-});
+
+connectDB()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`Learnexus Backend running on port ${PORT}`);
+      if (process.env.ENABLE_GHOST_STUDENT !== 'false') {
+        const { startGhostStudentWorker } = require('./workers/ghostStudent');
+        startGhostStudentWorker();
+      }
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to connect to MongoDB:', err.message);
+    process.exit(1);
+  });

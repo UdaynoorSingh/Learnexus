@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { User, College, Post, Comment, Topic } = require('../models');
 const { GHOST_AI_EMAIL } = require('../config/ghostStudent');
 
 const INTERVAL_MS = 5 * 60 * 1000;
@@ -15,26 +15,22 @@ async function ensureGhostAiUserId() {
 
   if (aiUserIdCache != null) return aiUserIdCache;
 
-  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [GHOST_AI_EMAIL]);
-  if (existing.rows.length) {
-    aiUserIdCache = existing.rows[0].id;
+  const existing = await User.findOne({ email: GHOST_AI_EMAIL });
+  if (existing) {
+    aiUserIdCache = existing.id;
     return aiUserIdCache;
   }
 
-  const ins = await pool.query(
-    `INSERT INTO users (name, email, college_id, role, credits, is_verified)
-     VALUES (
-       'AI Tutor',
-       $1,
-       (SELECT id FROM colleges WHERE LOWER(domain_suffix) = 'system.learnexus.internal' LIMIT 1),
-       'student',
-       0,
-       true
-     )
-     RETURNING id`,
-    [GHOST_AI_EMAIL]
-  );
-  aiUserIdCache = ins.rows[0].id;
+  const systemCollege = await College.findOne({ domain_suffix: 'system.learnexus.internal' });
+  const ins = await User.create({
+    name: 'AI Tutor',
+    email: GHOST_AI_EMAIL,
+    college_id: systemCollege?.id,
+    role: 'student',
+    credits: 0,
+    is_verified: true
+  });
+  aiUserIdCache = ins.id;
   console.log(`[GhostStudent] Created AI Tutor user id=${aiUserIdCache}`);
   return aiUserIdCache;
 }
@@ -49,28 +45,23 @@ async function mapTagToTopicId(tag, authorCollegeId) {
     .replace(/-/g, '_');
   if (!normalized) return null;
 
-  const r = await pool.query(
-    `SELECT id FROM topics
-     WHERE college_id = $2
-       AND LOWER(REPLACE(REPLACE(TRIM(name), ' ', '_'), '-', '_')) = $1
-     LIMIT 1`,
-    [normalized, authorCollegeId]
+  const topics = await Topic.find({ college_id: authorCollegeId });
+  const match = topics.find(
+    (t) =>
+      String(t.name || '')
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
+        .replace(/-/g, '_') === normalized
   );
-  return r.rows[0]?.id ?? null;
+  return match?.id ?? null;
 }
 
 async function fetchAiAnswer({ title, content, topicId, imageUrl }) {
-  const body = {
-    title,
-    content,
-    topicId: topicId ?? undefined,
-    imageUrl: imageUrl || undefined
-  };
-
   const res = await fetch(`${AI_URL}/api/ai/community/auto-answer`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body)
+    body: JSON.stringify({ title, content, topicId: topicId ?? undefined, imageUrl: imageUrl || undefined })
   });
 
   if (!res.ok) {
@@ -100,55 +91,56 @@ async function processOnePost(post, aiUserId) {
     return;
   }
 
-  const client = await pool.connect();
   try {
-    await client.query('BEGIN');
-    const gate = await client.query(
-      `SELECT p.id FROM posts p
-       WHERE p.id = $1
-         AND p.is_solved = false
-         AND p.created_at < NOW() - INTERVAL '10 minutes'
-         AND NOT EXISTS (SELECT 1 FROM comments c WHERE c.post_id = p.id)
-       FOR UPDATE`,
-      [post.id]
-    );
-    if (gate.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return;
-    }
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000);
+    const p = await Post.findOne({
+      id: post.id,
+      is_solved: false,
+      created_at: { $lt: tenMinAgo }
+    });
+    if (!p) return;
 
-    await client.query(
-      `INSERT INTO comments (post_id, user_id, content, is_anonymous, parent_comment_id)
-       VALUES ($1, $2, $3, false, NULL)`,
-      [post.id, aiUserId, answer]
-    );
-    await client.query('COMMIT');
+    const commentCount = await Comment.countDocuments({ post_id: post.id });
+    if (commentCount > 0) return;
+
+    await Comment.create({
+      post_id: post.id,
+      user_id: aiUserId,
+      content: answer,
+      is_anonymous: false,
+      parent_comment_id: null
+    });
     console.log(`[GhostStudent] Posted AI Tutor comment on post ${post.id}`);
   } catch (err) {
-    await client.query('ROLLBACK');
     console.error(`[GhostStudent] DB error for post ${post.id}:`, err.message || err);
-  } finally {
-    client.release();
   }
 }
 
 async function runGhostStudentCycle() {
   try {
     const aiUserId = await ensureGhostAiUserId();
+    const tenMinAgo = new Date(Date.now() - 10 * 60 * 1000);
 
-    const { rows } = await pool.query(
-      `SELECT p.id, p.title, p.content, p.tag, p.image_url, u.college_id AS author_college_id
-       FROM posts p
-       INNER JOIN users u ON u.id = p.user_id
-       WHERE p.is_solved = false
-         AND p.created_at < NOW() - INTERVAL '10 minutes'
-         AND NOT EXISTS (SELECT 1 FROM comments c WHERE c.post_id = p.id)
-       ORDER BY p.created_at ASC
-       LIMIT 10`
-    );
+    const posts = await Post.find({ is_solved: false, created_at: { $lt: tenMinAgo } })
+      .sort({ created_at: 1 })
+      .limit(10);
 
-    for (const post of rows) {
-      await processOnePost(post, aiUserId);
+    for (const post of posts) {
+      const commentCount = await Comment.countDocuments({ post_id: post.id });
+      if (commentCount > 0) continue;
+
+      const author = await User.findOne({ id: post.user_id });
+      await processOnePost(
+        {
+          id: post.id,
+          title: post.title,
+          content: post.content,
+          tag: post.tag,
+          image_url: post.image_url,
+          author_college_id: author?.college_id
+        },
+        aiUserId
+      );
     }
   } catch (err) {
     console.error('[GhostStudent] cycle error:', err.message || err);
