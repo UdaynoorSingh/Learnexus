@@ -3,6 +3,7 @@ import json
 import re
 import base64
 import hashlib
+import time
 import requests
 import uvicorn
 from fastapi import FastAPI, HTTPException
@@ -134,31 +135,92 @@ class NexGuideRequest(BaseModel):
     currentPath: Optional[str] = None
 
 
-def call_groq(prompt: str, fallback: bool = True) -> str:
+def truncate_for_llm(text: str, max_chars: int = 6000) -> str:
+    text = (text or "").strip()
+    if len(text) <= max_chars:
+        return text
+    return text[:max_chars] + "\n\n[Text truncated for AI processing.]"
+
+
+def call_gemini(prompt: str) -> str:
+    response = model.generate_content(prompt)
+    return (response.text or "").strip()
+
+
+def call_groq(prompt: str, fallback: bool = True, model_name: str = "llama-3.3-70b-versatile") -> str:
     try:
         response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
+            model=model_name,
             messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
     except Exception as e:
+        err = str(e)
+        if "413" in err or "too large" in err.lower() or "tokens per minute" in err.lower():
+            short_prompt = truncate_for_llm(prompt, 4000)
+            if short_prompt != prompt:
+                print("Groq TPM/context limit hit — retrying with truncated prompt.")
+                return call_groq(short_prompt, fallback=False, model_name="llama-3.1-8b-instant")
         if fallback:
             print(f"Groq API failed ({e}). Falling back to OpenRouter...")
             return call_openrouter(prompt, fallback=False)
         raise
 
 def call_openrouter(prompt: str, fallback: bool = True) -> str:
+    or_model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
     try:
         response = openrouter_client.chat.completions.create(
-            model="meta-llama/llama-3.3-70b-instruct:free",
+            model=or_model,
             messages=[{"role": "user", "content": prompt}]
         )
         return response.choices[0].message.content
     except Exception as e:
         if fallback:
-            print(f"OpenRouter API failed ({e}). Falling back to Groq...")
-            return call_groq(prompt, fallback=False)
+            print(f"OpenRouter API failed ({e}). Falling back to Gemini...")
+            return call_gemini(prompt)
         raise
+
+
+def call_llm(prompt: str) -> str:
+    try:
+        return call_groq(prompt)
+    except Exception:
+        try:
+            return call_openrouter(prompt, fallback=False)
+        except Exception:
+            return call_gemini(prompt)
+
+
+def faiss_from_texts_rate_limited(texts: list, embeddings, batch_size: int = 8, pause_sec: float = 6.0):
+    if not texts:
+        raise ValueError("No text chunks to embed.")
+    store = None
+    for i in range(0, len(texts), batch_size):
+        batch = texts[i:i + batch_size]
+        for attempt in range(5):
+            try:
+                batch_store = FAISS.from_texts(batch, embeddings)
+                if store is None:
+                    store = batch_store
+                else:
+                    store.merge_from(batch_store)
+                break
+            except Exception as e:
+                err = str(e)
+                if "429" in err or "RESOURCE_EXHAUSTED" in err or "quota" in err.lower():
+                    wait = 12 * (attempt + 1)
+                    print(f"Gemini embed rate limit — waiting {wait}s (batch {i // batch_size + 1})")
+                    time.sleep(wait)
+                else:
+                    raise
+        else:
+            raise HTTPException(
+                status_code=429,
+                detail="Gemini embedding quota exceeded. Wait a minute and try uploading again."
+            )
+        if i + batch_size < len(texts):
+            time.sleep(pause_sec)
+    return store
 
 
 def community_room_index_dir(tag: str) -> str:
@@ -335,7 +397,7 @@ async def embed_text(req: EmbedRequest):
         chunks = splitter.split_text(req.text)
         
         embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
-        vectorstore = FAISS.from_texts(chunks, embeddings)
+        vectorstore = faiss_from_texts_rate_limited(chunks, embeddings)
         
         save_path = f"vector_stores/{req.topicId}/notes_index"
         os.makedirs(save_path, exist_ok=True)
@@ -444,13 +506,14 @@ Post content:
 @app.post("/api/ai/summarize")
 async def summarize_text(req: TextRequest):
     try:
+        body = truncate_for_llm(req.text)
         prompt = f"""
         Summarize the following academic text in a clear, concise manner.
         Keep the summary informative and well-structured. Maximum 200 words.
         
-        Text: {req.text}
+        Text: {body}
         """
-        text_resp = call_groq(prompt)
+        text_resp = call_llm(prompt)
         return {"summary": text_resp.strip()}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -459,14 +522,15 @@ async def summarize_text(req: TextRequest):
 @app.post("/api/ai/keypoints")
 async def extract_keypoints(req: TextRequest):
     try:
+        body = truncate_for_llm(req.text)
         prompt = f"""
         Extract the key points from the following academic text.
         You MUST return ONLY a valid JSON array of strings. Do not include markdown blocks like ```json.
         Example format: ["Point 1", "Point 2", "Point 3"]
         
-        Text: {req.text}
+        Text: {body}
         """
-        text_resp = call_groq(prompt).strip()
+        text_resp = call_llm(prompt).strip()
         
         if text_resp.startswith("```json"):
             text_resp = text_resp.replace("```json", "").replace("```", "").strip()
@@ -743,7 +807,7 @@ async def youtube_embed(req: YouTubeRequest):
         chunks = splitter.split_text(full_text)
 
         embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
-        vectorstore = FAISS.from_texts(chunks, embeddings)
+        vectorstore = faiss_from_texts_rate_limited(chunks, embeddings)
 
         save_path = f"vector_stores/{req.topicId}/youtube_index"
         os.makedirs(save_path, exist_ok=True)
@@ -998,7 +1062,7 @@ async def community_ingest_solution(req: CommunityIngestSolutionRequest):
         if not chunks:
             chunks = [chunk[:50000]]
 
-        vectorstore = FAISS.from_texts(chunks, embeddings)
+        vectorstore = faiss_from_texts_rate_limited(chunks, embeddings)
         save_path = community_room_index_dir(tag)
         os.makedirs(save_path, exist_ok=True)
 
