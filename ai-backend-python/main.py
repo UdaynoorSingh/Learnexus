@@ -223,6 +223,203 @@ def faiss_from_texts_rate_limited(texts: list, embeddings, batch_size: int = 8, 
     return store
 
 
+PIPED_INSTANCES = [
+    "https://pipedapi.kavin.rocks",
+    "https://pipedapi.adminforge.de",
+    "https://api.piped.projectsegfau.lt",
+]
+
+INVIDIOUS_INSTANCES = [
+    "https://inv.nadeau.dev",
+    "https://invidious.fdn.fr",
+    "https://yt.artemislena.eu",
+]
+
+
+def _parse_vtt_timestamp(ts: str) -> float:
+    ts = ts.strip().split()[0].replace(",", ".")
+    parts = ts.split(":")
+    if len(parts) == 3:
+        return int(parts[0]) * 3600 + int(parts[1]) * 60 + float(parts[2])
+    if len(parts) == 2:
+        return int(parts[0]) * 60 + float(parts[1])
+    return float(parts[0]) if parts else 0.0
+
+
+def _parse_webvtt(content: str) -> list:
+    segments = []
+    lines = content.replace("\r\n", "\n").split("\n")
+    i = 0
+    while i < len(lines):
+        line = lines[i].strip()
+        if "-->" in line:
+            start_s, end_s = [p.strip() for p in line.split("-->", 1)]
+            start = _parse_vtt_timestamp(start_s)
+            end = _parse_vtt_timestamp(end_s)
+            i += 1
+            text_lines = []
+            while i < len(lines) and lines[i].strip() and "-->" not in lines[i]:
+                text_lines.append(re.sub(r"<[^>]+>", "", lines[i].strip()))
+                i += 1
+            text = " ".join(text_lines).strip()
+            if text:
+                segments.append({"start": start, "duration": max(0.0, end - start), "text": text})
+        else:
+            i += 1
+    return segments
+
+
+def _parse_json3(content: str) -> list:
+    data = json.loads(content)
+    segments = []
+    for ev in data.get("events", []):
+        start = float(ev.get("tStartMs", 0)) / 1000.0
+        dur = float(ev.get("dDurationMs", 0)) / 1000.0
+        text = "".join(str(p.get("utf8", "")) for p in (ev.get("segs") or [])).strip().replace("\n", " ")
+        if text:
+            segments.append({"start": start, "duration": dur, "text": text})
+    return segments
+
+
+def _parse_subtitle_payload(content: str, mime_type: str = "") -> list:
+    mime = (mime_type or "").lower()
+    stripped = (content or "").strip()
+    if not stripped:
+        return []
+    if "json" in mime or stripped.startswith("{"):
+        try:
+            return _parse_json3(stripped)
+        except json.JSONDecodeError:
+            pass
+    return _parse_webvtt(stripped)
+
+
+def _pick_english_track(tracks: list) -> Optional[dict]:
+    if not tracks:
+        return None
+    for t in tracks:
+        code = str(t.get("code") or t.get("language_code") or t.get("languageCode") or "").lower()
+        label = str(t.get("name") or t.get("label") or "").lower()
+        if code.startswith("en") or "english" in label:
+            return t
+    return tracks[0]
+
+
+def _fetch_transcript_via_piped(video_id: str) -> list:
+    for base in PIPED_INSTANCES:
+        try:
+            r = requests.get(f"{base}/streams/{video_id}", timeout=25)
+            if r.status_code != 200:
+                continue
+            subs = r.json().get("subtitles") or []
+            track = _pick_english_track(subs)
+            if not track or not track.get("url"):
+                continue
+            tr = requests.get(track["url"], timeout=25)
+            tr.raise_for_status()
+            segments = _parse_subtitle_payload(tr.text, track.get("mimeType", ""))
+            if segments:
+                print(f"YouTube transcript via Piped ({base})")
+                return segments
+        except Exception as e:
+            print(f"Piped {base} failed: {e}")
+    raise ValueError("Piped transcript fetch failed")
+
+
+def _fetch_transcript_via_invidious(video_id: str) -> list:
+    for base in INVIDIOUS_INSTANCES:
+        try:
+            r = requests.get(f"{base}/api/v1/captions/{video_id}", timeout=25)
+            if r.status_code != 200:
+                continue
+            tracks = r.json()
+            if not isinstance(tracks, list) or not tracks:
+                continue
+            track = _pick_english_track(tracks)
+            label = track.get("label") or track.get("name") or "English"
+            caption_url = track.get("url")
+            if caption_url:
+                if caption_url.startswith("/"):
+                    caption_url = f"{base}{caption_url}"
+                tr = requests.get(caption_url, timeout=25)
+            else:
+                tr = requests.get(
+                    f"{base}/api/v1/captions/{video_id}",
+                    params={"label": label},
+                    timeout=25,
+                )
+            tr.raise_for_status()
+            segments = _parse_subtitle_payload(tr.text)
+            if segments:
+                print(f"YouTube transcript via Invidious ({base})")
+                return segments
+        except Exception as e:
+            print(f"Invidious {base} failed: {e}")
+    raise ValueError("Invidious transcript fetch failed")
+
+
+def _proxy_dict_from_env() -> Optional[dict]:
+    p = (os.getenv("YOUTUBE_TRANSCRIPT_PROXY") or "").strip()
+    https_p = (os.getenv("HTTPS_PROXY") or "").strip()
+    http_p = (os.getenv("HTTP_PROXY") or "").strip()
+    if p:
+        return {"http": p, "https": p}
+    if https_p or http_p:
+        d = {}
+        if http_p:
+            d["http"] = http_p
+        if https_p:
+            d["https"] = https_p
+        return d or None
+    return None
+
+
+def _fetch_transcript_youtube_api(video_id: str, proxies: Optional[dict]) -> list:
+    from youtube_transcript_api import YouTubeTranscriptApi
+
+    if hasattr(YouTubeTranscriptApi, "get_transcript"):
+        transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)
+        return [
+            {
+                "start": float(e.get("start", 0)),
+                "duration": float(e.get("duration", 0)),
+                "text": str(e.get("text", "")),
+            }
+            for e in (transcript_entries or [])
+        ]
+
+    ytt_api = YouTubeTranscriptApi()
+    try:
+        transcript_list = ytt_api.fetch(video_id, proxies=proxies)
+    except TypeError:
+        transcript_list = ytt_api.fetch(video_id)
+    return [
+        {"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)}
+        for entry in transcript_list
+    ]
+
+
+def fetch_youtube_transcript(video_id: str) -> list:
+    proxies = _proxy_dict_from_env()
+    errors = []
+
+    try:
+        segments = _fetch_transcript_youtube_api(video_id, proxies)
+        if segments:
+            print("YouTube transcript via youtube-transcript-api")
+            return segments
+    except Exception as e:
+        errors.append(f"direct: {e}")
+
+    for fetcher in (_fetch_transcript_via_piped, _fetch_transcript_via_invidious):
+        try:
+            return fetcher(video_id)
+        except Exception as e:
+            errors.append(str(e))
+
+    raise ValueError("; ".join(errors[-3:]))
+
+
 def community_room_index_dir(tag: str) -> str:
     raw = (tag or "").strip()
     if not raw:
@@ -724,53 +921,7 @@ async def youtube_embed(req: YouTubeRequest):
             raise HTTPException(status_code=400, detail="Invalid YouTube URL. Please provide a valid YouTube video link.")
 
         try:
-            from youtube_transcript_api import YouTubeTranscriptApi
-            def _proxy_dict_from_env() -> Optional[dict]:
-                """
-                YouTube often blocks cloud provider IPs (Render, AWS, etc.).
-                Support optional proxy via env:
-                  - YOUTUBE_TRANSCRIPT_PROXY (single URL, applied to http+https)
-                  - HTTPS_PROXY / HTTP_PROXY (standard)
-                """
-                p = (os.getenv("YOUTUBE_TRANSCRIPT_PROXY") or "").strip()
-                https_p = (os.getenv("HTTPS_PROXY") or "").strip()
-                http_p = (os.getenv("HTTP_PROXY") or "").strip()
-                if p:
-                    return {"http": p, "https": p}
-                if https_p or http_p:
-                    d = {}
-                    if http_p:
-                        d["http"] = http_p
-                    if https_p:
-                        d["https"] = https_p
-                    return d or None
-                return None
-
-            proxies = _proxy_dict_from_env()
-
-            segments = []
-            transcript_entries = None
-            if hasattr(YouTubeTranscriptApi, "get_transcript"):
-                transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies) 
-                segments = [
-                    {
-                        "start": float(e.get("start", 0)),
-                        "duration": float(e.get("duration", 0)),
-                        "text": str(e.get("text", "")),
-                    }
-                    for e in (transcript_entries or [])
-                ]
-            else:
-                ytt_api = YouTubeTranscriptApi()
-                try:
-                    transcript_list = ytt_api.fetch(video_id, proxies=proxies)  
-                except TypeError:
-                    transcript_list = ytt_api.fetch(video_id) 
-                segments = [
-                    {"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)}
-                    for entry in transcript_list
-                ]
-
+            segments = fetch_youtube_transcript(video_id)
             full_text = " ".join([s["text"] for s in segments])
         except Exception as transcript_err:
             msg = str(transcript_err)
@@ -778,23 +929,23 @@ async def youtube_embed(req: YouTubeRequest):
             blocked = (
                 "too many requests" in lower
                 or "blocked" in lower
-                or "ip" in lower and "block" in lower
+                or ("ip" in lower and "block" in lower)
                 or "captcha" in lower
+                or "failed" in lower
             )
             if blocked:
                 raise HTTPException(
                     status_code=503,
                     detail=(
-                        "YouTube blocked this server's IP from fetching transcripts (common on cloud hosting). "
-                        "Fix: set YOUTUBE_TRANSCRIPT_PROXY (or HTTPS_PROXY/HTTP_PROXY) on the AI backend service, "
-                        "or use a transcript provider/API instead."
+                        "Could not fetch YouTube transcript. The video may have no captions, "
+                        "or all transcript sources are temporarily unavailable. Try again later."
                     ),
                 )
             raise HTTPException(
                 status_code=400,
                 detail=(
-                    "Could not fetch transcript for this video. The video may not have captions enabled, "
-                    f"or YouTube is restricting access. Error: {msg}"
+                    "Could not fetch transcript for this video. Enable captions on the video and try again. "
+                    f"Error: {msg}"
                 ),
             )
 
@@ -802,8 +953,6 @@ async def youtube_embed(req: YouTubeRequest):
             raise HTTPException(status_code=400, detail="The video transcript is empty. No content to embed.")
 
         splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-        chunks = splitter.split_text(full_text)
-
         chunks = splitter.split_text(full_text)
 
         embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001", google_api_key=os.getenv("GEMINI_API_KEY"))
@@ -825,7 +974,7 @@ Focus on the main topics covered.
 
 Transcript excerpt:
 {summary_text}"""
-        summary = call_groq(summary_prompt).strip()
+        summary = call_llm(summary_prompt).strip()
 
         chapters = []
         if segments:
