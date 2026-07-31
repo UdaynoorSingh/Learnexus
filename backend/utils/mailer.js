@@ -10,7 +10,6 @@ function smtpUser() {
 
 function smtpPass() {
   const raw = envTrim('SMTP_PASS') || envTrim('SMTP_PASSWORD');
-  // Gmail app passwords are often copied as "xxxx xxxx xxxx xxxx" — strip spaces.
   return raw.replace(/\s+/g, '');
 }
 
@@ -26,10 +25,7 @@ function shouldLogOtpToConsoleOnly() {
 }
 
 function isEmailConfigured() {
-  const devConsole =
-    process.env.NODE_ENV !== 'production' &&
-    (process.env.DEV_OTP_TO_CONSOLE === 'true' || process.env.DEV_OTP_TO_CONSOLE === '1');
-  if (devConsole) return true;
+  if (shouldLogOtpToConsoleOnly()) return true;
   return !!(smtpUser() && smtpPass());
 }
 
@@ -48,38 +44,13 @@ function emailFromAddress() {
   return user ? `"Learnexus" <${user}>` : 'Learnexus <noreply@learnexus.local>';
 }
 
-let cachedTransport = null;
-let cachedTransportKey = null;
-
-async function createTransport() {
-  const user = smtpUser();
-  const pass = smtpPass();
-  if (!user || !pass) {
-    throw new Error('SMTP_EMAIL and SMTP_PASSWORD are required.');
-  }
-
-  const cacheKey = `${user}:${pass.length}:${envTrim('SMTP_HOST')}:${envTrim('SMTP_PORT')}`;
-  if (cachedTransport && cachedTransportKey === cacheKey) {
-    return cachedTransport;
-  }
-
+function gmailTransportConfigs(user, pass) {
   const explicitHost = envTrim('SMTP_HOST');
-  let transporter;
-
-  // Gmail app password: use nodemailer's gmail preset (port 465 + TLS). Reliable on Render/cloud hosts.
-  if (isGmailAccount(user) && !explicitHost) {
-    transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: { user, pass },
-      connectionTimeout: 30_000,
-      greetingTimeout: 30_000,
-      socketTimeout: 30_000
-    });
-  } else {
+  if (explicitHost) {
     const port = parseInt(process.env.SMTP_PORT || '587', 10);
     const secure = process.env.SMTP_SECURE === 'true' || port === 465;
-    transporter = nodemailer.createTransport({
-      host: explicitHost || 'smtp.gmail.com',
+    return [{
+      host: explicitHost,
       port,
       secure,
       auth: { user, pass },
@@ -87,35 +58,90 @@ async function createTransport() {
       connectionTimeout: 30_000,
       greetingTimeout: 30_000,
       socketTimeout: 30_000
-    });
+    }];
   }
 
-  try {
-    await transporter.verify();
-  } catch (err) {
-    console.error('SMTP verify failed:', err.message);
-    throw new Error(
-      `SMTP connection failed: ${err.message}. Use a Gmail App Password (not your normal password) and set SMTP_EMAIL + SMTP_PASSWORD on Render.`
-    );
+  if (isGmailAccount(user)) {
+    return [
+      {
+        service: 'gmail',
+        auth: { user, pass },
+        connectionTimeout: 30_000,
+        greetingTimeout: 30_000,
+        socketTimeout: 30_000
+      },
+      {
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true,
+        auth: { user, pass },
+        connectionTimeout: 30_000,
+        greetingTimeout: 30_000,
+        socketTimeout: 30_000
+      },
+      {
+        host: 'smtp.gmail.com',
+        port: 587,
+        secure: false,
+        auth: { user, pass },
+        requireTLS: true,
+        connectionTimeout: 30_000,
+        greetingTimeout: 30_000,
+        socketTimeout: 30_000
+      }
+    ];
   }
 
-  cachedTransport = transporter;
-  cachedTransportKey = cacheKey;
-  return transporter;
+  const port = parseInt(process.env.SMTP_PORT || '587', 10);
+  const secure = process.env.SMTP_SECURE === 'true' || port === 465;
+  return [{
+    host: explicitHost || 'smtp.gmail.com',
+    port,
+    secure,
+    auth: { user, pass },
+    requireTLS: !secure,
+    connectionTimeout: 30_000,
+    greetingTimeout: 30_000,
+    socketTimeout: 30_000
+  }];
 }
 
-async function sendOtpEmail(to, otp, expiresMinutes = 10) {
-  if (shouldLogOtpToConsoleOnly()) {
-    console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (not sent by email; expires in ${expiresMinutes} min)`);
-    return;
+async function sendViaSmtp(to, otp, expiresMinutes) {
+  const user = smtpUser();
+  const pass = smtpPass();
+  if (!user || !pass) {
+    throw new Error('SMTP_EMAIL and SMTP_PASSWORD are required.');
   }
 
   const from = emailFromAddress();
   const { subject, text, html } = otpEmailContent(otp, expiresMinutes);
-  const transporter = await createTransport();
+  const configs = gmailTransportConfigs(user, pass);
+  const errors = [];
 
-  const info = await transporter.sendMail({ from, to, subject, text, html });
-  console.log(`OTP email sent to ${to} (messageId: ${info.messageId || 'n/a'})`);
+  for (const config of configs) {
+    const label = config.service || `${config.host}:${config.port}`;
+    try {
+      const transporter = nodemailer.createTransport(config);
+      const info = await transporter.sendMail({ from, to, subject, text, html });
+      console.log(`OTP email sent via SMTP (${label}) to ${to} (messageId: ${info.messageId || 'n/a'})`);
+      return info;
+    } catch (err) {
+      const msg = err?.message || String(err);
+      console.error(`SMTP attempt failed (${label}):`, msg);
+      errors.push(`${label}: ${msg}`);
+    }
+  }
+
+  throw new Error(errors.join(' | '));
 }
 
-module.exports = { sendOtpEmail, createTransport, isEmailConfigured };
+async function sendOtpEmail(to, otp, expiresMinutes = 10) {
+  if (shouldLogOtpToConsoleOnly()) {
+    console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (expires in ${expiresMinutes} min)`);
+    return;
+  }
+
+  await sendViaSmtp(to, otp, expiresMinutes);
+}
+
+module.exports = { sendOtpEmail, isEmailConfigured };

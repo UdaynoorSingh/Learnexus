@@ -61,7 +61,7 @@ exports.studentRequestOtp = async (req, res) => {
   if (!isEmailConfigured()) {
     return res.status(503).json({
       error:
-        'Email is not configured. Set SMTP_EMAIL + SMTP_PASSWORD (Gmail app password) on Render, or DEV_OTP_TO_CONSOLE=true for local dev.'
+        'Email is not configured. Set SMTP_EMAIL + SMTP_PASSWORD (Gmail app password) on the server.'
     });
   }
 
@@ -111,10 +111,10 @@ exports.studentRequestOtp = async (req, res) => {
     try {
       await sendOtpEmail(emailNorm, code, OTP_EXPIRY_MINUTES);
     } catch (mailErr) {
-      console.error('sendOtpEmail error:', mailErr);
+      console.error('sendOtpEmail error:', mailErr.message || mailErr);
       await StudentSigninOtp.deleteMany({ email: emailNorm });
       lastOtpSendAt.delete(emailNorm);
-      return res.status(502).json({ error: 'Could not send email. Check SMTP settings.' });
+      return res.status(502).json({ error: 'Could not send email. Check SMTP settings on the server.' });
     }
 
     return res.json({
