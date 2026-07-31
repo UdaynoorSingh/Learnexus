@@ -225,15 +225,37 @@ def faiss_from_texts_rate_limited(texts: list, embeddings, batch_size: int = 8, 
 
 PIPED_INSTANCES = [
     "https://pipedapi.kavin.rocks",
-    "https://pipedapi.adminforge.de",
-    "https://api.piped.projectsegfau.lt",
+    "https://api.piped.yt",
+    "https://pipedapi.leptons.xyz",
+    "https://piped-api.codespace.cz",
+    "https://api.piped.private.coffee",
+    "https://pipedapi-libre.kavin.rocks",
+    "https://pipedapi.minionflo.net",
+    "https://pipedapi.ducks.party",
 ]
 
 INVIDIOUS_INSTANCES = [
+    "https://invidious.privacyredirect.com",
     "https://inv.nadeau.dev",
-    "https://invidious.fdn.fr",
-    "https://yt.artemislena.eu",
 ]
+
+HTTP_HEADERS = {
+    "User-Agent": (
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
+        "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    ),
+    "Accept-Language": "en-US,en;q=0.9",
+    "Accept": "application/json,text/plain,*/*",
+}
+
+
+def _http_get(url: str, proxies: Optional[dict] = None, timeout: int = 25) -> requests.Response:
+    return requests.get(url, headers=HTTP_HEADERS, proxies=proxies, timeout=timeout)
+
+
+def _http_post(url: str, payload: dict, proxies: Optional[dict] = None, timeout: int = 25) -> requests.Response:
+    headers = {**HTTP_HEADERS, "Content-Type": "application/json"}
+    return requests.post(url, json=payload, headers=headers, proxies=proxies, timeout=timeout)
 
 
 def _parse_vtt_timestamp(ts: str) -> float:
@@ -305,17 +327,70 @@ def _pick_english_track(tracks: list) -> Optional[dict]:
     return tracks[0]
 
 
-def _fetch_transcript_via_piped(video_id: str) -> list:
+def _fetch_transcript_via_innertube(video_id: str, proxies: Optional[dict] = None) -> list:
+    player_url = "https://www.youtube.com/youtubei/v1/player?prettyPrint=false"
+    payload = {
+        "context": {
+            "client": {
+                "clientName": "ANDROID",
+                "clientVersion": "19.09.37",
+                "androidSdkVersion": 30,
+                "hl": "en",
+                "gl": "US",
+            }
+        },
+        "videoId": video_id,
+    }
+    r = _http_post(player_url, payload, proxies=proxies)
+    r.raise_for_status()
+    data = r.json()
+    tracks = (
+        data.get("captions", {})
+        .get("playerCaptionsTracklistRenderer", {})
+        .get("captionTracks", [])
+    )
+    if not tracks:
+        raise ValueError("No captions on this video")
+
+    track = _pick_english_track(tracks)
+    base_url = track.get("baseUrl")
+    if not base_url:
+        raise ValueError("No caption URL in player response")
+
+    for fmt in ("json3", "vtt", "srv3"):
+        sep = "&" if "?" in base_url else "?"
+        cap = _http_get(f"{base_url}{sep}fmt={fmt}", proxies=proxies)
+        if cap.status_code != 200 or not (cap.text or "").strip():
+            continue
+        mime = "json3" if fmt == "json3" else "text/vtt"
+        segments = _parse_subtitle_payload(cap.text, mime)
+        if segments:
+            print(f"YouTube transcript via innertube ({fmt})")
+            return segments
+    raise ValueError("Could not parse innertube caption payload")
+
+
+def _fetch_transcript_via_piped(video_id: str, proxies: Optional[dict] = None) -> list:
     for base in PIPED_INSTANCES:
+        base = base.rstrip("/")
         try:
-            r = requests.get(f"{base}/streams/{video_id}", timeout=25)
+            r = _http_get(f"{base}/streams/{video_id}", proxies=proxies)
             if r.status_code != 200:
                 continue
-            subs = r.json().get("subtitles") or []
+            try:
+                data = r.json()
+            except json.JSONDecodeError:
+                continue
+            subs = data.get("subtitles") or []
             track = _pick_english_track(subs)
             if not track or not track.get("url"):
                 continue
-            tr = requests.get(track["url"], timeout=25)
+            sub_url = str(track["url"]).strip()
+            if sub_url.startswith("/"):
+                sub_url = f"{base}{sub_url}"
+            elif not sub_url.startswith("http"):
+                sub_url = f"{base}/{sub_url.lstrip('/')}"
+            tr = _http_get(sub_url, proxies=proxies)
             tr.raise_for_status()
             segments = _parse_subtitle_payload(tr.text, track.get("mimeType", ""))
             if segments:
@@ -326,28 +401,25 @@ def _fetch_transcript_via_piped(video_id: str) -> list:
     raise ValueError("Piped transcript fetch failed")
 
 
-def _fetch_transcript_via_invidious(video_id: str) -> list:
+def _fetch_transcript_via_invidious(video_id: str, proxies: Optional[dict] = None) -> list:
     for base in INVIDIOUS_INSTANCES:
+        base = base.rstrip("/")
         try:
-            r = requests.get(f"{base}/api/v1/captions/{video_id}", timeout=25)
+            r = _http_get(f"{base}/api/v1/captions/{video_id}", proxies=proxies)
             if r.status_code != 200:
                 continue
             tracks = r.json()
             if not isinstance(tracks, list) or not tracks:
                 continue
             track = _pick_english_track(tracks)
-            label = track.get("label") or track.get("name") or "English"
             caption_url = track.get("url")
             if caption_url:
-                if caption_url.startswith("/"):
+                if str(caption_url).startswith("/"):
                     caption_url = f"{base}{caption_url}"
-                tr = requests.get(caption_url, timeout=25)
+                tr = _http_get(caption_url, proxies=proxies)
             else:
-                tr = requests.get(
-                    f"{base}/api/v1/captions/{video_id}",
-                    params={"label": label},
-                    timeout=25,
-                )
+                label = track.get("label") or track.get("name") or "English"
+                tr = _http_get(f"{base}/api/v1/captions/{video_id}?label={label}", proxies=proxies)
             tr.raise_for_status()
             segments = _parse_subtitle_payload(tr.text)
             if segments:
@@ -356,6 +428,40 @@ def _fetch_transcript_via_invidious(video_id: str) -> list:
         except Exception as e:
             print(f"Invidious {base} failed: {e}")
     raise ValueError("Invidious transcript fetch failed")
+
+
+def _fetch_transcript_via_supadata(video_id: str) -> list:
+    api_key = (os.getenv("SUPADATA_API_KEY") or "").strip()
+    if not api_key:
+        raise ValueError("SUPADATA_API_KEY not set")
+    r = requests.get(
+        "https://api.supadata.ai/v1/youtube/transcript",
+        params={"videoId": video_id, "lang": "en"},
+        headers={"x-api-key": api_key, **HTTP_HEADERS},
+        timeout=30,
+    )
+    if r.status_code != 200:
+        raise ValueError(f"Supadata HTTP {r.status_code}: {r.text[:200]}")
+    data = r.json()
+    content = data.get("content") or data.get("transcript") or data.get("text")
+    if isinstance(content, list):
+        segments = []
+        for item in content:
+            if isinstance(item, dict):
+                segments.append({
+                    "start": float(item.get("start", item.get("offset", 0))),
+                    "duration": float(item.get("duration", item.get("dur", 0))),
+                    "text": str(item.get("text", item.get("content", ""))).strip(),
+                })
+            elif isinstance(item, str) and item.strip():
+                segments.append({"start": 0.0, "duration": 0.0, "text": item.strip()})
+        if segments:
+            print("YouTube transcript via Supadata")
+            return segments
+    if isinstance(content, str) and content.strip():
+        print("YouTube transcript via Supadata (plain text)")
+        return [{"start": 0.0, "duration": 0.0, "text": content.strip()}]
+    raise ValueError("Supadata returned empty transcript")
 
 
 def _proxy_dict_from_env() -> Optional[dict]:
@@ -379,6 +485,7 @@ def _fetch_transcript_youtube_api(video_id: str, proxies: Optional[dict]) -> lis
 
     if hasattr(YouTubeTranscriptApi, "get_transcript"):
         transcript_entries = YouTubeTranscriptApi.get_transcript(video_id, proxies=proxies)
+        print("YouTube transcript via youtube-transcript-api")
         return [
             {
                 "start": float(e.get("start", 0)),
@@ -393,6 +500,7 @@ def _fetch_transcript_youtube_api(video_id: str, proxies: Optional[dict]) -> lis
         transcript_list = ytt_api.fetch(video_id, proxies=proxies)
     except TypeError:
         transcript_list = ytt_api.fetch(video_id)
+    print("YouTube transcript via youtube-transcript-api")
     return [
         {"start": float(entry.start), "duration": float(entry.duration), "text": str(entry.text)}
         for entry in transcript_list
@@ -402,22 +510,24 @@ def _fetch_transcript_youtube_api(video_id: str, proxies: Optional[dict]) -> lis
 def fetch_youtube_transcript(video_id: str) -> list:
     proxies = _proxy_dict_from_env()
     errors = []
+    fetchers = [
+        lambda: _fetch_transcript_via_innertube(video_id, proxies),
+        lambda: _fetch_transcript_youtube_api(video_id, proxies),
+        lambda: _fetch_transcript_via_piped(video_id, proxies),
+        lambda: _fetch_transcript_via_invidious(video_id, proxies),
+    ]
+    if (os.getenv("SUPADATA_API_KEY") or "").strip():
+        fetchers.append(lambda: _fetch_transcript_via_supadata(video_id))
 
-    try:
-        segments = _fetch_transcript_youtube_api(video_id, proxies)
-        if segments:
-            print("YouTube transcript via youtube-transcript-api")
-            return segments
-    except Exception as e:
-        errors.append(f"direct: {e}")
-
-    for fetcher in (_fetch_transcript_via_piped, _fetch_transcript_via_invidious):
+    for fetch in fetchers:
         try:
-            return fetcher(video_id)
+            segments = fetch()
+            if segments:
+                return segments
         except Exception as e:
             errors.append(str(e))
 
-    raise ValueError("; ".join(errors[-3:]))
+    raise ValueError("; ".join(errors[-4:]))
 
 
 def community_room_index_dir(tag: str) -> str:
