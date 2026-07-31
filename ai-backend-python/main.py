@@ -162,12 +162,12 @@ def call_groq(prompt: str, fallback: bool = True, model_name: str = "llama-3.3-7
                 print("Groq TPM/context limit hit — retrying with truncated prompt.")
                 return call_groq(short_prompt, fallback=False, model_name="llama-3.1-8b-instant")
         if fallback:
-            print(f"Groq API failed ({e}). Falling back to OpenRouter...")
-            return call_openrouter(prompt, fallback=False)
+            print(f"Groq API failed ({e}). Falling back to Gemini...")
+            return call_gemini(prompt)
         raise
 
 def call_openrouter(prompt: str, fallback: bool = True) -> str:
-    or_model = os.getenv("OPENROUTER_MODEL", "google/gemini-2.0-flash-exp:free")
+    or_model = os.getenv("OPENROUTER_MODEL", "meta-llama/llama-3.1-8b-instruct:free")
     try:
         response = openrouter_client.chat.completions.create(
             model=or_model,
@@ -186,9 +186,9 @@ def call_llm(prompt: str) -> str:
         return call_groq(prompt)
     except Exception:
         try:
-            return call_openrouter(prompt, fallback=False)
-        except Exception:
             return call_gemini(prompt)
+        except Exception:
+            return call_openrouter(prompt, fallback=False)
 
 
 def faiss_from_texts_rate_limited(texts: list, embeddings, batch_size: int = 8, pause_sec: float = 6.0):
