@@ -26,15 +26,29 @@ function brevoSenderEmail() {
   return envTrim('BREVO_SENDER_EMAIL') || smtpUser();
 }
 
+function isCloudHost() {
+  return process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
+}
+
 function isGmailAccount(email) {
   return /@(gmail|googlemail)\.com$/i.test(String(email || '').trim());
 }
 
 function shouldLogOtpToConsoleOnly() {
   return (
-    process.env.NODE_ENV !== 'production' &&
+    !isCloudHost() &&
     (process.env.DEV_OTP_TO_CONSOLE === 'true' || process.env.DEV_OTP_TO_CONSOLE === '1')
   );
+}
+
+function primaryProvider() {
+  if (shouldLogOtpToConsoleOnly()) return 'console';
+  if (isCloudHost() && brevoApiKey()) return 'brevo';
+  if (isCloudHost() && resendApiKey()) return 'resend';
+  if (smtpUser() && smtpPass()) return 'smtp';
+  if (brevoApiKey()) return 'brevo';
+  if (resendApiKey()) return 'resend';
+  return null;
 }
 
 function isEmailConfigured() {
@@ -246,35 +260,29 @@ async function sendViaResend(to, otp, expiresMinutes) {
   return body;
 }
 
-async function sendViaHttpsFallback(to, otp, expiresMinutes) {
-  if (brevoApiKey()) {
-    console.warn('SMTP unavailable on this host. Using Brevo API (personal Gmail sender).');
-    return sendViaBrevo(to, otp, expiresMinutes);
-  }
-  if (resendApiKey()) {
-    console.warn('SMTP unavailable on this host. Using Resend API fallback.');
-    return sendViaResend(to, otp, expiresMinutes);
-  }
-  throw new Error('No HTTPS email fallback configured. Set BREVO_API_KEY for personal Gmail.');
-}
-
 async function sendOtpEmail(to, otp, expiresMinutes = 10) {
-  if (shouldLogOtpToConsoleOnly()) {
+  const provider = primaryProvider();
+  if (!provider) {
+    throw new Error('No email provider configured.');
+  }
+  if (provider === 'console') {
     console.warn(`[DEV_OTP_TO_CONSOLE] OTP for ${to}: ${otp} (expires in ${expiresMinutes} min)`);
     return;
   }
-
-  if (smtpUser() && smtpPass()) {
-    try {
-      return await sendViaSmtp(to, otp, expiresMinutes);
-    } catch (smtpErr) {
-      if (!brevoApiKey() && !resendApiKey()) throw smtpErr;
-      return sendViaHttpsFallback(to, otp, expiresMinutes);
-    }
+  if (provider === 'brevo') {
+    return sendViaBrevo(to, otp, expiresMinutes);
+  }
+  if (provider === 'resend') {
+    return sendViaResend(to, otp, expiresMinutes);
   }
 
-  if (brevoApiKey()) return sendViaBrevo(to, otp, expiresMinutes);
-  return sendViaResend(to, otp, expiresMinutes);
+  try {
+    return await sendViaSmtp(to, otp, expiresMinutes);
+  } catch (smtpErr) {
+    if (brevoApiKey()) return sendViaBrevo(to, otp, expiresMinutes);
+    if (resendApiKey()) return sendViaResend(to, otp, expiresMinutes);
+    throw smtpErr;
+  }
 }
 
-module.exports = { sendOtpEmail, isEmailConfigured };
+module.exports = { sendOtpEmail, isEmailConfigured, primaryProvider };

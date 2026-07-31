@@ -90,14 +90,14 @@ app.use('/api/dashboard', require('./routes/dashboardRoutes'));
 app.use('/api/sessions', require('./routes/sessionsRoutes'));
 
 const connectDB = require('./config/db');
-const { isEmailConfigured } = require('./utils/mailer');
+const { isEmailConfigured, primaryProvider } = require('./utils/mailer');
 const PORT = process.env.PORT || 5000;
 
 connectDB()
   .then(() => {
     server.listen(PORT, () => {
       console.log(`Learnexus Backend running on port ${PORT}`);
-      console.log(`OTP email (SMTP): ${isEmailConfigured() ? 'configured' : 'NOT configured — set SMTP_EMAIL + SMTP_PASSWORD (and RESEND_API_KEY as Render fallback)'}`);
+      console.log(`OTP email: ${isEmailConfigured() ? `configured (${primaryProvider()})` : 'NOT configured'}`);
       if (process.env.ENABLE_GHOST_STUDENT !== 'false') {
         const { startGhostStudentWorker } = require('./workers/ghostStudent');
         startGhostStudentWorker();
